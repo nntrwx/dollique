@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables & secrets (CRITICAL: NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
+# Uploaded files (keep directories via .gitkeep, ignore actual uploaded files)
+uploads/avatars/*
+!uploads/avatars/.gitkeep
+uploads/posts/*
+!uploads/posts/.gitkeep
+
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor settings
+.vscode/
+.idea/
