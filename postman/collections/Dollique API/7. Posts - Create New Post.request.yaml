@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:3000/api/posts
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer YOUR_TOKEN_HERE
+body:
+  type: text
+  content: |-
+    {
+      "title": "Де знайти якісні треси з козочки для ООАК?",
+      "content": "Підкажіть перевірені магазини з м'якими тресами для прошивки ляльок.",
+      "categories":
+    }
+order: 7000

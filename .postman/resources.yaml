@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: d4aa56df-7999-4b3d-84fc-0013fee3e7a1
+
+cloudResources:
+  collections:
+    ../postman/collections/Dollique API: 70676e14-d28e-41d9-a0c0-d504d302e16a
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

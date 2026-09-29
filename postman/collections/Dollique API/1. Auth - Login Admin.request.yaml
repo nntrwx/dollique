@@ -1,0 +1,13 @@
+$kind: http-request
+url: http://localhost:3000/api/auth/login
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "login": "dollique_admin",
+      "password": "password123"
+    }
+order: 1000

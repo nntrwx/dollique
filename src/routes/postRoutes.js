@@ -7,28 +7,32 @@ const { uploadPostImage } = require('../middlewares/uploadMiddleware');
 
 const router = express.Router();
 
-function optionalAuth(req, res, next) {
+function optionalPostAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ');
-  if (token) {
-    try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      // Continue as guest
+  if (authHeader) {
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+    if (token) {
+      try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (error) {
+      }
     }
   }
   next();
 }
 
-// 1. Posts List & Creation
-router.get('/', optionalAuth, PostController.getAllPosts);
+// GET /api/posts - Get all posts (with pagination, sorting & filters)
+router.get('/', optionalPostAuth, PostController.getAllPosts);
+
+// POST /api/posts - Create post (auth required, supports image uploads)
 router.post('/', authMiddleware, uploadPostImage.array('images', 5), PostController.createPost);
 
 // 2. Favorites (Act: Creative) - MUST be placed before /:post_id
 router.get('/favorites', authMiddleware, PostController.getFavorites);
 
 // 3. Specific Post Details & Actions
-router.get('/:post_id', optionalAuth, PostController.getPostById);
+router.get('/:post_id', optionalPostAuth, PostController.getPostById);
 router.patch('/:post_id', authMiddleware, PostController.updatePost);
 router.delete('/:post_id', authMiddleware, PostController.deletePost);
 
