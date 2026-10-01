@@ -4,17 +4,20 @@ const LikeModel = require('../models/LikeModel');
 const RatingService = require('../services/ratingService');
 
 class CommentController {
-  // GET /api/posts/:post_id/comments - Get all comments for a post
+  // GET /api/posts/:post_id/comments
   static async getPostComments(req, res) {
     try {
-      const { post_id } = req.params;
+      const postId = Number(req.params.post_id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: 'Invalid post_id format.' });
+      }
 
-      const post = await PostModel.findById(post_id);
+      const post = await PostModel.findById(postId);
       if (!post) {
         return res.status(404).json({ error: 'Post not found.' });
       }
 
-      const comments = await CommentModel.findByPostId(post_id);
+      const comments = await CommentModel.findByPostId(postId, req.user);
       return res.status(200).json(comments);
     } catch (error) {
       console.error('Get post comments error:', error);
@@ -22,10 +25,14 @@ class CommentController {
     }
   }
 
-  // POST /api/posts/:post_id/comments - Create a new comment or reply
+  // POST /api/posts/:post_id/comments
   static async createComment(req, res) {
     try {
-      const { post_id } = req.params;
+      const postId = Number(req.params.post_id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: 'Invalid post_id format.' });
+      }
+
       const { content, parent_id } = req.body;
       const authorId = req.user.id;
 
@@ -33,7 +40,11 @@ class CommentController {
         return res.status(400).json({ error: 'Required parameter: [content].' });
       }
 
-      const post = await PostModel.findById(post_id);
+      if (content.length > 5000) {
+        return res.status(400).json({ error: 'Comment content cannot exceed 5000 characters.' });
+      }
+
+      const post = await PostModel.findById(postId);
       if (!post) {
         return res.status(404).json({ error: 'Post not found.' });
       }
@@ -44,14 +55,14 @@ class CommentController {
 
       if (parent_id) {
         const parentComment = await CommentModel.findById(parent_id);
-        if (!parentComment || parentComment.postId !== Number(post_id)) {
+        if (!parentComment || parentComment.postId !== postId) {
           return res.status(400).json({ error: 'Invalid parent_id: parent comment does not belong to this post.' });
         }
       }
 
       const newComment = await CommentModel.create({
         authorId,
-        postId: post_id,
+        postId,
         content: content.trim(),
         parentId: parent_id || null,
       });
@@ -66,12 +77,15 @@ class CommentController {
     }
   }
 
-  // GET /api/comments/:comment_id - Get specified comment data
+  // GET /api/comments/:comment_id
   static async getCommentById(req, res) {
     try {
-      const { comment_id } = req.params;
-      const comment = await CommentModel.findById(comment_id);
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
 
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
@@ -83,14 +97,18 @@ class CommentController {
     }
   }
 
-  // PATCH /api/comments/:comment_id - Update comment status
+  // PATCH /api/comments/:comment_id
   static async updateComment(req, res) {
     try {
-      const { comment_id } = req.params;
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
+
       const { status } = req.body;
       const requester = req.user;
 
-      const comment = await CommentModel.findById(comment_id);
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
@@ -103,7 +121,7 @@ class CommentController {
         return res.status(400).json({ error: 'Status must be either "active" or "inactive".' });
       }
 
-      const updatedComment = await CommentModel.updateStatus(comment_id, status);
+      const updatedComment = await CommentModel.updateStatus(commentId, status);
 
       return res.status(200).json({
         message: 'Comment status updated successfully.',
@@ -115,13 +133,16 @@ class CommentController {
     }
   }
 
-  // DELETE /api/comments/:comment_id - Delete a comment
+  // DELETE /api/comments/:comment_id
   static async deleteComment(req, res) {
     try {
-      const { comment_id } = req.params;
-      const requester = req.user;
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
 
-      const comment = await CommentModel.findById(comment_id);
+      const requester = req.user;
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
@@ -130,8 +151,7 @@ class CommentController {
         return res.status(403).json({ error: 'Forbidden: You can only delete your own comments.' });
       }
 
-      await CommentModel.delete(comment_id);
-
+      await CommentModel.delete(commentId);
       await RatingService.recalculateUserRating(comment.authorId);
 
       return res.status(200).json({ message: 'Comment deleted successfully.' });
@@ -141,17 +161,20 @@ class CommentController {
     }
   }
 
-  // GET /api/comments/:comment_id/like - Get all likes under comment
+  // GET /api/comments/:comment_id/like
   static async getCommentLikes(req, res) {
     try {
-      const { comment_id } = req.params;
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
 
-      const comment = await CommentModel.findById(comment_id);
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      const likes = await LikeModel.findCommentLikes(comment_id);
+      const likes = await LikeModel.findCommentLikes(commentId);
       return res.status(200).json(likes);
     } catch (error) {
       console.error('Get comment likes error:', error);
@@ -159,10 +182,14 @@ class CommentController {
     }
   }
 
-  // POST /api/comments/:comment_id/like - Vote on comment
+  // POST /api/comments/:comment_id/like
   static async likeComment(req, res) {
     try {
-      const { comment_id } = req.params;
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
+
       const { type = 'like' } = req.body;
       const authorId = req.user.id;
 
@@ -170,13 +197,17 @@ class CommentController {
         return res.status(400).json({ error: 'Vote type must be "like" or "dislike".' });
       }
 
-      const comment = await CommentModel.findById(comment_id);
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      const vote = await LikeModel.voteOnComment(authorId, comment_id, type);
+      // Security fix: cannot vote on inactive comments
+      if (comment.status !== 'active') {
+        return res.status(403).json({ error: 'Cannot vote on inactive comments.' });
+      }
 
+      const vote = await LikeModel.voteOnComment(authorId, commentId, type);
       await RatingService.recalculateUserRating(comment.authorId);
 
       return res.status(200).json({
@@ -189,18 +220,21 @@ class CommentController {
     }
   }
 
-  // DELETE /api/comments/:comment_id/like - Remove vote on comment
+  // DELETE /api/comments/:comment_id/like
   static async deleteCommentLike(req, res) {
     try {
-      const { comment_id } = req.params;
-      const authorId = req.user.id;
+      const commentId = Number(req.params.comment_id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment_id format.' });
+      }
 
-      const comment = await CommentModel.findById(comment_id);
+      const authorId = req.user.id;
+      const comment = await CommentModel.findById(commentId);
       if (!comment) {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      const removed = await LikeModel.removeCommentVote(authorId, comment_id);
+      const removed = await LikeModel.removeCommentVote(authorId, commentId);
       if (!removed) {
         return res.status(404).json({ error: 'No vote found to delete.' });
       }

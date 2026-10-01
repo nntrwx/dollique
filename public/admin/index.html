@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dollique - Admin Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f8; color: #333; }
+    header { background-color: #d81b60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h2 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #f4f6f8; padding-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    th { background-color: #fafafa; color: #666; }
+    button { cursor: pointer; border: none; padding: 8px 14px; border-radius: 4px; font-weight: 600; font-size: 13px; transition: 0.2s; }
+    .btn-primary { background-color: #d81b60; color: white; }
+    .btn-danger { background-color: #e53935; color: white; }
+    .btn-warning { background-color: #fb8c00; color: white; }
+    .btn-success { background-color: #43a047; color: white; }
+    .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .badge-active { background-color: #e8f5e9; color: #2e7d32; }
+    .badge-inactive { background-color: #ffebee; color: #c62828; }
+    .badge-admin { background-color: #ede7f6; color: #512da8; }
+    .badge-user { background-color: #e3f2fd; color: #1565c0; }
+    input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 12px; font-size: 14px; }
+    .login-box { max-width: 400px; margin: 80px auto; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🧸 Dollique Admin Panel</h1>
+    <div id="authStatus">Not logged in</div>
+  </header>
+
+  <div class="container" id="loginSection">
+    <div class="card login-box">
+      <h2>Admin Sign In</h2>
+      <input type="text" id="loginUser" placeholder="Login" value="dollique_admin" />
+      <input type="password" id="loginPass" placeholder="Password" value="password123" />
+      <button class="btn-primary" style="width: 100%;" onclick="login()">Log In as Admin</button>
+    </div>
+  </div>
+
+  <div class="container" id="dashboardSection" style="display: none;">
+    <!-- Categories Manager -->
+    <div class="card">
+      <h2>Categories Management</h2>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="newCatTitle" placeholder="Category Title" style="margin-bottom: 0;" />
+        <input type="text" id="newCatDesc" placeholder="Description" style="margin-bottom: 0;" />
+        <button class="btn-primary" style="white-space: nowrap;" onclick="createCategory()">Add Category</button>
+      </div>
+      <table id="categoriesTable">
+        <thead><tr><th>ID</th><th>Title</th><th>Description</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Posts Moderation -->
+    <div class="card">
+      <h2>Posts Moderation (Active / Inactive)</h2>
+      <table id="postsTable">
+        <thead><tr><th>ID</th><th>Author</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Users Overview -->
+    <div class="card">
+      <h2>Users Overview</h2>
+      <table id="usersTable">
+        <thead><tr><th>ID</th><th>Login</th><th>Name</th><th>Role</th><th>Rating</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('dollique_admin_token') || '';
+
+    if (token) showDashboard();
+
+    async function login() {
+      const login = document.getElementById('loginUser').value;
+      const password = document.getElementById('loginPass').value;
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.user.role === 'admin') {
+        token = data.token;
+        localStorage.setItem('dollique_admin_token', token);
+        showDashboard();
+      } else {
+        alert(data.error || 'Access denied: Admin role required.');
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('authStatus').innerHTML = '<button onclick="logout()" class="btn-warning">Log Out</button>';
+      loadCategories();
+      loadPosts();
+      loadUsers();
+    }
+
+    function logout() {
+      localStorage.removeItem('dollique_admin_token');
+      location.reload();
+    }
+
+    async function loadCategories() {
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      const tbody = document.querySelector('#categoriesTable tbody');
+      tbody.innerHTML = data.map(c => `
+        <tr>
+          <td>${c.id}</td>
+          <td><b>${c.title}</b></td>
+          <td>${c.description || ''}</td>
+          <td><button class="btn-danger" onclick="deleteCategory(${c.id})">Delete</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function createCategory() {
+      const title = document.getElementById('newCatTitle').value;
+      const description = document.getElementById('newCatDesc').value;
+      if (!title) return alert('Title required');
+
+      await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ title, description })
+      });
+      document.getElementById('newCatTitle').value = '';
+      document.getElementById('newCatDesc').value = '';
+      loadCategories();
+    }
+
+    async function deleteCategory(id) {
+      if (!confirm('Delete category #' + id + '?')) return;
+      await fetch('/api/categories/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      loadCategories();
+    }
+
+    async function loadPosts() {
+      const res = await fetch('/api/posts?limit=50', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const tbody = document.querySelector('#postsTable tbody');
+      tbody.innerHTML = data.posts.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.author ? p.author.login : 'ID: ' + p.authorId}</td>
+          <td>${p.title}</td>
+          <td><span class="badge badge-${p.status}">${p.status}</span></td>
+          <td>
+            <button class="${p.status === 'active' ? 'btn-warning' : 'btn-success'}" onclick="togglePostStatus(${p.id}, '${p.status}')">
+              ${p.status === 'active' ? 'Lock (Inactive)' : 'Activate'}
+            </button>
+            <button class="btn-danger" onclick="deletePost(${p.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function togglePostStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await fetch('/api/posts/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ status: newStatus })
+      });
+      loadPosts();
+    }
+
+    async function deletePost(id) {
+      if (!confirm('Delete post #' + id + '?')) return;
+      await fetch('/api/posts/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      loadPosts();
+    }
+
+    async function loadUsers() {
+      const res = await fetch('/api/users', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const tbody = document.querySelector('#usersTable tbody');
+      tbody.innerHTML = data.map(u => `
+        <tr>
+          <td>${u.id}</td>
+          <td><b>${u.login}</b></td>
+          <td>${u.fullName || u.full_name}</td>
+          <td><span class="badge badge-${u.role}">${u.role}</span></td>
+          <td>${u.rating}</td>
+          <td>${u.is_email_confirmed ? 'Verified' : 'Pending'}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

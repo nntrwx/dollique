@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const UserModel = require('../models/UserModel');
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
 
   if (!authHeader) {
@@ -9,6 +10,7 @@ function authMiddleware(req, res, next) {
     });
   }
 
+  // Extract clean token
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
   if (!token) {
@@ -19,7 +21,16 @@ function authMiddleware(req, res, next) {
 
   try {
     const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decodedUser;
+
+    // Security fix: verify that user still exists in database and get fresh role
+    const freshUser = await UserModel.findById(decodedUser.id, true);
+    if (!freshUser) {
+      return res.status(401).json({
+        error: 'Unauthorized: User account no longer exists or was deleted.',
+      });
+    }
+
+    req.user = freshUser;
     next();
   } catch (error) {
     return res.status(401).json({

@@ -10,38 +10,55 @@ class AuthController {
     try {
       const { login, password, password_confirmation, email, full_name } = req.body;
 
+      // 1. Validate required fields
       if (!login || !password || !password_confirmation || !email) {
         return res.status(400).json({
-          error: 'Parameters [login, password, password_confirmation, email] are required.',
+          error: 'Required parameters: [login, password, password_confirmation, email].',
         });
       }
 
+      // 2. Validate email format (Fix: reject invalid emails like 'abc')
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email address format.' });
+      }
+
+      // 3. Validate password strength (Fix: minimum 6 characters)
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+      }
+
+      // 4. Validate that passwords match
       if (password !== password_confirmation) {
-        return res.status(400).json({
-          error: 'Password and password confirmation do not match.',
-        });
+        return res.status(400).json({ error: 'Password and password confirmation do not match.' });
       }
 
+      // 5. Check if login already exists
       const existingLogin = await UserModel.findByLogin(login);
       if (existingLogin) {
         return res.status(409).json({ error: 'User with this login already exists.' });
       }
 
+      // 6. Check if email already exists
       const existingEmail = await UserModel.findByEmail(email);
       if (existingEmail) {
         return res.status(409).json({ error: 'User with this email already exists.' });
       }
 
+      // 7. Hash password
       const passwordHash = await bcrypt.hash(password, 10);
 
+      // 8. Create user in database
       const newUser = await UserModel.create({
         login,
         passwordHash,
         fullName: full_name || login,
         email,
         role: 'user',
+        isEmailConfirmed: false,
       });
 
+      // 9. Generate confirmation token
       const confirmationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -52,6 +69,7 @@ class AuthController {
         expiresAt: tokenExpiresAt,
       });
 
+      // 10. Send confirmation email
       await EmailService.sendConfirmationEmail(email, confirmationToken);
 
       return res.status(201).json({
@@ -64,7 +82,7 @@ class AuthController {
     }
   }
 
-  // POST /api/auth/confirm-email/:confirm_token
+  // GET & POST /api/auth/confirm-email/:confirm_token
   static async confirmEmail(req, res) {
     try {
       const { confirm_token } = req.params;
@@ -75,8 +93,17 @@ class AuthController {
       }
 
       await UserModel.confirmEmail(tokenRecord.userId);
-
       await UserModel.deleteToken(tokenRecord.id);
+
+      // If clicked from browser URL, return a nice HTML confirmation
+      if (req.method === 'GET') {
+        return res.send(`
+          <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #2e7d32;">🎉 Email Confirmed!</h1>
+            <p>Your Dollique account has been successfully verified. You can now log in.</p>
+          </div>
+        `);
+      }
 
       return res.status(200).json({ message: 'Email confirmed successfully. You can now log in.' });
     } catch (error) {
@@ -107,12 +134,12 @@ class AuthController {
         return res.status(401).json({ error: 'Invalid credentials.' });
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       if (!isPasswordValid) {
         return res.status(401).json({ error: 'Invalid credentials.' });
       }
 
-      if (!user.isEmailConfirmed) {
+      if (!user.is_email_confirmed) {
         return res.status(403).json({
           error: 'Please confirm your email before signing in.',
         });
@@ -134,11 +161,11 @@ class AuthController {
         user: {
           id: user.id,
           login: user.login,
-          fullName: user.fullName,
+          fullName: user.full_name,
           email: user.email,
           role: user.role,
           rating: user.rating,
-          profilePicture: user.profilePicture,
+          profilePicture: user.profile_picture,
         },
       });
     } catch (error) {
@@ -169,7 +196,7 @@ class AuthController {
       }
 
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const tokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const tokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
       await UserModel.saveToken({
         userId: user.id,
@@ -189,14 +216,50 @@ class AuthController {
     }
   }
 
-  // POST /api/auth/password-reset/:confirm_token
+  // GET /api/auth/password-reset/:confirm_token - Opens reset form when clicked in email
+  static async renderPasswordResetPage(req, res) {
+    try {
+      const { confirm_token } = req.params;
+      const tokenRecord = await UserModel.findToken(confirm_token, 'password_reset');
+
+      if (!tokenRecord) {
+        return res.status(400).send(`
+          <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h2 style="color: #c62828;">❌ Invalid or Expired Token</h2>
+            <p>This password reset link is invalid or has expired.</p>
+          </div>
+        `);
+      }
+
+      // Return a working HTML form that POSTs to this token
+      return res.send(`
+        <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 25px; border: 1px solid #ddd; border-radius: 8px;">
+          <h2 style="color: #333; text-align: center;">Reset Your Password</h2>
+          <form method="POST" action="/api/auth/password-reset/${confirm_token}">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">New Password:</label>
+            <input type="password" name="password" required minlength="6" style="width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 15px;" placeholder="At least 6 characters" />
+            
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Confirm New Password:</label>
+            <input type="password" name="password_confirmation" required minlength="6" style="width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 20px;" placeholder="Repeat password" />
+            
+            <button type="submit" style="width: 100%; padding: 12px; background-color: #d81b60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Update Password</button>
+          </form>
+        </div>
+      `);
+    } catch (error) {
+      console.error('Render reset page error:', error);
+      return res.status(500).json({ error: 'Internal server error.' });
+    }
+  }
+
+  // POST /api/auth/password-reset/:confirm_token - Confirm new password
   static async confirmPasswordReset(req, res) {
     try {
       const { confirm_token } = req.params;
       const { password, password_confirmation } = req.body;
 
-      if (!password) {
-        return res.status(400).json({ error: 'Parameter [password] is required.' });
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
       }
 
       if (password_confirmation && password !== password_confirmation) {
@@ -210,10 +273,11 @@ class AuthController {
 
       const newPasswordHash = await bcrypt.hash(password, 10);
       await UserModel.updatePassword(tokenRecord.userId, newPasswordHash);
-
       await UserModel.deleteToken(tokenRecord.id);
 
-      return res.status(200).json({ message: 'Password has been successfully updated. You can now log in.' });
+      return res.status(200).json({
+        message: 'Password has been successfully updated. You can now log in.',
+      });
     } catch (error) {
       console.error('Confirm password reset error:', error);
       return res.status(500).json({ error: 'Internal server error during password reset confirmation.' });

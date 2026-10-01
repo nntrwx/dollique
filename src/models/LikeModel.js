@@ -1,130 +1,130 @@
-const prisma = require('../prismaClient');
+const pool = require('../../database/db');
 
 class LikeModel {
+  // 1. Get all likes for a post
   static async findPostLikes(postId) {
-    return await prisma.like.findMany({
-      where: { postId: Number(postId) },
-      include: {
-        author: {
-          select: {
-            id: true,
-            login: true,
-            fullName: true,
-            profilePicture: true,
-            rating: true,
-          },
-        },
+    const pId = Number(postId);
+    if (isNaN(pId)) return [];
+
+    const [rows] = await pool.execute(`
+      SELECT 
+        l.id, l.author_id, l.post_id, l.comment_id, l.type, l.created_at,
+        u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
+        u.profile_picture AS author_avatar, u.rating AS author_rating
+      FROM likes l
+      JOIN users u ON l.author_id = u.id
+      WHERE l.post_id = ?
+      ORDER BY l.created_at DESC
+    `, [pId]);
+
+    return rows.map((r) => ({
+      id: r.id,
+      authorId: r.author_id,
+      postId: r.post_id,
+      commentId: r.comment_id,
+      type: r.type,
+      createdAt: r.created_at,
+      author: {
+        id: r.author_user_id,
+        login: r.author_login,
+        fullName: r.author_name,
+        profilePicture: r.author_avatar,
+        rating: r.author_rating,
       },
-    });
+    }));
   }
 
+  // 2. Get all likes for a comment
   static async findCommentLikes(commentId) {
-    return await prisma.like.findMany({
-      where: { commentId: Number(commentId) },
-      include: {
-        author: {
-          select: {
-            id: true,
-            login: true,
-            fullName: true,
-            profilePicture: true,
-            rating: true,
-          },
-        },
+    const cId = Number(commentId);
+    if (isNaN(cId)) return [];
+
+    const [rows] = await pool.execute(`
+      SELECT 
+        l.id, l.author_id, l.post_id, l.comment_id, l.type, l.created_at,
+        u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
+        u.profile_picture AS author_avatar, u.rating AS author_rating
+      FROM likes l
+      JOIN users u ON l.author_id = u.id
+      WHERE l.comment_id = ?
+      ORDER BY l.created_at DESC
+    `, [cId]);
+
+    return rows.map((r) => ({
+      id: r.id,
+      authorId: r.author_id,
+      postId: r.post_id,
+      commentId: r.comment_id,
+      type: r.type,
+      createdAt: r.created_at,
+      author: {
+        id: r.author_user_id,
+        login: r.author_login,
+        fullName: r.author_name,
+        profilePicture: r.author_avatar,
+        rating: r.author_rating,
       },
-    });
+    }));
   }
 
+  // 3. Vote on post using atomic UPSERT (immune to race conditions)
   static async voteOnPost(authorId, postId, type) {
     const userId = Number(authorId);
     const pId = Number(postId);
 
-    const existingVote = await prisma.like.findUnique({
-      where: {
-        user_post_like_unique: {
-          authorId: userId,
-          postId: pId,
-        },
-      },
-    });
+    await pool.execute(`
+      INSERT INTO likes (author_id, post_id, comment_id, type)
+      VALUES (?, ?, NULL, ?)
+      ON DUPLICATE KEY UPDATE type = VALUES(type)
+    `, [userId, pId, type]);
 
-    if (existingVote) {
-      return await prisma.like.update({
-        where: { id: existingVote.id },
-        data: { type },
-      });
-    }
+    const [rows] = await pool.execute(`
+      SELECT * FROM likes WHERE author_id = ? AND post_id = ?
+    `, [userId, pId]);
 
-    return await prisma.like.create({
-      data: {
-        authorId: userId,
-        postId: pId,
-        type,
-      },
-    });
+    return rows[0] || null;
   }
 
+  // 4. Remove vote from post
   static async removePostVote(authorId, postId) {
-    const existingVote = await prisma.like.findUnique({
-      where: {
-        user_post_like_unique: {
-          authorId: Number(authorId),
-          postId: Number(postId),
-        },
-      },
-    });
+    const userId = Number(authorId);
+    const pId = Number(postId);
 
-    if (!existingVote) return null;
+    const [result] = await pool.execute(`
+      DELETE FROM likes WHERE author_id = ? AND post_id = ?
+    `, [userId, pId]);
 
-    return await prisma.like.delete({
-      where: { id: existingVote.id },
-    });
+    return result.affectedRows > 0;
   }
 
+  // 5. Vote on comment using atomic UPSERT
   static async voteOnComment(authorId, commentId, type) {
     const userId = Number(authorId);
     const cId = Number(commentId);
 
-    const existingVote = await prisma.like.findUnique({
-      where: {
-        user_comment_like_unique: {
-          authorId: userId,
-          commentId: cId,
-        },
-      },
-    });
+    await pool.execute(`
+      INSERT INTO likes (author_id, post_id, comment_id, type)
+      VALUES (?, NULL, ?, ?)
+      ON DUPLICATE KEY UPDATE type = VALUES(type)
+    `, [userId, cId, type]);
 
-    if (existingVote) {
-      return await prisma.like.update({
-        where: { id: existingVote.id },
-        data: { type },
-      });
-    }
+    const [rows] = await pool.execute(`
+      SELECT * FROM likes WHERE author_id = ? AND comment_id = ?
+    `, [userId, cId]);
 
-    return await prisma.like.create({
-      data: {
-        authorId: userId,
-        commentId: cId,
-        type,
-      },
-    });
+    return rows[0] || null;
   }
 
+  // 6. Remove vote from comment
   static async removeCommentVote(authorId, commentId) {
-    const existingVote = await prisma.like.findUnique({
-      where: {
-        user_comment_like_unique: {
-          authorId: Number(authorId),
-          commentId: Number(commentId),
-        },
-      },
-    });
+    const userId = Number(authorId);
+    const cId = Number(commentId);
 
-    if (!existingVote) return null;
+    const [result] = await pool.execute(`
+      DELETE FROM likes WHERE author_id = ? AND comment_id = ?
+    `, [userId, cId]);
 
-    return await prisma.like.delete({
-      where: { id: existingVote.id },
-    });
+    return result.affectedRows > 0;
   }
 }
 

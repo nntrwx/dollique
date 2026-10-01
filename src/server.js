@@ -1,21 +1,22 @@
 require('dotenv').config();
 const app = require('./app');
-const prisma = require('./prismaClient');
+const pool = require('../database/db');
 
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Перевірка зв'язку з базою даних
-    await prisma.$connect();
-    console.log('📦 Успішне підключення до бази даних MySQL (Dollique DB)');
+    // Test database connection via MySQL2 pool
+    const connection = await pool.getConnection();
+    console.log('📦 Successfully connected to MySQL database (Dollique DB)');
+    connection.release();
 
     app.listen(PORT, () => {
-      console.log(`🚀 Сервер Dollique запущено на http://localhost:${PORT}`);
-      console.log(`🩺 Перевірка статусу: http://localhost:${PORT}/api/health`);
+      console.log(`🚀 Dollique API server running at http://localhost:${PORT}`);
+      console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
-    console.error('❌ Не вдалося запустити сервер:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }

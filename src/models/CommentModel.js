@@ -1,111 +1,134 @@
-const prisma = require('../prismaClient');
+const pool = require('../../database/db');
 
 class CommentModel {
-  static async findByPostId(postId) {
-    return await prisma.comment.findMany({
-      where: {
-        postId: Number(postId),
-        parentId: null,
-      },
-      include: {
+  // 1. Get all comments for a post (with nested replies tree & status filtering)
+  static async findByPostId(postId, currentUser = null) {
+    const pId = Number(postId);
+    if (isNaN(pId)) return [];
+
+    let statusCondition = "c.status = 'active'";
+    const queryParams = [pId];
+
+    if (currentUser && currentUser.role === 'admin') {
+      statusCondition = "1=1"; // Admin sees all
+    } else if (currentUser) {
+      statusCondition = "(c.status = 'active' OR c.author_id = ?)";
+      queryParams.push(currentUser.id);
+    }
+
+    const query = `
+      SELECT 
+        c.id, c.author_id, c.post_id, c.parent_id, c.content, c.status, c.created_at, c.updated_at,
+        u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
+        u.profile_picture AS author_avatar, u.rating AS author_rating,
+        COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 WHEN l.type = 'dislike' THEN -1 ELSE 0 END), 0) AS net_likes
+      FROM comments c
+      JOIN users u ON c.author_id = u.id
+      LEFT JOIN likes l ON c.id = l.comment_id
+      WHERE c.post_id = ? AND ${statusCondition}
+      GROUP BY c.id, u.id
+      ORDER BY c.created_at ASC
+    `;
+
+    const [rows] = await pool.execute(query, queryParams);
+
+    // Build hierarchical tree supporting replies to replies at any depth
+    const commentMap = {};
+    const formattedList = rows.map((r) => {
+      const item = {
+        id: r.id,
+        authorId: r.author_id,
+        postId: r.post_id,
+        parentId: r.parent_id,
+        content: r.content,
+        status: r.status,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        netLikes: Number(r.net_likes) || 0,
         author: {
-          select: {
-            id: true,
-            login: true,
-            fullName: true,
-            profilePicture: true,
-            rating: true,
-          },
+          id: r.author_user_id,
+          login: r.author_login,
+          fullName: r.author_name,
+          profilePicture: r.author_avatar,
+          rating: r.author_rating,
         },
-        likes: true,
-        _count: {
-          select: { likes: true },
-        },
-        replies: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                login: true,
-                fullName: true,
-                profilePicture: true,
-                rating: true,
-              },
-            },
-            likes: true,
-            _count: {
-              select: { likes: true },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-      orderBy: [
-        { likes: { _count: 'asc' } },
-        { createdAt: 'asc' },
-      ],
+        replies: [],
+      };
+      commentMap[item.id] = item;
+      return item;
     });
+
+    const rootComments = [];
+    formattedList.forEach((comment) => {
+      if (comment.parentId && commentMap[comment.parentId]) {
+        commentMap[comment.parentId].replies.push(comment);
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
   }
 
+  // 2. Find single comment by ID
   static async findById(id) {
-    return await prisma.comment.findUnique({
-      where: { id: Number(id) },
-      include: {
-        author: {
-          select: {
-            id: true,
-            login: true,
-            fullName: true,
-            profilePicture: true,
-            rating: true,
-          },
-        },
-        likes: true,
-        replies: true,
-        _count: {
-          select: { likes: true },
-        },
+    const commentId = Number(id);
+    if (isNaN(commentId)) return null;
+
+    const [rows] = await pool.execute(`
+      SELECT 
+        c.id, c.author_id, c.post_id, c.parent_id, c.content, c.status, c.created_at, c.updated_at,
+        u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
+        u.profile_picture AS author_avatar, u.rating AS author_rating
+      FROM comments c
+      JOIN users u ON c.author_id = u.id
+      WHERE c.id = ?
+    `, [commentId]);
+
+    if (!rows[0]) return null;
+
+    const r = rows[0];
+    return {
+      id: r.id,
+      authorId: r.author_id,
+      postId: r.post_id,
+      parentId: r.parent_id,
+      content: r.content,
+      status: r.status,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      author: {
+        id: r.author_user_id,
+        login: r.author_login,
+        fullName: r.author_name,
+        profilePicture: r.author_avatar,
+        rating: r.author_rating,
       },
-    });
+    };
   }
 
+  // 3. Create comment or reply
   static async create({ authorId, postId, content, parentId = null }) {
-    return await prisma.comment.create({
-      data: {
-        authorId: Number(authorId),
-        postId: Number(postId),
-        parentId: parentId ? Number(parentId) : null,
-        content,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            login: true,
-            fullName: true,
-            profilePicture: true,
-          },
-        },
-      },
-    });
+    const [result] = await pool.execute(`
+      INSERT INTO comments (author_id, post_id, parent_id, content, status)
+      VALUES (?, ?, ?, ?, 'active')
+    `, [Number(authorId), Number(postId), parentId ? Number(parentId) : null, content]);
+
+    return await this.findById(result.insertId);
   }
 
+  // 4. Update status (active / inactive)
   static async updateStatus(id, status) {
-    return await prisma.comment.update({
-      where: { id: Number(id) },
-      data: { status },
-      include: {
-        author: {
-          select: { id: true, login: true },
-        },
-      },
-    });
+    const commentId = Number(id);
+    await pool.execute('UPDATE comments SET status = ? WHERE id = ?', [status, commentId]);
+    return await this.findById(commentId);
   }
 
+  // 5. Delete comment
   static async delete(id) {
-    return await prisma.comment.delete({
-      where: { id: Number(id) },
-    });
+    const commentId = Number(id);
+    const [result] = await pool.execute('DELETE FROM comments WHERE id = ?', [commentId]);
+    return result.affectedRows > 0;
   }
 }
 

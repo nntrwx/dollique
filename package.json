@@ -4,12 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js",
-  "db:push": "npx prisma db push",
-  "db:seed": "node prisma/seed.js",
-  "prisma:studio": "npx prisma studio"
-},
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:init": "node database/initDb.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nntrwx/dollique.git"
@@ -23,17 +21,16 @@
   },
   "homepage": "https://github.com/nntrwx/dollique#readme",
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.3.0",
+    "mysql2": "^3.24.5",
     "nodemailer": "^10.0.9"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prisma": "^6.19.3"
+    "nodemon": "^3.1.14"
   }
 }

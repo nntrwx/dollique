@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -18,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static uploaded files (avatars, post images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve static admin dashboard
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+
 
 // Health check and root route
 app.get('/', (req, res) => {
@@ -44,10 +48,14 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 
-// Global error handler
+// Global error handler (handles Multer errors as 400 Bad Request)
 app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || (err.message && err.message.includes('image files'))) {
+    return res.status(400).json({ error: err.message });
+  }
+
   console.error('Server error:', err);
-  res.status(err.status || 500).json({
+  return res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
   });
 });
