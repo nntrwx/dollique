@@ -113,8 +113,8 @@ class CommentController {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      if (requester.role !== 'admin' && requester.id !== comment.authorId) {
-        return res.status(403).json({ error: 'Forbidden: You can only update your own comments.' });
+      if (!requester || (requester.role !== 'admin' && requester.id !== comment.authorId)) {
+        return res.status(403).json({ error: 'Forbidden: Insufficient rights.' });
       }
 
       if (!status || !['active', 'inactive'].includes(status)) {

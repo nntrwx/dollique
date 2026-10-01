@@ -54,7 +54,7 @@ async function initDatabase() {
     // 4. Seed 5 Users (All English)
     await connection.query(
       `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, avatar_config) VALUES
-      (1, 'dollique_admin', ?, 'Chief Moderator', 'admin@dollique.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"skin":"porcelain","eyes":"violet","hair":"dark_bob"}'),
+      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"skin":"porcelain","eyes":"violet","hair":"dark_bob"}'),
       (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"skin":"pale","eyes":"emerald","hair":"pastel_pink_curls"}'),
       (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', NULL),
       (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', NULL),

@@ -1,7 +1,7 @@
 const pool = require('../../database/db');
 
 class CommentModel {
-  // 1. Get all comments for a post (with nested replies tree & status filtering)
+  // 1. Get all comments for a post (Admin gets all statuses, users get active)
   static async findByPostId(postId, currentUser = null) {
     const pId = Number(postId);
     if (isNaN(pId)) return [];
@@ -9,8 +9,9 @@ class CommentModel {
     let statusCondition = "c.status = 'active'";
     const queryParams = [pId];
 
+    // Если передан пользователь с ролью admin, разрешаем видеть все комментарии (включая inactive)
     if (currentUser && currentUser.role === 'admin') {
-      statusCondition = "1=1"; // Admin sees all
+      statusCondition = "1=1"; 
     } else if (currentUser) {
       statusCondition = "(c.status = 'active' OR c.author_id = ?)";
       queryParams.push(currentUser.id);
@@ -32,7 +33,6 @@ class CommentModel {
 
     const [rows] = await pool.execute(query, queryParams);
 
-    // Build hierarchical tree supporting replies to replies at any depth
     const commentMap = {};
     const formattedList = rows.map((r) => {
       const item = {
@@ -117,7 +117,7 @@ class CommentModel {
     return await this.findById(result.insertId);
   }
 
-  // 4. Update status (active / inactive)
+  // 4. Update status (active / inactive) — строго UPDATE, запись не удаляется
   static async updateStatus(id, status) {
     const commentId = Number(id);
     await pool.execute('UPDATE comments SET status = ? WHERE id = ?', [status, commentId]);

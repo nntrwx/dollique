@@ -6,7 +6,6 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Test database connection via MySQL2 pool
     const connection = await pool.getConnection();
     console.log('📦 Successfully connected to MySQL database (Dollique DB)');
     connection.release();

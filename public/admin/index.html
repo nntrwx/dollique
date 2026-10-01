@@ -3,178 +3,674 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dollique - Admin Dashboard</title>
+  <title>Dollique • Studio Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f8; color: #333; }
-    header { background-color: #d81b60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-    .card { background: white; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    h2 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #f4f6f8; padding-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-    th { background-color: #fafafa; color: #666; }
-    button { cursor: pointer; border: none; padding: 8px 14px; border-radius: 4px; font-weight: 600; font-size: 13px; transition: 0.2s; }
-    .btn-primary { background-color: #d81b60; color: white; }
-    .btn-danger { background-color: #e53935; color: white; }
-    .btn-warning { background-color: #fb8c00; color: white; }
-    .btn-success { background-color: #43a047; color: white; }
-    .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-    .badge-active { background-color: #e8f5e9; color: #2e7d32; }
-    .badge-inactive { background-color: #ffebee; color: #c62828; }
-    .badge-admin { background-color: #ede7f6; color: #512da8; }
-    .badge-user { background-color: #e3f2fd; color: #1565c0; }
-    input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 12px; font-size: 14px; }
-    .login-box { max-width: 400px; margin: 80px auto; }
+    :root {
+      --ink-950: #0F0E10;
+      --ink-900: #151417;
+      --ink-800: #201E23;
+      --blush-50: #FDF8FA;
+      --blush-100: #FAF0F3;
+      --blush-200: #F5E2E8;
+      --blush-300: #EBCFD8;
+      --editorial-cream: #FAF7F7;
+      --editorial-border: #E8DCE1;
+      --bg-page: var(--editorial-cream);
+      --bg-surface: #FFFFFF;
+      --text-main: var(--ink-950);
+      --text-muted: #6E6870;
+      --text-subtle: #9B949E;
+      --border-color: var(--editorial-border);
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 25%, var(--blush-100) 0%, var(--editorial-cream) 70%);
+    }
+
+    .login-container {
+      max-width: 400px;
+      width: 100%;
+      background: var(--bg-surface);
+      padding: 40px 32px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--editorial-border);
+      box-shadow: 0 10px 30px rgba(15, 14, 16, 0.04);
+      text-align: center;
+    }
+
+    .login-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--ink-950);
+      color: var(--blush-50);
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .login-container h2 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-container p { color: var(--text-muted); font-size: 13px; margin-bottom: 22px; }
+
+    .login-error-alert {
+      display: none; background: #FFF1F2; border: 1px solid #FECDD3; color: #9F1239;
+      padding: 10px 14px; border-radius: var(--radius-md); font-size: 12.5px; margin-bottom: 16px; text-align: left;
+    }
+
+    .login-container input {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--editorial-border); border-radius: var(--radius-md);
+      font-size: 13px; margin-bottom: 12px; outline: none; background: var(--blush-50); color: var(--ink-950);
+    }
+    .login-container input:focus { border-color: var(--ink-900); background: #FFFFFF; }
+
+    #dashboardScreen { display: flex; min-height: 100vh; }
+
+    aside.sidebar {
+      width: 260px; background: var(--bg-surface); border-right: 1px solid var(--editorial-border);
+      display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0;
+    }
+
+    .brand-section {
+      display: flex; align-items: center; gap: 12px; padding: 0 8px 24px;
+      border-bottom: 1px solid var(--editorial-border); margin-bottom: 20px;
+    }
+
+    .brand-logo {
+      width: 34px; height: 34px; border-radius: 8px; background: var(--ink-950); color: var(--blush-50);
+      display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 16px;
+    }
+
+    .brand-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: var(--ink-950); }
+    .brand-title span { display: block; font-size: 9.5px; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase; margin-top: 3px; }
+
+    .nav-group { list-style: none; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+    .tab-btn {
+      width: 100%; border: 1px solid transparent; background: transparent; padding: 10px 14px;
+      border-radius: var(--radius-md); font-size: 13px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: all 0.15s ease;
+    }
+    .tab-btn:hover { background: var(--blush-100); color: var(--ink-950); }
+    .tab-btn.active { background: var(--ink-950); color: var(--blush-50); border-color: var(--ink-950); }
+    .tab-btn.active .icon { stroke: var(--blush-50); }
+
+    .sidebar-user {
+      border-top: 1px solid var(--editorial-border); padding: 16px 8px 0; display: flex; align-items: center; justify-content: space-between;
+    }
+    .user-profile { display: flex; align-items: center; gap: 10px; }
+    .user-avatar-initials {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--blush-200); color: var(--ink-950);
+      display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 13px; border: 1px solid var(--blush-300);
+    }
+    .user-meta-name { font-weight: 600; font-size: 12.5px; color: var(--ink-950); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-meta-role { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; }
+
+    main.main-body { flex: 1; padding: 32px 36px; overflow-y: auto; max-width: 1280px; margin: 0 auto; }
+
+    .top-action-bar { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .page-heading { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ink-950); }
+    .page-subheading { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--bg-surface); border: 1px solid var(--editorial-border); border-radius: var(--radius-lg);
+      padding: 18px 20px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .stat-info p { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-info h3 { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ink-950); }
+    .stat-indicator {
+      width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--blush-100);
+      color: var(--ink-900); display: flex; align-items: center; justify-content: center; border: 1px solid var(--blush-200);
+    }
+
+    .card {
+      background: var(--bg-surface); border: 1px solid var(--editorial-border); border-radius: var(--radius-lg);
+      overflow: hidden; box-shadow: 0 4px 20px rgba(15, 14, 16, 0.02);
+    }
+    .card-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--editorial-border); display: flex;
+      justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--blush-50);
+    }
+    .card-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ink-950); }
+    .card-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .search-input {
+      padding: 7px 12px; border: 1px solid var(--editorial-border); border-radius: var(--radius-md);
+      font-size: 12.5px; width: 200px; outline: none; background: var(--bg-surface); color: var(--ink-950);
+    }
+    .filter-select {
+      padding: 7px 10px; border: 1px solid var(--editorial-border); border-radius: var(--radius-md);
+      font-size: 12.5px; background: var(--bg-surface); color: var(--ink-950); outline: none; cursor: pointer;
+    }
+
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-muted); padding: 12px 20px; background: var(--editorial-cream); border-bottom: 1px solid var(--editorial-border);
+    }
+    td { padding: 14px 20px; border-bottom: 1px solid var(--editorial-border); font-size: 13px; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--blush-50); }
+
+    .btn-status-toggle {
+      background: transparent; border: 1px solid var(--editorial-border); border-radius: var(--radius-sm);
+      padding: 5px 9px; cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11.5px; font-weight: 600; transition: all 0.15s;
+    }
+    .btn-status-toggle.is-active { color: #166534; background: #F0FDF4; border-color: #DCFCE7; }
+    .btn-status-toggle.is-inactive { color: #9F1239; background: #FFF1F2; border-color: #FECDD3; }
+
+    .comments-dropdown-row { background: #faf6f5 !important; }
+    .nested-comments-box { padding: 8px 0 12px 28px; }
+    .nested-comment-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+      background: #ffffff; border: 1px solid var(--editorial-border); border-radius: var(--radius-md); margin-bottom: 6px; font-size: 12.5px;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid transparent;
+    }
+    .badge-active { background: #F0FDF4; color: #166534; border-color: #DCFCE7; }
+    .badge-inactive { background: #FFF1F2; color: #9F1239; border-color: #FECDD3; }
+    .badge-admin { background: var(--blush-200); color: var(--ink-950); border-color: var(--blush-300); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+    .badge-user { background: var(--editorial-cream); color: var(--text-muted); border-color: var(--editorial-border); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+
+    .cat-tag {
+      display: inline-block; background: var(--blush-100); color: var(--ink-800); border: 1px solid var(--blush-200); padding: 2px 7px; border-radius: var(--radius-sm); font-size: 11px; margin-right: 4px;
+    }
+
+    .btn {
+      padding: 6px 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--editorial-border); background: var(--bg-surface); color: var(--ink-950);
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;
+    }
+    .btn:hover { background: var(--blush-100); border-color: var(--blush-300); }
+    .btn-primary { background: var(--ink-950); color: var(--blush-50); border-color: var(--ink-950); }
+    .btn-primary:hover { background: var(--ink-800); color: #FFFFFF; }
+    .btn-danger { color: #9F1239; border-color: #FECDD3; }
+    .btn-danger:hover { background: #FFF1F2; border-color: #FDA4AF; }
+    .btn-warning { color: #92400E; border-color: #FDE68A; }
+    .btn-warning:hover { background: #FEF3C7; }
+    .btn-logout { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; }
+    .btn-logout:hover { color: var(--ink-950); background: var(--blush-100); }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(15, 14, 16, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+    }
+    .modal {
+      background: var(--bg-surface); border: 1px solid var(--editorial-border); border-radius: var(--radius-lg); width: 100%; max-width: 440px; padding: 28px; box-shadow: 0 15px 35px rgba(15, 14, 16, 0.1);
+    }
+    .modal-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 9px 12px; border: 1px solid var(--editorial-border); border-radius: var(--radius-md); font-size: 13px; outline: none; background: var(--blush-50); color: var(--ink-950);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--ink-900); background: #FFFFFF; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--ink-950); color: var(--blush-50); padding: 10px 18px; border-radius: var(--radius-md); font-size: 12.5px; font-family: var(--font-mono); box-shadow: 0 10px 25px rgba(15, 14, 16, 0.15); display: none; z-index: 1000;
+    }
+
+    @media (max-width: 900px) {
+      #dashboardScreen { flex-direction: column; }
+      aside.sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--editorial-border); }
+      main.main-body { padding: 20px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🧸 Dollique Admin Panel</h1>
-    <div id="authStatus">Not logged in</div>
-  </header>
+  <div id="loginScreen">
+    <div class="login-container">
+      <div class="login-logo">D</div>
+      <h2>Dollique Bureau</h2>
+      <p>Studio Administrator Authentication</p>
+      
+      <div id="loginError" class="login-error-alert"></div>
 
-  <div class="container" id="loginSection">
-    <div class="card login-box">
-      <h2>Admin Sign In</h2>
-      <input type="text" id="loginUser" placeholder="Login" value="dollique_admin" />
-      <input type="password" id="loginPass" placeholder="Password" value="password123" />
-      <button class="btn-primary" style="width: 100%;" onclick="login()">Log In as Admin</button>
+      <form onsubmit="event.preventDefault(); login();">
+        <input type="text" id="loginUser" placeholder="Admin Login" value="dollique_admin" oninput="clearLoginError()" />
+        <input type="password" id="loginPass" placeholder="Admin Password" value="password123" oninput="clearLoginError()" />
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;">Access Workspace</button>
+      </form>
     </div>
   </div>
 
-  <div class="container" id="dashboardSection" style="display: none;">
-    <!-- Categories Manager -->
-    <div class="card">
-      <h2>Categories Management</h2>
-      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <input type="text" id="newCatTitle" placeholder="Category Title" style="margin-bottom: 0;" />
-        <input type="text" id="newCatDesc" placeholder="Description" style="margin-bottom: 0;" />
-        <button class="btn-primary" style="white-space: nowrap;" onclick="createCategory()">Add Category</button>
+  <div id="dashboardScreen" style="display: none;">
+    
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="brand-logo">D</div>
+        <div class="brand-title">
+          Dollique
+          <span>Studio Admin</span>
+        </div>
       </div>
-      <table id="categoriesTable">
-        <thead><tr><th>ID</th><th>Title</th><th>Description</th><th>Action</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
 
-    <!-- Posts Moderation -->
-    <div class="card">
-      <h2>Posts Moderation (Active / Inactive)</h2>
-      <table id="postsTable">
-        <thead><tr><th>ID</th><th>Author</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+      <ul class="nav-group">
+        <li>
+          <button class="tab-btn active" onclick="switchTab('posts')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            Posts & Comments
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab('categories')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+            Categories Manager
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab('users')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Users & Reputation
+          </button>
+        </li>
+      </ul>
 
-    <!-- Users Overview -->
-    <div class="card">
-      <h2>Users Overview</h2>
-      <table id="usersTable">
-        <thead><tr><th>ID</th><th>Login</th><th>Name</th><th>Role</th><th>Rating</th><th>Status</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="sidebar-user" id="headerActions">
+        <div class="user-profile">
+          <div class="user-avatar-initials">A</div>
+          <div>
+            <div class="user-meta-name" id="adminUsername">Logged as Admin</div>
+            <div class="user-meta-role">Administrator</div>
+          </div>
+        </div>
+        <button class="btn-logout" title="Log Out" onclick="logout()">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-body">
+      
+      <div class="top-action-bar">
+        <div>
+          <h2 class="page-heading">Editorial Console</h2>
+          <p class="page-subheading">Posts & comments moderation with full Bearer token authentication</p>
+        </div>
+        <button class="btn btn-primary" id="createBtn" onclick="openCreateModal()">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Create New Entity
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-info"><p>Total Users</p><h3 id="statUsers">0</h3></div>
+          <div class="stat-indicator"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info"><p>Posts & Comments</p><h3 id="statPosts">0</h3></div>
+          <div class="stat-indicator"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info"><p>Categories</p><h3 id="statCategories">0</h3></div>
+          <div class="stat-indicator"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info"><p>API Server</p><h3 style="color: #166534; font-size: 20px;">Healthy</h3></div>
+          <div class="stat-indicator" style="background: #F0FDF4; color: #166534; border-color:#DCFCE7;"><svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+        </div>
+      </div>
+
+      <!-- Вкладка постов -->
+      <div id="postsTab" class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Posts & Comments Moderation</h3>
+            <p class="card-desc">Expand post to see all comments; use eye icon to safely toggle active/inactive status</p>
+          </div>
+          <div class="toolbar">
+            <input type="text" id="postSearch" class="search-input" placeholder="Search inquiries..." oninput="filterPosts()" />
+            <select id="statusFilter" class="filter-select" onchange="loadPosts()">
+              <option value="">All Statuses</option>
+              <option value="active">Active only</option>
+              <option value="inactive">Inactive / Locked</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="postsTable">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th width="60">ID</th>
+                <th>Inquiry & Topic</th>
+                <th>Author</th>
+                <th>Categories</th>
+                <th>Votes</th>
+                <th width="190">Actions & Visibility</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Вкладка категорий -->
+      <div id="categoriesTab" class="card" style="display: none;">
+        <div class="card-header">
+          <div><h3 class="card-title">Taxonomy Registry</h3><p class="card-desc">Create, update or remove taxonomy categories</p></div>
+        </div>
+        <div class="table-responsive">
+          <table id="categoriesTable">
+            <thead>
+              <tr>
+                <th width="60">ID</th>
+                <th width="200">Title</th>
+                <th>Description</th>
+                <th width="160">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Вкладка пользователей -->
+      <div id="usersTab" class="card" style="display: none;">
+        <div class="card-header">
+          <div><h3 class="card-title">User Directory</h3><p class="card-desc">Manage accounts, roles, profiles and passwords</p></div>
+        </div>
+        <div class="table-responsive">
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th width="60">ID</th>
+                <th>Login</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Reputation</th>
+                <th width="200">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="crudModal">
+    <div class="modal">
+      <h3 class="modal-title" id="modalTitle">Entity Form</h3>
+      <form id="crudForm" onsubmit="handleFormSubmit(event)">
+        <div id="modalFields"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
     </div>
   </div>
+
+  <div id="toast"></div>
 
   <script>
     let token = localStorage.getItem('dollique_admin_token') || '';
+    let activeTab = 'posts';
+    let allPostsCache = [];
+    let commentsMap = {};
+    let editingItem = null;
+    let expandedPostId = null;
 
-    if (token) showDashboard();
+    window.onload = () => { if (token) showDashboard(); else showLogin(); };
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg; t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    function showLoginError(msg) {
+      const errBox = document.getElementById('loginError');
+      errBox.innerHTML = `⚠ ${msg}`; errBox.style.display = 'block';
+    }
+
+    function clearLoginError() {
+      const errBox = document.getElementById('loginError');
+      if (errBox.style.display === 'block') { errBox.style.display = 'none'; errBox.innerText = ''; }
+    }
 
     async function login() {
-      const login = document.getElementById('loginUser').value;
-      const password = document.getElementById('loginPass').value;
+      clearLoginError();
+      const loginVal = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value.trim();
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login: loginVal, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const user = data.user || (data.data && data.data.user);
+          const authToken = data.token || (data.data && data.data.token);
+          if (user && user.role === 'admin') {
+            token = authToken;
+            localStorage.setItem('dollique_admin_token', token);
+            document.getElementById('adminUsername').innerText = user.login;
+            showDashboard();
+            showToast('Welcome to Dollique Studio Admin!');
+          } else { showLoginError('Access denied: admin privileges required.'); }
+        } else { showLoginError(data.error || data.message || 'Invalid credentials.'); }
+      } catch (e) { showLoginError('Cannot reach API server.'); }
+    }
 
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login, password })
-      });
-      const data = await res.json();
-
-      if (res.ok && data.user.role === 'admin') {
-        token = data.token;
-        localStorage.setItem('dollique_admin_token', token);
-        showDashboard();
-      } else {
-        alert(data.error || 'Access denied: Admin role required.');
-      }
+    function showLogin() {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('dashboardScreen').style.display = 'none';
     }
 
     function showDashboard() {
-      document.getElementById('loginSection').style.display = 'none';
-      document.getElementById('dashboardSection').style.display = 'block';
-      document.getElementById('authStatus').innerHTML = '<button onclick="logout()" class="btn-warning">Log Out</button>';
-      loadCategories();
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboardScreen').style.display = 'flex';
+      loadStats();
       loadPosts();
+      loadCategories();
       loadUsers();
     }
 
     function logout() {
       localStorage.removeItem('dollique_admin_token');
-      location.reload();
+      token = ''; showLogin(); showToast('Logged out successfully.');
     }
 
-    async function loadCategories() {
-      const res = await fetch('/api/categories');
-      const data = await res.json();
-      const tbody = document.querySelector('#categoriesTable tbody');
-      tbody.innerHTML = data.map(c => `
-        <tr>
-          <td>${c.id}</td>
-          <td><b>${c.title}</b></td>
-          <td>${c.description || ''}</td>
-          <td><button class="btn-danger" onclick="deleteCategory(${c.id})">Delete</button></td>
-        </tr>
-      `).join('');
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('postsTab').style.display = 'none';
+      document.getElementById('categoriesTab').style.display = 'none';
+      document.getElementById('usersTab').style.display = 'none';
+
+      event.currentTarget.classList.add('active');
+      document.getElementById(`${tab}Tab`).style.display = 'block';
+      document.getElementById('createBtn').style.display = 'inline-flex';
+      document.getElementById('createBtn').innerText = `Create New ${tab.slice(0, -1)}`;
+
+      if (tab === 'posts') loadPosts();
+      else if (tab === 'categories') loadCategories();
+      else if (tab === 'users') loadUsers();
     }
 
-    async function createCategory() {
-      const title = document.getElementById('newCatTitle').value;
-      const description = document.getElementById('newCatDesc').value;
-      if (!title) return alert('Title required');
+    async function loadStats() {
+      try {
+        const [uRes, pRes, cRes] = await Promise.all([
+          fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/posts?limit=100', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/categories')
+        ]);
+        const users = await uRes.json();
+        const pData = await pRes.json();
+        const cats = await cRes.json();
 
-      await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ title, description })
-      });
-      document.getElementById('newCatTitle').value = '';
-      document.getElementById('newCatDesc').value = '';
-      loadCategories();
+        document.getElementById('statUsers').innerText = users.length || 0;
+        document.getElementById('statPosts').innerText = (pData.pagination ? pData.pagination.total : (pData.posts ? pData.posts.length : 0)) || 0;
+        document.getElementById('statCategories').innerText = cats.length || 0;
+      } catch (e) { console.error('Stats error:', e); }
     }
 
-    async function deleteCategory(id) {
-      if (!confirm('Delete category #' + id + '?')) return;
-      await fetch('/api/categories/' + id, {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      loadCategories();
-    }
-
+    // Загрузка постов и комментариев с передачей Bearer token в запросах к комментариям
     async function loadPosts() {
-      const res = await fetch('/api/posts?limit=50', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const data = await res.json();
+      const status = document.getElementById('statusFilter').value;
+      const url = status ? `/api/posts?status=${status}&limit=50` : '/api/posts?limit=50';
+      try {
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        allPostsCache = data.posts || [];
+        
+        await Promise.all(allPostsCache.map(async (p) => {
+          try {
+            const cRes = await fetch(`/api/posts/${p.id}/comments`, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (cRes.ok) {
+              const cData = await cRes.json();
+              commentsMap[p.id] = Array.isArray(cData) ? cData : (cData.comments || []);
+            } else {
+              commentsMap[p.id] = [];
+            }
+          } catch(err) {
+            commentsMap[p.id] = [];
+          }
+        }));
+
+        renderPosts(allPostsCache);
+      } catch (e) { console.error(e); }
+    }
+
+    function filterPosts() {
+      const q = document.getElementById('postSearch').value.toLowerCase();
+      renderPosts(allPostsCache.filter(p => p.title.toLowerCase().includes(q)));
+    }
+
+    function getEyeSvg(isActive) {
+      if (isActive) {
+        return `<svg class="icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+      } else {
+        return `<svg class="icon" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+      }
+    }
+
+    function renderPosts(posts) {
       const tbody = document.querySelector('#postsTable tbody');
-      tbody.innerHTML = data.posts.map(p => `
-        <tr>
-          <td>${p.id}</td>
-          <td>${p.author ? p.author.login : 'ID: ' + p.authorId}</td>
-          <td>${p.title}</td>
-          <td><span class="badge badge-${p.status}">${p.status}</span></td>
-          <td>
-            <button class="${p.status === 'active' ? 'btn-warning' : 'btn-success'}" onclick="togglePostStatus(${p.id}, '${p.status}')">
-              ${p.status === 'active' ? 'Lock (Inactive)' : 'Activate'}
-            </button>
-            <button class="btn-danger" onclick="deletePost(${p.id})">Delete</button>
-          </td>
-        </tr>
-      `).join('');
+      if (!posts.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-subtle); padding:24px;">No posts found.</td></tr>'; return; }
+      
+      tbody.innerHTML = posts.map(p => {
+        const isActive = p.status === 'active';
+        const comments = commentsMap[p.id] || [];
+        const isExpanded = expandedPostId === p.id;
+
+        let html = `
+          <tr>
+            <td>
+              <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="togglePostComments(${p.id})">
+                ${isExpanded ? '▲' : '▼'} (${comments.length})
+              </button>
+            </td>
+            <td><b style="font-family:var(--font-mono); font-size:11px;">#${p.id}</b></td>
+            <td><b>${p.title}</b><br><span style="font-size:12px; color:var(--text-muted);">${p.content.substring(0, 50)}...</span></td>
+            <td>${p.author ? p.author.login : 'ID: ' + p.authorId}</td>
+            <td>${p.categories ? p.categories.map(c => `<span class="cat-tag">${c.title}</span>`).join('') : '—'}</td>
+            <td><b>${p.netLikes || 0}</b></td>
+            <td>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button class="btn-status-toggle ${isActive ? 'is-active' : 'is-inactive'}" onclick="togglePostStatus(${p.id}, '${p.status}')" title="Toggle Active / Inactive">
+                  ${getEyeSvg(isActive)} ${isActive ? 'Active' : 'Hidden'}
+                </button>
+                <button class="btn btn-danger" style="padding:5px 8px; font-size:11px;" onclick="deleteRecord('posts', ${p.id})">Del</button>
+              </div>
+            </td>
+          </tr>
+        `;
+
+        if (isExpanded) {
+          html += `
+            <tr class="comments-dropdown-row">
+              <td colspan="7">
+                <div style="padding: 10px 14px;">
+                  <div style="font-weight:700; font-size:12px; margin-bottom:8px; color:var(--ink-950);">💬 Comments for Post #${p.id}:</div>
+          `;
+          if (comments.length === 0) {
+            html += `<div style="font-size:12px; color:var(--text-muted);">No comments under this post.</div>`;
+          } else {
+            html += comments.map(c => {
+              const cActive = (c.status || 'active') === 'active';
+              return `
+                <div class="nested-comment-item">
+                  <div style="max-width: 650px;">
+                    <b>@${c.author ? c.author.login : 'User#'+c.authorId}:</b> ${c.content}
+                  </div>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <button class="btn-status-toggle ${cActive ? 'is-active' : 'is-inactive'}" style="padding:4px 8px;" onclick="toggleCommentStatus(${c.id}, '${c.status || 'active'}', ${p.id})">
+                      ${getEyeSvg(cActive)} ${cActive ? 'Shown' : 'Hidden'}
+                    </button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('comments', ${c.id})">Del</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+          html += `</div></td></tr>`;
+        }
+        return html;
+      }).join('');
+    }
+
+    function togglePostComments(postId) {
+      expandedPostId = expandedPostId === postId ? null : postId;
+      renderPosts(allPostsCache);
     }
 
     async function togglePostStatus(id, currentStatus) {
@@ -185,33 +681,195 @@
         body: JSON.stringify({ status: newStatus })
       });
       loadPosts();
+      showToast(`Post #${id} status: ${newStatus}`);
     }
 
-    async function deletePost(id) {
-      if (!confirm('Delete post #' + id + '?')) return;
-      await fetch('/api/posts/' + id, {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + token }
+    async function toggleCommentStatus(id, currentStatus, postId) {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const res = await fetch('/api/comments/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ status: newStatus })
       });
-      loadPosts();
+
+      if (res.ok) {
+        const cRes = await fetch(`/api/posts/${postId}/comments`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          commentsMap[postId] = Array.isArray(cData) ? cData : (cData.comments || []);
+        }
+        renderPosts(allPostsCache);
+        showToast(`Comment #${id} status: ${newStatus}`);
+      } else {
+        alert('Failed to update comment status.');
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const cats = await res.json();
+        document.querySelector('#categoriesTable tbody').innerHTML = cats.map(c => `
+          <tr>
+            <td><b style="font-family:var(--font-mono); font-size:11px;">#${c.id}</b></td>
+            <td><b>${c.title}</b></td>
+            <td>${c.description || '—'}</td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('categories', ${c.id}, '${c.title}', '${c.description || ''}')">Edit</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('categories', ${c.id})">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { console.error(e); }
     }
 
     async function loadUsers() {
-      const res = await fetch('/api/users', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const data = await res.json();
-      const tbody = document.querySelector('#usersTable tbody');
-      tbody.innerHTML = data.map(u => `
-        <tr>
-          <td>${u.id}</td>
-          <td><b>${u.login}</b></td>
-          <td>${u.fullName || u.full_name}</td>
-          <td><span class="badge badge-${u.role}">${u.role}</span></td>
-          <td>${u.rating}</td>
-          <td>${u.is_email_confirmed ? 'Verified' : 'Pending'}</td>
-        </tr>
-      `).join('');
+      try {
+        const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
+        const users = await res.json();
+        document.querySelector('#usersTable tbody').innerHTML = users.map(u => `
+          <tr>
+            <td><b style="font-family:var(--font-mono); font-size:11px;">#${u.id}</b></td>
+            <td><b>${u.login}</b></td>
+            <td>${u.fullName || u.full_name || '—'}</td>
+            <td><span style="font-family:var(--font-mono); font-size:11.5px;">${u.email}</span></td>
+            <td><span class="badge badge-${u.role}">${u.role}</span></td>
+            <td><b>★ ${u.rating}</b></td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('users', ${u.id}, '${u.login}', '${u.fullName || u.full_name || ''}', '${u.email}', '${u.role}')">Edit</button>
+                <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="resetUserPassword('${u.email}')">Reset Pass</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('users', ${u.id})">Del</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function resetUserPassword(email) {
+      if (!confirm(`Send password reset link to ${email}?`)) return;
+      try {
+        const res = await fetch('/api/auth/password-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        if (res.ok) { showToast(`Reset link sent to ${email}`); } else { alert('Failed to send reset link.'); }
+      } catch(e) { alert('Server error during password reset.'); }
+    }
+
+    async function deleteRecord(entity, id) {
+      if (!confirm(`Permanently delete #${id} from ${entity}?`)) return;
+      const endpoint = entity === 'comments' ? `/api/comments/${id}` : `/api/${entity}/${id}`;
+      const res = await fetch(endpoint, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.ok) {
+        showToast(`Record #${id} deleted.`);
+        if (entity === 'posts') { loadPosts(); loadStats(); }
+        else if (entity === 'comments') { loadPosts(); }
+        else if (entity === 'categories') { loadCategories(); loadStats(); }
+        else if (entity === 'users') { loadUsers(); loadStats(); }
+      } else { alert('Failed to delete.'); }
+    }
+
+    function openCreateModal() {
+      editingItem = null;
+      document.getElementById('modalTitle').innerText = `Create New ${activeTab.slice(0, -1)}`;
+      const fields = document.getElementById('modalFields');
+
+      if (activeTab === 'users') {
+        fields.innerHTML = `
+          <div class="form-group"><label>Login</label><input required name="login"></div>
+          <div class="form-group"><label>Email</label><input required type="email" name="email"></div>
+          <div class="form-group"><label>Password</label><input required type="password" name="password"></div>
+          <div class="form-group"><label>Role</label><select name="role"><option value="user">User</option><option value="admin">Admin</option></select></div>
+        `;
+      } else if (activeTab === 'posts') {
+        fields.innerHTML = `
+          <div class="form-group"><label>Title</label><input required name="title"></div>
+          <div class="form-group"><label>Content</label><textarea required name="content" rows="4"></textarea></div>
+          <div class="form-group"><label>Category IDs (comma separated)</label><input name="categories" placeholder="1, 2"></div>
+        `;
+      } else if (activeTab === 'categories') {
+        fields.innerHTML = `
+          <div class="form-group"><label>Title</label><input required name="title"></div>
+          <div class="form-group"><label>Description</label><textarea name="description" rows="3"></textarea></div>
+        `;
+      }
+      document.getElementById('crudModal').style.display = 'flex';
+    }
+
+    function openEditModal(entity, id, param1 = '', param2 = '', param3 = '', param4 = '') {
+      editingItem = { entity, id };
+      document.getElementById('modalTitle').innerText = `Edit ${entity.slice(0, -1)} #${id}`;
+      const fields = document.getElementById('modalFields');
+
+      if (entity === 'categories') {
+        fields.innerHTML = `
+          <div class="form-group"><label>Title</label><input required name="title" value="${param1}"></div>
+          <div class="form-group"><label>Description</label><textarea name="description" rows="3">${param2}</textarea></div>
+        `;
+      } else if (entity === 'users') {
+        fields.innerHTML = `
+          <div class="form-group"><label>Login</label><input required name="login" value="${param1}"></div>
+          <div class="form-group"><label>Full Name</label><input name="full_name" value="${param2}"></div>
+          <div class="form-group"><label>Email</label><input required type="email" name="email" value="${param3}"></div>
+          <div class="form-group"><label>Role</label><select name="role"><option value="user" ${param4==='user'?'selected':''}>User</option><option value="admin" ${param4==='admin'?'selected':''}>Admin</option></select></div>
+        `;
+      } else if (entity === 'posts') {
+        fields.innerHTML = `
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Notice: Post content is immutable per specification rules.</p>
+          <div class="form-group"><label>Category IDs (comma separated)</label><input name="categories" placeholder="1, 2"></div>
+        `;
+      }
+      document.getElementById('crudModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('crudModal').style.display = 'none';
+      editingItem = null;
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      let url = ''; let method = '';
+      if (editingItem) {
+        method = 'PATCH';
+        url = editingItem.entity === 'categories' ? `/api/categories/${editingItem.id}` : 
+              editingItem.entity === 'users' ? `/api/users/${editingItem.id}` : `/api/posts/${editingItem.id}`;
+        if (data.categories) data.categories = data.categories.split(',').map(Number);
+      } else {
+        method = 'POST';
+        url = activeTab === 'users' ? '/api/users' : activeTab === 'posts' ? '/api/posts' : '/api/categories';
+        if (data.categories) data.categories = data.categories.split(',').map(Number);
+      }
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          showToast(editingItem ? 'Updated successfully!' : 'Created successfully!');
+          closeModal();
+          loadStats();
+          if (activeTab === 'posts') loadPosts();
+          else if (activeTab === 'categories') loadCategories();
+          else if (activeTab === 'users') loadUsers();
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Operation failed.');
+        }
+      } catch (err) { alert('Server request failed.'); }
     }
   </script>
 </body>
