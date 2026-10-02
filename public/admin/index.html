@@ -253,6 +253,40 @@
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--ink-900); background: #FFFFFF; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
+    #dialogModal { z-index: 200; }
+    #dialogModal .modal { animation: dialog-in 0.15s ease-out; }
+    .dialog-message { font-size: 13.5px; line-height: 1.5; color: var(--text-muted); margin-bottom: 14px; white-space: pre-line; }
+    .dialog-icon {
+      width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 12px; color: var(--ink-900); background: var(--blush-100); border: 1px solid var(--blush-200);
+    }
+    .dialog-icon .icon { width: 18px; height: 18px; }
+    .dialog-icon.is-danger { color: #9F1239; background: #FFF1F2; border-color: #FECDD3; }
+    .dialog-icon.is-success { color: #166534; background: #F0FDF4; border-color: #DCFCE7; }
+    .inline-icon { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }
+    .dialog-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .dialog-check {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--editorial-border);
+      border-radius: var(--radius-md); font-size: 13px; cursor: pointer; background: var(--blush-50);
+    }
+    .dialog-check input { accent-color: var(--ink-950); width: 15px; height: 15px; }
+    .dialog-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 300px; overflow-y: auto; }
+    .dialog-list-item { border: 1px solid var(--editorial-border); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; }
+    .dialog-list-item.is-muted { opacity: .55; }
+    .dialog-list-item.is-muted .dialog-list-title { text-decoration: line-through; }
+    .dialog-list-title { font-weight: 600; }
+    .dialog-list-meta { color: var(--text-muted); font-size: 11.5px; margin-top: 2px; }
+    .dialog-number { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+    .dialog-number input { width: 80px; padding: 6px 10px; border: 1px solid var(--editorial-border); border-radius: 8px; font: inherit; }
+    .strikes-btn { white-space: nowrap; font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--editorial-border); background: var(--editorial-cream); cursor: pointer; }
+    .strikes-btn.is-warning { background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
+    .strikes-btn.is-danger { background: #FFF1F2; color: #9F1239; border-color: #FECDD3; }
+    .ban-note { display: block; margin-top: 4px; font-size: 11px; color: #9F1239; }
+    .dialog-error { font-size: 12px; color: #9F1239; margin-top: -6px; margin-bottom: 8px; display: none; }
+    .btn-danger-solid { background: #9F1239; color: #FFFFFF; border-color: #9F1239; }
+    .btn-danger-solid:hover { background: #881337; border-color: #881337; }
+    @keyframes dialog-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+
     #toast {
       position: fixed; bottom: 24px; right: 24px; background: var(--ink-950); color: var(--blush-50); padding: 10px 18px; border-radius: var(--radius-md); font-size: 12.5px; font-family: var(--font-mono); box-shadow: 0 10px 25px rgba(15, 14, 16, 0.15); display: none; z-index: 1000;
     }
@@ -304,13 +338,19 @@
         <li>
           <button class="tab-btn" onclick="switchTab('categories')">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-            Categories Manager
+            Categories Manager <span id="categoriesBadge" class="badge badge-inactive" style="margin-left:auto; display:none;">0</span>
           </button>
         </li>
         <li>
           <button class="tab-btn" onclick="switchTab('users')">
             <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             Users & Reputation
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab('appeals')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Appeals <span id="appealsBadge" class="badge badge-inactive" style="margin-left:auto; display:none;">0</span>
           </button>
         </li>
       </ul>
@@ -399,7 +439,15 @@
       <!-- Вкладка категорий -->
       <div id="categoriesTab" class="card" style="display: none;">
         <div class="card-header">
-          <div><h3 class="card-title">Taxonomy Registry</h3><p class="card-desc">Create, update or remove taxonomy categories</p></div>
+          <div><h3 class="card-title">Taxonomy Registry</h3><p class="card-desc">Create, update or remove categories; approve or reject the ones users suggest</p></div>
+          <div class="toolbar">
+            <select id="categoryStatusFilter" class="filter-select" onchange="loadCategories()">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
         </div>
         <div class="table-responsive">
           <table id="categoriesTable">
@@ -408,7 +456,9 @@
                 <th width="60">ID</th>
                 <th width="200">Title</th>
                 <th>Description</th>
-                <th width="160">Actions</th>
+                <th width="140">Suggested by</th>
+                <th width="110">Status</th>
+                <th width="200">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -431,7 +481,38 @@
                 <th>Email</th>
                 <th>Role</th>
                 <th>Reputation</th>
+                <th width="90">Strikes</th>
                 <th width="200">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Вкладка апелляций -->
+      <div id="appealsTab" class="card" style="display: none;">
+        <div class="card-header">
+          <div><h3 class="card-title">Moderation Appeals</h3><p class="card-desc">Authors dispute hidden posts; approve to restore, reject to restart the deletion timer</p></div>
+          <div class="toolbar">
+            <select id="appealStatusFilter" class="filter-select" onchange="loadAppeals()">
+              <option value="pending">Pending</option>
+              <option value="">All</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table id="appealsTable">
+            <thead>
+              <tr>
+                <th width="60">ID</th>
+                <th>Post & Moderation Reason</th>
+                <th>Author</th>
+                <th>Appeal Message</th>
+                <th>Status</th>
+                <th width="190">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -455,6 +536,25 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="dialogModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+      <div class="dialog-icon" id="dialogIcon"></div>
+      <h3 class="modal-title" id="dialogTitle"></h3>
+      <p class="dialog-message" id="dialogMessage"></p>
+      <div class="dialog-list" id="dialogList"></div>
+      <div class="dialog-checks" id="dialogChecks"></div>
+      <label class="dialog-number" id="dialogNumberGroup"><span id="dialogNumberLabel"></span><input type="number" id="dialogNumber"></label>
+      <div class="form-group" id="dialogInputGroup">
+        <textarea id="dialogInput" rows="3"></textarea>
+      </div>
+      <p class="dialog-error" id="dialogError">This field is required.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="dialogCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="dialogConfirm">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast"></div>
 
   <script>
@@ -466,6 +566,117 @@
     let expandedPostId = null;
 
     window.onload = () => { if (token) showDashboard(); else showLogin(); };
+
+    // Styled replacement for prompt/confirm/alert. Resolves with the text (input), true (confirm) or null (cancel)
+    // Feather-style icons, same look as the sidebar icons
+    const ICONS = {
+      message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
+      flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line>',
+      check: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
+      ban: '<circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>',
+      trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',
+      key: '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>',
+      user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+      tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line>',
+      alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+    };
+
+    function iconSvg(name, extraClass = '') {
+      return `<svg class="icon ${extraClass}" viewBox="0 0 24 24">${ICONS[name] || ICONS.message}</svg>`;
+    }
+
+    function showDialog({ title, message = '', icon = 'message', tone = '', input = false, placeholder = '', required = false,
+                          checkboxes = null, list = null, number = null, confirmText = 'OK', cancelText = 'Cancel', danger = false }) {
+      const overlay = document.getElementById('dialogModal');
+      const inputEl = document.getElementById('dialogInput');
+      const errorEl = document.getElementById('dialogError');
+      const confirmBtn = document.getElementById('dialogConfirm');
+      const cancelBtn = document.getElementById('dialogCancel');
+
+      document.getElementById('dialogTitle').innerText = title;
+      document.getElementById('dialogMessage').innerText = message;
+      document.getElementById('dialogMessage').style.display = message ? 'block' : 'none';
+      const iconEl = document.getElementById('dialogIcon');
+      iconEl.innerHTML = iconSvg(icon);
+      iconEl.className = 'dialog-icon' + (tone ? ` is-${tone}` : (danger ? ' is-danger' : ''));
+      document.getElementById('dialogInputGroup').style.display = input ? 'flex' : 'none';
+      const checksEl = document.getElementById('dialogChecks');
+      checksEl.style.display = checkboxes ? 'flex' : 'none';
+      checksEl.innerHTML = (checkboxes || []).map(c => `
+        <label class="dialog-check"><input type="checkbox" value="${c.value}" ${c.checked ? 'checked' : ''}> ${c.label}</label>
+      `).join('');
+      const listEl = document.getElementById('dialogList');
+      listEl.style.display = list ? 'flex' : 'none';
+      listEl.innerHTML = (list || []).map(item => `
+        <div class="dialog-list-item ${item.muted ? 'is-muted' : ''}">
+          <div class="dialog-list-title">${escapeHtml(item.title)}</div>
+          ${item.meta ? `<div class="dialog-list-meta">${escapeHtml(item.meta)}</div>` : ''}
+        </div>
+      `).join('');
+      const numberEl = document.getElementById('dialogNumber');
+      document.getElementById('dialogNumberGroup').style.display = number ? 'flex' : 'none';
+      if (number) {
+        document.getElementById('dialogNumberLabel').innerText = number.label;
+        numberEl.min = number.min; numberEl.max = number.max; numberEl.value = number.value;
+      }
+      inputEl.value = '';
+      inputEl.placeholder = placeholder;
+      errorEl.style.display = 'none';
+      confirmBtn.innerText = confirmText;
+      confirmBtn.className = danger ? 'btn btn-danger-solid' : 'btn btn-primary';
+      cancelBtn.innerText = cancelText;
+      cancelBtn.style.display = cancelText ? 'inline-flex' : 'none';
+
+      overlay.style.display = 'flex';
+      (input ? inputEl : confirmBtn).focus();
+
+      return new Promise(resolve => {
+        const close = (value) => {
+          overlay.style.display = 'none';
+          confirmBtn.onclick = cancelBtn.onclick = overlay.onclick = document.onkeydown = null;
+          resolve(value);
+        };
+        const submit = () => {
+          const checked = [...checksEl.querySelectorAll('input:checked')].map(c => c.value);
+          if (checkboxes && checked.length === 0) {
+            errorEl.innerText = 'Select at least one option.'; errorEl.style.display = 'block'; return;
+          }
+          const value = inputEl.value.trim();
+          if (input && required && !value) {
+            errorEl.innerText = 'This field is required.'; errorEl.style.display = 'block'; inputEl.focus(); return;
+          }
+          if (number) {
+            const n = Number(numberEl.value);
+            if (!Number.isInteger(n) || n < number.min || n > number.max) {
+              errorEl.innerText = `Enter a whole number from ${number.min} to ${number.max}.`; errorEl.style.display = 'block'; return;
+            }
+            return close({ number: n, text: value });
+          }
+          if (checkboxes) return close({ checked, text: value });
+          close(input ? value : true);
+        };
+
+        confirmBtn.onclick = submit;
+        cancelBtn.onclick = () => close(null);
+        overlay.onclick = (e) => { if (e.target === overlay) close(null); };
+        document.onkeydown = (e) => {
+          if (e.key === 'Escape') close(null);
+          else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+        };
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function singular(entity) {
+      return { categories: 'category', posts: 'post', users: 'user', comments: 'comment' }[entity] || entity;
+    }
+
+    function showError(message) {
+      return showDialog({ title: 'Something went wrong', message, icon: 'alert', cancelText: '', danger: true });
+    }
 
     function showToast(msg) {
       const t = document.getElementById('toast');
@@ -520,6 +731,7 @@
       loadPosts();
       loadCategories();
       loadUsers();
+      loadAppeals();
     }
 
     function logout() {
@@ -533,15 +745,17 @@
       document.getElementById('postsTab').style.display = 'none';
       document.getElementById('categoriesTab').style.display = 'none';
       document.getElementById('usersTab').style.display = 'none';
+      document.getElementById('appealsTab').style.display = 'none';
 
       event.currentTarget.classList.add('active');
       document.getElementById(`${tab}Tab`).style.display = 'block';
-      document.getElementById('createBtn').style.display = 'inline-flex';
-      document.getElementById('createBtn').innerText = `Create New ${tab.slice(0, -1)}`;
+      document.getElementById('createBtn').style.display = tab === 'appeals' ? 'none' : 'inline-flex';
+      document.getElementById('createBtn').innerText = `Create New ${singular(tab)}`;
 
       if (tab === 'posts') loadPosts();
       else if (tab === 'categories') loadCategories();
       else if (tab === 'users') loadUsers();
+      else if (tab === 'appeals') loadAppeals();
     }
 
     async function loadStats() {
@@ -616,11 +830,14 @@
           <tr>
             <td>
               <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="togglePostComments(${p.id})">
-                ${isExpanded ? '▲' : '▼'} (${comments.length})
+                ${isExpanded ? '▲' : '▼'} (${countComments(comments)})
               </button>
             </td>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${p.id}</b></td>
-            <td><b>${p.title}</b><br><span style="font-size:12px; color:var(--text-muted);">${p.content.substring(0, 50)}...</span></td>
+            <td>
+              <b>${p.title}</b><br><span style="font-size:12px; color:var(--text-muted);">${p.content.substring(0, 50)}...</span>
+              ${p.moderation ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('flag', 'inline-icon')}${p.moderation.reason} · auto-delete: ${p.moderation.deleteAfter ? formatDate(p.moderation.deleteAfter) : 'paused (appeal)'}</span>` : ''}
+            </td>
             <td>${p.author ? p.author.login : 'ID: ' + p.authorId}</td>
             <td>${p.categories ? p.categories.map(c => `<span class="cat-tag">${c.title}</span>`).join('') : '—'}</td>
             <td><b>${p.netLikes || 0}</b></td>
@@ -640,31 +857,41 @@
             <tr class="comments-dropdown-row">
               <td colspan="7">
                 <div style="padding: 10px 14px;">
-                  <div style="font-weight:700; font-size:12px; margin-bottom:8px; color:var(--ink-950);">💬 Comments for Post #${p.id}:</div>
+                  <div style="font-weight:700; font-size:12px; margin-bottom:8px; color:var(--ink-950);">${iconSvg('message', 'inline-icon')} Comments for Post #${p.id}:</div>
           `;
           if (comments.length === 0) {
             html += `<div style="font-size:12px; color:var(--text-muted);">No comments under this post.</div>`;
           } else {
-            html += comments.map(c => {
-              const cActive = (c.status || 'active') === 'active';
-              return `
-                <div class="nested-comment-item">
-                  <div style="max-width: 650px;">
-                    <b>@${c.author ? c.author.login : 'User#'+c.authorId}:</b> ${c.content}
-                  </div>
-                  <div style="display:flex; gap:6px; align-items:center;">
-                    <button class="btn-status-toggle ${cActive ? 'is-active' : 'is-inactive'}" style="padding:4px 8px;" onclick="toggleCommentStatus(${c.id}, '${c.status || 'active'}', ${p.id})">
-                      ${getEyeSvg(cActive)} ${cActive ? 'Shown' : 'Hidden'}
-                    </button>
-                    <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('comments', ${c.id})">Del</button>
-                  </div>
-                </div>
-              `;
-            }).join('');
+            html += renderCommentTree(comments, p.id, 0);
           }
           html += `</div></td></tr>`;
         }
         return html;
+      }).join('');
+    }
+
+    function countComments(list) {
+      return list.reduce((sum, c) => sum + 1 + countComments(c.replies || []), 0);
+    }
+
+    function renderCommentTree(list, postId, depth) {
+      return list.map(c => {
+        const cActive = (c.status || 'active') === 'active';
+        const replies = c.replies || [];
+        return `
+          <div class="nested-comment-item" style="margin-left:${depth * 24}px; ${cActive ? '' : 'opacity:0.6;'}">
+            <div style="max-width: 650px;">
+              ${depth > 0 ? '<span style="color:var(--text-muted);">↳ reply to #' + c.parentId + '</span><br>' : ''}
+              <b>@${c.author ? c.author.login : 'User#' + c.authorId}:</b> ${c.content}
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="btn-status-toggle ${cActive ? 'is-active' : 'is-inactive'}" style="padding:4px 8px;" onclick="toggleCommentStatus(${c.id}, '${c.status || 'active'}', ${postId})">
+                ${getEyeSvg(cActive)} ${cActive ? 'Shown' : 'Hidden'}
+              </button>
+              <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('comments', ${c.id})">Del</button>
+            </div>
+          </div>
+        ` + renderCommentTree(replies, postId, depth + 1);
       }).join('');
     }
 
@@ -675,21 +902,145 @@
 
     async function togglePostStatus(id, currentStatus) {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      await fetch('/api/posts/' + id, {
+      const body = { status: newStatus };
+
+      if (newStatus === 'inactive') {
+        const reason = await showDialog({
+          title: `Hide post #${id}`,
+          message: 'The author will get a notification with this reason and can appeal. Without an appeal the post is deleted automatically.',
+          icon: 'flag',
+          input: true,
+          required: true,
+          placeholder: 'e.g. Advertising bootleg figures is not allowed',
+          confirmText: 'Hide post',
+          danger: true,
+        });
+        if (reason === null) return;
+        body.reason = reason;
+      }
+
+      const res = await fetch('/api/posts/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(body)
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error || 'Failed to update post status.');
+        return;
+      }
       loadPosts();
+      loadAppeals();
       showToast(`Post #${id} status: ${newStatus}`);
+    }
+
+    function formatDate(value) {
+      return value ? new Date(value).toLocaleString() : '—';
+    }
+
+    async function loadAppeals() {
+      const status = document.getElementById('appealStatusFilter').value;
+      try {
+        const res = await fetch('/api/appeals' + (status ? `?status=${status}` : ''), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const appeals = res.ok ? await res.json() : [];
+        const pendingCount = status === 'pending'
+          ? appeals.length
+          : appeals.filter(a => a.status === 'pending').length;
+
+        const badge = document.getElementById('appealsBadge');
+        badge.innerText = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
+
+        const tbody = document.querySelector('#appealsTable tbody');
+        if (!appeals.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-subtle); padding:24px;">No appeals found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = appeals.map(a => {
+          const isPending = a.status === 'pending';
+          const badgeClass = a.status === 'approved' ? 'badge-active' : (a.status === 'rejected' ? 'badge-inactive' : 'badge-user');
+          return `
+            <tr>
+              <td><b style="font-family:var(--font-mono); font-size:11px;">#${a.id}</b></td>
+              <td>
+                <b>#${a.postId} ${a.post ? a.post.title : ''}</b><br>
+                <span style="font-size:12px; color:var(--text-muted);">Reason: ${a.post && a.post.moderationReason ? a.post.moderationReason : '—'}</span><br>
+                <span style="font-size:11px; color:var(--text-subtle);">Auto-delete: ${a.post && a.post.deleteAfter ? formatDate(a.post.deleteAfter) : (isPending ? 'paused' : '—')}</span>
+              </td>
+              <td>${a.author ? a.author.login : 'User#' + a.authorId}</td>
+              <td style="max-width:280px;">${a.message}${a.adminResponse ? `<br><span style="font-size:12px; color:var(--text-muted);">↳ ${a.adminResponse}</span>` : ''}</td>
+              <td><span class="badge ${badgeClass}">${a.status}</span></td>
+              <td>
+                ${isPending ? `
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resolveAppeal(${a.id}, 'approved')">Approve</button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="resolveAppeal(${a.id}, 'rejected')">Reject</button>
+                  </div>` : `<span style="font-size:11px; color:var(--text-subtle);">${formatDate(a.resolvedAt)}</span>`}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function resolveAppeal(id, status) {
+      const isApprove = status === 'approved';
+      const response = await showDialog({
+        title: isApprove ? `Approve appeal #${id}` : `Reject appeal #${id}`,
+        message: isApprove
+          ? 'The post becomes visible again. You can add an optional message for the author.'
+          : 'The deletion timer restarts and the author cannot appeal again. Explain the decision to the author.',
+        icon: isApprove ? 'check' : 'ban',
+        tone: isApprove ? 'success' : 'danger',
+        input: true,
+        required: !isApprove,
+        placeholder: isApprove ? 'Optional message' : 'Reason for rejection',
+        confirmText: isApprove ? 'Approve' : 'Reject',
+        danger: !isApprove,
+      });
+      if (response === null) return;
+
+      const res = await fetch('/api/appeals/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ status, admin_response: response })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(data.error || 'Failed to resolve appeal.');
+        return;
+      }
+      showToast(data.message);
+      loadAppeals();
+      loadPosts();
     }
 
     async function toggleCommentStatus(id, currentStatus, postId) {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const body = { status: newStatus };
+
+      if (newStatus === 'inactive') {
+        const reason = await showDialog({
+          title: `Hide comment #${id}`,
+          message: 'The author will get a notification and a strike. Showing the comment again cancels the strike.',
+          icon: 'flag',
+          input: true,
+          required: true,
+          placeholder: 'e.g. Insulting other members',
+          confirmText: 'Hide comment',
+          danger: true,
+        });
+        if (reason === null) return;
+        body.reason = reason;
+      }
+
       const res = await fetch('/api/comments/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(body)
       });
 
       if (res.ok) {
@@ -703,28 +1054,192 @@
         renderPosts(allPostsCache);
         showToast(`Comment #${id} status: ${newStatus}`);
       } else {
-        alert('Failed to update comment status.');
+        showError('Failed to update comment status.');
       }
     }
 
     async function loadCategories() {
+      const status = document.getElementById('categoryStatusFilter').value;
       try {
-        const res = await fetch('/api/categories');
+        const res = await fetch('/api/categories' + (status ? `?status=${status}` : ''), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
         const cats = await res.json();
-        document.querySelector('#categoriesTable tbody').innerHTML = cats.map(c => `
+
+        const pendingCount = cats.filter(c => c.status === 'pending').length;
+        const badge = document.getElementById('categoriesBadge');
+        if (!status || status === 'pending') {
+          badge.innerText = pendingCount;
+          badge.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
+        }
+
+        if (!cats.length) {
+          document.querySelector('#categoriesTable tbody').innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-subtle); padding:24px;">No categories found.</td></tr>';
+          return;
+        }
+
+        document.querySelector('#categoriesTable tbody').innerHTML = cats.map(c => {
+          const badgeClass = c.status === 'approved' ? 'badge-active' : (c.status === 'rejected' ? 'badge-inactive' : 'badge-user');
+          const moderationButtons = c.status === 'pending' ? `
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="moderateCategory(${c.id}, 'approved')">Approve</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="moderateCategory(${c.id}, 'rejected')">Reject</button>` : '';
+          return `
           <tr>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${c.id}</b></td>
             <td><b>${c.title}</b></td>
-            <td>${c.description || '—'}</td>
+            <td>${c.description || '—'}${c.rejection_reason ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('ban', 'inline-icon')}${c.rejection_reason}</span>` : ''}</td>
+            <td>${c.creator_login || '—'}</td>
+            <td><span class="badge ${badgeClass}">${c.status}</span></td>
             <td>
-              <div style="display:flex; gap:6px;">
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${moderationButtons}
                 <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('categories', ${c.id}, '${c.title}', '${c.description || ''}')">Edit</button>
                 <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('categories', ${c.id})">Delete</button>
               </div>
             </td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       } catch (e) { console.error(e); }
+    }
+
+    async function moderateCategory(id, status) {
+      const isApprove = status === 'approved';
+      const reason = await showDialog({
+        title: isApprove ? `Approve category #${id}` : `Reject category #${id}`,
+        message: isApprove
+          ? 'The category becomes public and can be used in posts. The author gets a notification.'
+          : 'The category stays hidden. The author gets a notification with this reason.',
+        icon: isApprove ? 'check' : 'ban',
+        tone: isApprove ? 'success' : 'danger',
+        input: !isApprove,
+        required: true,
+        placeholder: 'Reason for rejection',
+        confirmText: isApprove ? 'Approve' : 'Reject',
+        danger: !isApprove,
+      });
+      if (reason === null) return;
+
+      const res = await fetch('/api/categories/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(isApprove ? { status } : { status, reason })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showError(data.error || 'Failed to update category.'); return; }
+      showToast(`Category #${id} ${status}`);
+      loadCategories();
+      loadStats();
+    }
+
+    async function resetProfile(id, login) {
+      const result = await showDialog({
+        title: `Reset profile of ${login}`,
+        message: 'Choose what to reset to the defaults. The user will get a notification with the reason and a strike.',
+        icon: 'user',
+        checkboxes: [
+          { value: 'profile_picture', label: 'Profile picture', checked: true },
+          { value: 'full_name', label: 'Display name (replaced with login)' },
+          { value: 'bio', label: 'Profile description (cleared)' },
+        ],
+        input: true,
+        required: true,
+        placeholder: 'Reason, e.g. offensive image',
+        confirmText: 'Reset',
+        danger: true,
+      });
+      if (result === null) return;
+
+      const res = await fetch(`/api/users/${id}/profile-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ fields: result.checked, reason: result.text })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showError(data.error || 'Failed to reset profile.'); return; }
+      showToast(data.message);
+      loadUsers();
+    }
+
+    const BAN_STRIKES = 3;
+    const VIOLATION_LABELS = {
+      post_hidden: 'Post hidden', post_deleted: 'Post deleted',
+      comment_hidden: 'Comment hidden', comment_deleted: 'Comment deleted',
+      category_rejected: 'Category rejected', profile_reset: 'Profile reset',
+    };
+
+    function isBanned(u) {
+      return Boolean(u.banned_until && new Date(u.banned_until) > new Date());
+    }
+
+    function strikeTone(count) {
+      if (count >= BAN_STRIKES - 1) return 'is-danger';
+      return count > 0 ? 'is-warning' : '';
+    }
+
+    async function showViolations(id, login) {
+      const res = await fetch(`/api/users/${id}/violations`, { headers: { 'Authorization': 'Bearer ' + token } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showError(data.error || 'Failed to load violations.'); return; }
+
+      const banLine = data.bannedUntil ? `\nBanned until ${formatDate(data.bannedUntil)}. ${data.banReason || ''}` : '';
+      await showDialog({
+        title: `Strikes of ${login}: ${data.activeStrikes} / ${data.banStrikes}`,
+        message: data.violations.length
+          ? `At ${data.banStrikes} active strikes the account is banned automatically. Crossed out strikes were cancelled or happened before the last ban.${banLine}`
+          : `No violations yet.${banLine}`,
+        icon: 'alert',
+        tone: data.activeStrikes > 0 ? 'danger' : '',
+        list: data.violations.map(v => ({
+          title: `${VIOLATION_LABELS[v.type] || v.type}${v.targetId ? ' #' + v.targetId : ''}`,
+          meta: `${formatDate(v.createdAt)}${v.createdByLogin ? ' · by ' + v.createdByLogin : ''}${v.reason ? ' · ' + v.reason : ''}`,
+          muted: v.revoked || !v.counts,
+        })),
+        confirmText: 'Close',
+        cancelText: '',
+      });
+    }
+
+    async function banUser(id, login) {
+      const result = await showDialog({
+        title: `Ban ${login}`,
+        message: 'The user cannot sign in or act until the ban ends. You can lift it earlier.',
+        icon: 'ban',
+        number: { label: 'Days', value: 7, min: 1, max: 365 },
+        input: true,
+        required: true,
+        placeholder: 'Reason, e.g. Repeated spam',
+        confirmText: 'Ban',
+        danger: true,
+      });
+      if (result === null) return;
+
+      const res = await fetch(`/api/users/${id}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ days: result.number, reason: result.text })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showError(data.error || 'Failed to ban user.'); return; }
+      showToast(data.message);
+      loadUsers();
+    }
+
+    async function unbanUser(id, login) {
+      const ok = await showDialog({
+        title: `Unban ${login}?`,
+        message: 'The user will be able to sign in again right away and gets a notification.',
+        icon: 'check',
+        tone: 'success',
+        confirmText: 'Unban',
+      });
+      if (!ok) return;
+
+      const res = await fetch(`/api/users/${id}/ban`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showError(data.error || 'Failed to unban user.'); return; }
+      showToast(data.message);
+      loadUsers();
     }
 
     async function loadUsers() {
@@ -734,15 +1249,20 @@
         document.querySelector('#usersTable tbody').innerHTML = users.map(u => `
           <tr>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${u.id}</b></td>
-            <td><b>${u.login}</b></td>
+            <td><b>${u.login}</b>${isBanned(u) ? `<span class="ban-note">${iconSvg('ban')} Banned until ${formatDate(u.banned_until)}</span>` : ''}</td>
             <td>${u.fullName || u.full_name || '—'}</td>
             <td><span style="font-family:var(--font-mono); font-size:11.5px;">${u.email}</span></td>
             <td><span class="badge badge-${u.role}">${u.role}</span></td>
             <td><b>★ ${u.rating}</b></td>
+            <td>${u.role === 'admin' ? '—' : `<button class="strikes-btn ${strikeTone(u.active_strikes)}" onclick="showViolations(${u.id}, '${u.login}')">${u.active_strikes} / ${BAN_STRIKES}</button>`}</td>
             <td>
-              <div style="display:flex; gap:6px;">
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('users', ${u.id}, '${u.login}', '${u.fullName || u.full_name || ''}', '${u.email}', '${u.role}')">Edit</button>
                 <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="resetUserPassword('${u.email}')">Reset Pass</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="resetProfile(${u.id}, '${u.login}')">Moderate</button>
+                ${u.role === 'admin' ? '' : isBanned(u)
+                  ? `<button class="btn" style="padding:4px 8px; font-size:11px;" onclick="unbanUser(${u.id}, '${u.login}')">Unban</button>`
+                  : `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="banUser(${u.id}, '${u.login}')">Ban</button>`}
                 <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('users', ${u.id})">Del</button>
               </div>
             </td>
@@ -752,33 +1272,59 @@
     }
 
     async function resetUserPassword(email) {
-      if (!confirm(`Send password reset link to ${email}?`)) return;
+      const ok = await showDialog({
+        title: 'Reset password',
+        message: `Send a password reset link to ${email}?`,
+        icon: 'key',
+        confirmText: 'Send link',
+      });
+      if (!ok) return;
       try {
         const res = await fetch('/api/auth/password-reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
-        if (res.ok) { showToast(`Reset link sent to ${email}`); } else { alert('Failed to send reset link.'); }
-      } catch(e) { alert('Server error during password reset.'); }
+        if (res.ok) { showToast(`Reset link sent to ${email}`); } else { showError('Failed to send reset link.'); }
+      } catch(e) { showError('Server error during password reset.'); }
     }
 
     async function deleteRecord(entity, id) {
-      if (!confirm(`Permanently delete #${id} from ${entity}?`)) return;
+      const moderated = entity === 'posts' || entity === 'comments';
+      const answer = await showDialog({
+        title: `Delete ${singular(entity)} #${id}?`,
+        message: moderated
+          ? 'This cannot be undone. If it is not yours, the author gets a notification with the reason and a strike.'
+          : 'This cannot be undone.',
+        icon: 'trash',
+        input: moderated,
+        placeholder: 'Reason (optional), e.g. Spam',
+        confirmText: 'Delete',
+        danger: true,
+      });
+      if (answer === null || answer === false) return;
       const endpoint = entity === 'comments' ? `/api/comments/${id}` : `/api/${entity}/${id}`;
-      const res = await fetch(endpoint, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      const options = { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } };
+      if (moderated && answer) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify({ reason: answer });
+      }
+      const res = await fetch(endpoint, options);
       if (res.ok) {
         showToast(`Record #${id} deleted.`);
         if (entity === 'posts') { loadPosts(); loadStats(); }
         else if (entity === 'comments') { loadPosts(); }
         else if (entity === 'categories') { loadCategories(); loadStats(); }
         else if (entity === 'users') { loadUsers(); loadStats(); }
-      } else { alert('Failed to delete.'); }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error || 'Failed to delete.');
+      }
     }
 
     function openCreateModal() {
       editingItem = null;
-      document.getElementById('modalTitle').innerText = `Create New ${activeTab.slice(0, -1)}`;
+      document.getElementById('modalTitle').innerText = `Create New ${singular(activeTab)}`;
       const fields = document.getElementById('modalFields');
 
       if (activeTab === 'users') {
@@ -805,7 +1351,7 @@
 
     function openEditModal(entity, id, param1 = '', param2 = '', param3 = '', param4 = '') {
       editingItem = { entity, id };
-      document.getElementById('modalTitle').innerText = `Edit ${entity.slice(0, -1)} #${id}`;
+      document.getElementById('modalTitle').innerText = `Edit ${singular(entity)} #${id}`;
       const fields = document.getElementById('modalFields');
 
       if (entity === 'categories') {
@@ -867,9 +1413,9 @@
           else if (activeTab === 'users') loadUsers();
         } else {
           const err = await res.json();
-          alert(err.error || 'Operation failed.');
+          showError(err.error || 'Operation failed.');
         }
-      } catch (err) { alert('Server request failed.'); }
+      } catch (err) { showError('Server request failed.'); }
     }
   </script>
 </body>

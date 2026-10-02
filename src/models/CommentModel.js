@@ -1,6 +1,13 @@
 const pool = require('../../database/db');
 
 class CommentModel {
+  // Inactive comments are visible only to their author and admins
+  static isVisibleTo(comment, user) {
+    if (!comment) return false;
+    if (comment.status === 'active') return true;
+    return Boolean(user) && (user.role === 'admin' || user.id === comment.authorId);
+  }
+
   // 1. Get all comments for a post (Admin gets all statuses, users get active)
   static async findByPostId(postId, currentUser = null) {
     const pId = Number(postId);

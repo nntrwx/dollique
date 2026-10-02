@@ -1,11 +1,17 @@
 const pool = require('../../database/db');
 
+const DEFAULT_AVATAR = '/uploads/avatars/default.png';
+
 class UserModel {
   // 1. Get all users (public sees only confirmed users and NO private emails; admin sees all)
   static async findAll(isAdmin = false) {
     if (isAdmin) {
       const [rows] = await pool.execute(`
-        SELECT id, login, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role, created_at
+        SELECT id, login, full_name, email, is_email_confirmed, profile_picture, avatar_config, bio, rating, role,
+               banned_until, ban_reason, created_at,
+               (SELECT COUNT(*) FROM violations v
+                 WHERE v.user_id = users.id AND v.revoked = 0
+                   AND (users.strikes_reset_at IS NULL OR v.created_at > users.strikes_reset_at)) AS active_strikes
         FROM users
         ORDER BY id ASC
       `);
@@ -14,7 +20,7 @@ class UserModel {
 
     // Public view: hide email for privacy, only confirmed users
     const [rows] = await pool.execute(`
-      SELECT id, login, full_name, is_email_confirmed, profile_picture, avatar_config, rating, role, created_at
+      SELECT id, login, full_name, is_email_confirmed, profile_picture, avatar_config, bio, rating, role, created_at
       FROM users
       WHERE is_email_confirmed = 1
       ORDER BY id ASC
@@ -27,9 +33,10 @@ class UserModel {
     const userId = Number(id);
     if (isNaN(userId)) return null;
 
-    const emailField = isSelfOrAdmin ? ', email' : '';
+    // Email and ban details are private: only the user and admins see them
+    const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason' : '';
     const [rows] = await pool.execute(`
-      SELECT id, login, full_name${emailField}, is_email_confirmed, profile_picture, avatar_config, rating, role, created_at
+      SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, avatar_config, bio, rating, role, created_at
       FROM users
       WHERE id = ?
     `, [userId]);
@@ -41,7 +48,8 @@ class UserModel {
   static async findByLogin(login) {
     if (!login) return null;
     const [rows] = await pool.execute(`
-      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role
+      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
+             banned_until, ban_reason
       FROM users
       WHERE login = ?
     `, [login]);
@@ -53,7 +61,8 @@ class UserModel {
   static async findByEmail(email) {
     if (!email) return null;
     const [rows] = await pool.execute(`
-      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role
+      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
+             banned_until, ban_reason
       FROM users
       WHERE email = ?
     `, [email]);
@@ -106,6 +115,10 @@ class UserModel {
       fields.push('avatar_config = ?');
       values.push(updateData.avatarConfig ? JSON.stringify(updateData.avatarConfig) : null);
     }
+    if (updateData.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(updateData.bio || null);
+    }
     if (updateData.profilePicture) {
       fields.push('profile_picture = ?');
       values.push(updateData.profilePicture);
@@ -119,6 +132,45 @@ class UserModel {
     await pool.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
 
     return await this.findById(userId, true);
+  }
+
+  // Moderator resets profile fields to safe defaults (login is used as the display name)
+  static async resetProfileFields(id, fields) {
+    const userId = Number(id);
+    const sets = [];
+    if (fields.includes('profile_picture')) sets.push(`profile_picture = '${DEFAULT_AVATAR}'`);
+    if (fields.includes('full_name')) sets.push('full_name = login');
+    if (fields.includes('bio')) sets.push('bio = NULL');
+
+    if (sets.length > 0) {
+      await pool.execute(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, [userId]);
+    }
+    return await this.findById(userId, true);
+  }
+
+  // Ban until NOW() + days. Strikes start counting again from this moment.
+  static async setBan(id, days, reason) {
+    await pool.execute(`
+      UPDATE users
+      SET banned_until = NOW() + INTERVAL ? DAY, ban_reason = ?, strikes_reset_at = NOW()
+      WHERE id = ?
+    `, [Number(days), reason || null, Number(id)]);
+  }
+
+  static async clearBan(id) {
+    await pool.execute(
+      'UPDATE users SET banned_until = NULL, ban_reason = NULL WHERE id = ?',
+      [Number(id)]
+    );
+  }
+
+  static async getStrikesResetAt(id) {
+    const [rows] = await pool.execute('SELECT strikes_reset_at FROM users WHERE id = ?', [Number(id)]);
+    return rows[0] ? rows[0].strikes_reset_at : null;
+  }
+
+  static isBanned(user) {
+    return Boolean(user && user.banned_until && new Date(user.banned_until) > new Date());
   }
 
   // 7. Update profile picture
@@ -184,5 +236,7 @@ class UserModel {
     await pool.execute('DELETE FROM tokens WHERE id = ?', [Number(tokenId)]);
   }
 }
+
+UserModel.DEFAULT_AVATAR = DEFAULT_AVATAR;
 
 module.exports = UserModel;

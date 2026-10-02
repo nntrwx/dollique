@@ -145,6 +145,14 @@ class AuthController {
         });
       }
 
+      if (UserModel.isBanned(user)) {
+        return res.status(403).json({
+          error: `Your account is banned until ${new Date(user.banned_until).toISOString()}.`,
+          bannedUntil: user.banned_until,
+          reason: user.ban_reason,
+        });
+      }
+
       const token = jwt.sign(
         {
           id: user.id,

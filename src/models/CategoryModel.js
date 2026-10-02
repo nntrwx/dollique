@@ -1,13 +1,43 @@
 const pool = require('../../database/db');
 
+const CATEGORY_FIELDS = `
+  c.id, c.title, c.description, c.status, c.created_by, c.rejection_reason, c.created_at,
+  u.login AS creator_login
+`;
+
 class CategoryModel {
-  // 1. Get all categories
-  static async findAll() {
+  // Approved categories are public; pending/rejected ones only for their creator and admins
+  static isVisibleTo(category, user) {
+    if (!category) return false;
+    if (category.status === 'approved') return true;
+    return Boolean(user) && (user.role === 'admin' || user.id === category.created_by);
+  }
+
+  // 1. Get all categories visible to the user (admin may filter by status)
+  static async findAll({ user = null, status } = {}) {
+    const conditions = [];
+    const params = [];
+
+    if (user && user.role === 'admin') {
+      if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+        conditions.push('c.status = ?');
+        params.push(status);
+      }
+    } else if (user) {
+      conditions.push("(c.status = 'approved' OR c.created_by = ?)");
+      params.push(user.id);
+    } else {
+      conditions.push("c.status = 'approved'");
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const [rows] = await pool.execute(`
-      SELECT id, title, description, created_at
-      FROM categories
-      ORDER BY id ASC
-    `);
+      SELECT ${CATEGORY_FIELDS}
+      FROM categories c
+      LEFT JOIN users u ON c.created_by = u.id
+      ${where}
+      ORDER BY (c.status = 'pending') DESC, c.id ASC
+    `, params);
     return rows;
   }
 
@@ -17,9 +47,10 @@ class CategoryModel {
     if (isNaN(categoryId)) return null;
 
     const [rows] = await pool.execute(`
-      SELECT id, title, description, created_at
-      FROM categories
-      WHERE id = ?
+      SELECT ${CATEGORY_FIELDS}
+      FROM categories c
+      LEFT JOIN users u ON c.created_by = u.id
+      WHERE c.id = ?
     `, [categoryId]);
 
     return rows[0] || null;
@@ -29,7 +60,7 @@ class CategoryModel {
   static async findByTitle(title) {
     if (!title) return null;
     const [rows] = await pool.execute(`
-      SELECT id, title, description, created_at
+      SELECT id, title, description, status, created_by, created_at
       FROM categories
       WHERE title = ?
     `, [title]);
@@ -91,18 +122,36 @@ class CategoryModel {
     }));
   }
 
-  // 5. Create category (Admin only)
-  static async create({ title, description }) {
-    const [result] = await pool.execute(`
-      INSERT INTO categories (title, description)
-      VALUES (?, ?)
-    `, [title, description || '']);
+  // Returns the ids from the list that point to approved categories
+  static async findApprovedIds(ids) {
+    const cleanIds = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
+    if (cleanIds.length === 0) return [];
 
-    return {
-      id: result.insertId,
-      title,
-      description: description || '',
-    };
+    const placeholders = cleanIds.map(() => '?').join(',');
+    const [rows] = await pool.execute(
+      `SELECT id FROM categories WHERE status = 'approved' AND id IN (${placeholders})`,
+      cleanIds
+    );
+    return rows.map((r) => r.id);
+  }
+
+  // 5. Create category (admin: approved at once, user: waits for moderation)
+  static async create({ title, description, status = 'approved', createdBy = null }) {
+    const [result] = await pool.execute(`
+      INSERT INTO categories (title, description, status, created_by)
+      VALUES (?, ?, ?, ?)
+    `, [title, description || '', status, createdBy]);
+
+    return await this.findById(result.insertId);
+  }
+
+  // Moderation decision on a user-suggested category
+  static async setStatus(id, status, rejectionReason = null) {
+    await pool.execute(
+      'UPDATE categories SET status = ?, rejection_reason = ? WHERE id = ?',
+      [status, status === 'rejected' ? rejectionReason : null, Number(id)]
+    );
+    return await this.findById(id);
   }
 
   // 6. Update category (Admin only)
@@ -120,7 +169,7 @@ class CategoryModel {
       WHERE id = ?
     `, [newTitle, newDesc, categoryId]);
 
-    return { id: categoryId, title: newTitle, description: newDesc };
+    return await this.findById(categoryId);
   }
 
   // 7. Delete category (Admin only)

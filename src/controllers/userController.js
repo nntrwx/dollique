@@ -1,5 +1,19 @@
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 const UserModel = require('../models/UserModel');
+const NotificationModel = require('../models/NotificationModel');
+const ViolationModel = require('../models/ViolationModel');
+const ViolationService = require('../services/violationService');
+
+const BIO_MAX_LENGTH = 500;
+
+const RESETTABLE_FIELDS = {
+  profile_picture: 'profile picture',
+  full_name: 'display name',
+  bio: 'profile description',
+};
+// The virtual doll avatar (avatar_config) is built from site parts only, so it is never moderated
 
 class UserController {
   // GET /api/users - Get all users
@@ -143,7 +157,7 @@ class UserController {
         return res.status(404).json({ error: 'User not found.' });
       }
 
-      const { login, full_name, email, role, avatar_config } = req.body;
+      const { login, full_name, email, role, avatar_config, bio } = req.body;
       const updateData = {};
 
       if (role) {
@@ -174,6 +188,14 @@ class UserController {
 
       if (full_name) updateData.fullName = full_name;
 
+      if (bio !== undefined) {
+        const cleanBio = bio === null ? '' : String(bio).trim();
+        if (cleanBio.length > BIO_MAX_LENGTH) {
+          return res.status(400).json({ error: `Bio cannot exceed ${BIO_MAX_LENGTH} characters.` });
+        }
+        updateData.bio = cleanBio;
+      }
+
       if (avatar_config) {
         updateData.avatarConfig = typeof avatar_config === 'string' ? JSON.parse(avatar_config) : avatar_config;
       }
@@ -187,6 +209,160 @@ class UserController {
     } catch (error) {
       console.error('Update user error:', error);
       return res.status(500).json({ error: 'Internal server error while updating user.' });
+    }
+  }
+
+  // POST /api/users/:user_id/profile-reset - Admin resets inappropriate profile data
+  static async resetProfile(req, res) {
+    try {
+      const targetUserId = Number(req.params.user_id);
+      if (isNaN(targetUserId)) {
+        return res.status(400).json({ error: 'Invalid user_id format.' });
+      }
+
+      const { fields, reason } = req.body;
+      const requested = Array.isArray(fields) ? fields : (fields ? String(fields).split(',') : []);
+      const cleanFields = [...new Set(requested.map((f) => String(f).trim()))];
+
+      if (cleanFields.length === 0) {
+        return res.status(400).json({
+          error: `Required parameter: [fields]. Allowed values: ${Object.keys(RESETTABLE_FIELDS).join(', ')}.`,
+        });
+      }
+      const unknown = cleanFields.filter((f) => !RESETTABLE_FIELDS[f]);
+      if (unknown.length > 0) {
+        return res.status(400).json({
+          error: `Unknown fields: [${unknown.join(', ')}]. Allowed values: ${Object.keys(RESETTABLE_FIELDS).join(', ')}.`,
+        });
+      }
+      if (!reason || !String(reason).trim()) {
+        return res.status(400).json({ error: 'Required parameter: [reason].' });
+      }
+
+      const targetUser = await UserModel.findById(targetUserId, true);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+
+      const updatedUser = await UserModel.resetProfileFields(targetUserId, cleanFields);
+
+      // Remove the uploaded file so the inappropriate image is not served anymore
+      const oldPicture = targetUser.profile_picture;
+      if (cleanFields.includes('profile_picture') && oldPicture
+          && oldPicture.startsWith('/uploads/avatars/') && oldPicture !== UserModel.DEFAULT_AVATAR) {
+        const filePath = path.join(__dirname, '../..', oldPicture);
+        fs.promises.unlink(filePath).catch(() => {});
+      }
+
+      const resetNames = cleanFields.map((f) => RESETTABLE_FIELDS[f]).join(', ');
+      await NotificationModel.create({
+        userId: targetUserId,
+        type: 'profile_reset',
+        message: `A moderator reset your ${resetNames}. Reason: ${String(reason).trim()}`,
+      });
+      await ViolationService.record({
+        userId: targetUserId, type: 'profile_reset', targetId: null,
+        reason: `${resetNames}: ${String(reason).trim()}`, adminId: req.user.id,
+      });
+
+      return res.status(200).json({
+        message: `Profile reset: ${resetNames}. The user has been notified.`,
+        user: updatedUser,
+      });
+    } catch (error) {
+      console.error('Reset profile error:', error);
+      return res.status(500).json({ error: 'Internal server error while resetting profile.' });
+    }
+  }
+
+  // GET /api/users/:user_id/violations - Strike history (admin or the user)
+  static async getViolations(req, res) {
+    try {
+      const targetUserId = Number(req.params.user_id);
+      if (isNaN(targetUserId)) {
+        return res.status(400).json({ error: 'Invalid user_id format.' });
+      }
+      if (req.user.role !== 'admin' && req.user.id !== targetUserId) {
+        return res.status(403).json({ error: 'Forbidden: You can only see your own violations.' });
+      }
+
+      const targetUser = await UserModel.findById(targetUserId, true);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+
+      const resetAt = await UserModel.getStrikesResetAt(targetUserId);
+      return res.status(200).json({
+        activeStrikes: await ViolationService.activeStrikes(targetUserId),
+        banStrikes: ViolationService.banStrikes,
+        bannedUntil: UserModel.isBanned(targetUser) ? targetUser.banned_until : null,
+        banReason: UserModel.isBanned(targetUser) ? targetUser.ban_reason : null,
+        // counts = false for strikes that were cancelled or given before the last ban
+        violations: (await ViolationModel.findByUser(targetUserId)).map((v) => ({
+          ...v,
+          counts: !v.revoked && (!resetAt || new Date(v.createdAt) > new Date(resetAt)),
+        })),
+      });
+    } catch (error) {
+      console.error('Get violations error:', error);
+      return res.status(500).json({ error: 'Internal server error while fetching violations.' });
+    }
+  }
+
+  // POST /api/users/:user_id/ban - Manual ban (Admin only)
+  static async banUser(req, res) {
+    try {
+      const targetUserId = Number(req.params.user_id);
+      if (isNaN(targetUserId)) {
+        return res.status(400).json({ error: 'Invalid user_id format.' });
+      }
+
+      const days = req.body.days === undefined ? ViolationService.banDays : Number(req.body.days);
+      const reason = String(req.body.reason || '').trim();
+      if (!Number.isInteger(days) || days < 1 || days > 365) {
+        return res.status(400).json({ error: 'Parameter [days] must be a whole number from 1 to 365.' });
+      }
+      if (!reason) {
+        return res.status(400).json({ error: 'Required parameter: [reason].' });
+      }
+
+      const targetUser = await UserModel.findById(targetUserId, true);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+      if (targetUser.role === 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins cannot be banned.' });
+      }
+
+      const user = await ViolationService.ban(targetUserId, days, reason);
+      return res.status(200).json({ message: `User ${user.login} is banned for ${days} day(s).`, user });
+    } catch (error) {
+      console.error('Ban user error:', error);
+      return res.status(500).json({ error: 'Internal server error while banning user.' });
+    }
+  }
+
+  // DELETE /api/users/:user_id/ban - Lift the ban early (Admin only)
+  static async unbanUser(req, res) {
+    try {
+      const targetUserId = Number(req.params.user_id);
+      if (isNaN(targetUserId)) {
+        return res.status(400).json({ error: 'Invalid user_id format.' });
+      }
+
+      const targetUser = await UserModel.findById(targetUserId, true);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+      if (!UserModel.isBanned(targetUser)) {
+        return res.status(400).json({ error: 'This user is not banned.' });
+      }
+
+      const user = await ViolationService.unban(targetUserId);
+      return res.status(200).json({ message: `User ${user.login} is unbanned.`, user });
+    } catch (error) {
+      console.error('Unban user error:', error);
+      return res.status(500).json({ error: 'Internal server error while unbanning user.' });
     }
   }
 

@@ -1,8 +1,23 @@
 const PostModel = require('../models/PostModel');
 const LikeModel = require('../models/LikeModel');
+const CategoryModel = require('../models/CategoryModel');
 const RatingService = require('../services/ratingService');
+const ModerationService = require('../services/moderationService');
+const ViolationService = require('../services/violationService');
+const NotificationModel = require('../models/NotificationModel');
 
 class PostController {
+  // Posts can only use existing, approved categories
+  static async validateCategories(categoryIds) {
+    if (!categoryIds.length) return 'At least one category is required.';
+    const approved = await CategoryModel.findApprovedIds(categoryIds);
+    const invalid = [...new Set(categoryIds)].filter((id) => !approved.includes(id));
+    if (invalid.length > 0) {
+      return `Unknown or not yet approved categories: [${invalid.join(', ')}].`;
+    }
+    return null;
+  }
+
   // GET /api/posts - Get all posts (with pagination, sorting & filters)
   static async getAllPosts(req, res) {
     try {
@@ -43,17 +58,8 @@ class PostController {
       }
 
       const post = await PostModel.findById(postId);
-      if (!post) {
-        return res.status(404).json({ error: 'Post not found.' });
-      }
-
-      // Security fix: If post is inactive, only author or admin can view it
-      if (post.status === 'inactive') {
-        const isAuthor = req.user && req.user.id === post.authorId;
-        const isAdmin = req.user && req.user.role === 'admin';
-        if (!isAuthor && !isAdmin) {
-          return res.status(404).json({ error: 'Post not found or is currently inactive.' });
-        }
+      if (!PostModel.isVisibleTo(post, req.user)) {
+        return res.status(404).json({ error: 'Post not found or is currently inactive.' });
       }
 
       return res.status(200).json(post);
@@ -72,8 +78,8 @@ class PostController {
       }
 
       const post = await PostModel.findById(postId);
-      if (!post) {
-        return res.status(404).json({ error: 'Post not found.' });
+      if (!PostModel.isVisibleTo(post, req.user)) {
+        return res.status(404).json({ error: 'Post not found or is currently inactive.' });
       }
 
       return res.status(200).json(post.categories);
@@ -104,6 +110,11 @@ class PostController {
         categoryIds = categories.map(Number);
       } else {
         categoryIds = String(categories).split(',').map(Number);
+      }
+
+      const categoryError = await PostController.validateCategories(categoryIds);
+      if (categoryError) {
+        return res.status(400).json({ error: categoryError });
       }
 
       let imageUrls = [];
@@ -140,7 +151,7 @@ class PostController {
       }
 
       const requester = req.user;
-      const { title, content, status, categories } = req.body;
+      const { title, content, status, categories, reason } = req.body;
 
       const post = await PostModel.findById(postId);
       if (!post) {
@@ -168,7 +179,19 @@ class PostController {
         });
       }
 
-      if (status && ['active', 'inactive'].includes(status)) {
+      if (status !== undefined && !['active', 'inactive'].includes(status)) {
+        return res.status(400).json({ error: 'Status must be either "active" or "inactive".' });
+      }
+
+      // A moderator decision on someone else's post goes through the moderation flow
+      const isModeration = isAdmin && !isAuthor && status && status !== post.status;
+
+      if (status && !isModeration) {
+        if (post.moderation && !isAdmin) {
+          return res.status(403).json({
+            error: 'Forbidden: This post was hidden by a moderator. Submit an appeal via POST /api/posts/:post_id/appeal.',
+          });
+        }
         updateData.status = status;
       }
 
@@ -176,9 +199,23 @@ class PostController {
         updateData.categoryIds = Array.isArray(categories)
           ? categories.map(Number)
           : String(categories).split(',').map(Number);
+
+        const categoryError = await PostController.validateCategories(updateData.categoryIds);
+        if (categoryError) {
+          return res.status(400).json({ error: categoryError });
+        }
       }
 
-      const updatedPost = await PostModel.update(postId, updateData);
+      let updatedPost = await PostModel.update(postId, updateData);
+
+      if (isModeration) {
+        updatedPost = status === 'inactive'
+          ? await ModerationService.hidePost(post, reason, req.user.id)
+          : await ModerationService.restorePost(post);
+      } else if (status === 'active' && post.moderation) {
+        // Admin re-activating their own moderated post also clears the timer
+        updatedPost = await PostModel.clearModeration(postId);
+      }
 
       return res.status(200).json({
         message: 'Post updated successfully.',
@@ -211,6 +248,21 @@ class PostController {
       await PostModel.delete(postId);
       await RatingService.recalculateUserRating(post.authorId);
 
+      // Deleting by an admin replaces the "hidden" strike (if any) with a "deleted" one, so it is not counted twice
+      if (requester.role === 'admin' && requester.id !== post.authorId) {
+        const reason = String((req.body && req.body.reason) || '').trim()
+          || (post.moderation && post.moderation.reason) || 'The post breaks the community rules.';
+        await ViolationService.revoke('post_hidden', postId);
+        await NotificationModel.create({
+          userId: post.authorId,
+          type: 'post_deleted',
+          message: `Your post "${post.title}" was deleted by a moderator. Reason: ${reason}`,
+        });
+        await ViolationService.record({
+          userId: post.authorId, type: 'post_deleted', targetId: postId, reason, adminId: requester.id,
+        });
+      }
+
       return res.status(200).json({ message: 'Post deleted successfully.' });
     } catch (error) {
       console.error('Delete post error:', error);
@@ -227,8 +279,8 @@ class PostController {
       }
 
       const post = await PostModel.findById(postId);
-      if (!post) {
-        return res.status(404).json({ error: 'Post not found.' });
+      if (!PostModel.isVisibleTo(post, req.user)) {
+        return res.status(404).json({ error: 'Post not found or is currently inactive.' });
       }
 
       const likes = await LikeModel.findPostLikes(postId);
@@ -305,6 +357,34 @@ class PostController {
     }
   }
 
+  // POST /api/posts/:post_id/appeal - Author disputes a moderator decision
+  static async appealPost(req, res) {
+    try {
+      const postId = Number(req.params.post_id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: 'Invalid post_id format.' });
+      }
+
+      const post = await PostModel.findById(postId);
+      if (!PostModel.isVisibleTo(post, req.user)) {
+        return res.status(404).json({ error: 'Post not found or is currently inactive.' });
+      }
+
+      const appeal = await ModerationService.submitAppeal(post, req.user, req.body.message);
+
+      return res.status(201).json({
+        message: 'Appeal submitted. The deletion timer is paused until a moderator reviews it.',
+        appeal,
+      });
+    } catch (error) {
+      if (error instanceof ModerationService.ModerationError) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      console.error('Appeal post error:', error);
+      return res.status(500).json({ error: 'Internal server error while submitting appeal.' });
+    }
+  }
+
   // POST /api/posts/:post_id/favorite - Add or remove post from favorites
   static async toggleFavorite(req, res) {
     try {
@@ -315,8 +395,8 @@ class PostController {
 
       const userId = req.user.id;
       const post = await PostModel.findById(postId);
-      if (!post) {
-        return res.status(404).json({ error: 'Post not found.' });
+      if (!PostModel.isVisibleTo(post, req.user)) {
+        return res.status(404).json({ error: 'Post not found or is currently inactive.' });
       }
 
       const result = await PostModel.toggleFavorite(userId, postId);

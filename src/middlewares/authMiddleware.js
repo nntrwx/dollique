@@ -30,6 +30,15 @@ async function authMiddleware(req, res, next) {
       });
     }
 
+    // A banned user cannot act until the ban ends, even with a token issued before the ban
+    if (UserModel.isBanned(freshUser)) {
+      return res.status(403).json({
+        error: `Your account is banned until ${new Date(freshUser.banned_until).toISOString()}.`,
+        bannedUntil: freshUser.banned_until,
+        reason: freshUser.ban_reason,
+      });
+    }
+
     req.user = freshUser;
     next();
   } catch (error) {

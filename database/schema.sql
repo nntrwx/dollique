@@ -5,6 +5,9 @@ USE dollique_db;
 
 -- Drop old tables if they exist to guarantee clean recreation
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS violations;
+DROP TABLE IF EXISTS appeals;
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS likes;
 DROP TABLE IF EXISTS comments;
@@ -26,8 +29,12 @@ CREATE TABLE users (
     is_email_confirmed BOOLEAN DEFAULT FALSE,
     profile_picture VARCHAR(255) DEFAULT '/uploads/avatars/default.png',
     avatar_config JSON DEFAULT NULL,
+    bio TEXT DEFAULT NULL,
     rating INT DEFAULT 0,
     role ENUM('admin', 'user') DEFAULT 'user',
+    banned_until TIMESTAMP NULL DEFAULT NULL,
+    ban_reason TEXT DEFAULT NULL,
+    strikes_reset_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_login (login),
@@ -51,7 +58,12 @@ CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'approved',
+    created_by INT DEFAULT NULL,
+    rejection_reason TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_category_status (status)
 ) ENGINE=InnoDB;
 
 -- 4. Posts
@@ -61,10 +73,14 @@ CREATE TABLE posts (
     title VARCHAR(255) NOT NULL,
     content LONGTEXT NOT NULL,
     status ENUM('active', 'inactive') DEFAULT 'active',
+    moderation_reason TEXT DEFAULT NULL,
+    moderated_at TIMESTAMP NULL DEFAULT NULL,
+    delete_after TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_post_author (author_id),
+    INDEX idx_post_delete_after (delete_after),
     INDEX idx_post_status (status),
     INDEX idx_post_created (created_at)
 ) ENGINE=InnoDB;
@@ -127,4 +143,50 @@ CREATE TABLE favorites (
     PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 10. Notifications (system messages for users)
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    post_id INT DEFAULT NULL,
+    type VARCHAR(40) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL,
+    INDEX idx_notification_user (user_id, is_read)
+) ENGINE=InnoDB;
+
+-- 11. Appeals (author disputes a moderation decision)
+CREATE TABLE appeals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    author_id INT NOT NULL,
+    message TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    admin_response TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_appeal_status (status)
+) ENGINE=InnoDB;
+
+-- 12. Violations (strikes that lead to an automatic ban)
+CREATE TABLE violations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type ENUM('post_hidden', 'post_deleted', 'comment_hidden', 'comment_deleted',
+              'category_rejected', 'profile_reset') NOT NULL,
+    target_id INT DEFAULT NULL,
+    reason TEXT DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    revoked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_violation_user (user_id, revoked),
+    INDEX idx_violation_target (type, target_id)
 ) ENGINE=InnoDB;

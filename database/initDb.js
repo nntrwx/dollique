@@ -19,13 +19,16 @@ async function initDatabase() {
     // 1. Create database and tables from schema.sql
     const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
     await connection.query(schemaSql);
-    console.log('✅ Schema executed: database & all 9 tables verified.');
+    console.log('✅ Schema executed: database & all 12 tables verified.');
 
     // Switch to database
     await connection.changeUser({ database: process.env.DB_NAME || 'dollique_db' });
 
     // 2. Clear old data for clean re-initialization
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+    await connection.query('TRUNCATE TABLE violations');
+    await connection.query('TRUNCATE TABLE appeals');
+    await connection.query('TRUNCATE TABLE notifications');
     await connection.query('TRUNCATE TABLE favorites');
     await connection.query('TRUNCATE TABLE likes');
     await connection.query('TRUNCATE TABLE comments');
@@ -53,12 +56,12 @@ async function initDatabase() {
 
     // 4. Seed 5 Users (All English)
     await connection.query(
-      `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, avatar_config) VALUES
-      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"skin":"porcelain","eyes":"violet","hair":"dark_bob"}'),
-      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"skin":"pale","eyes":"emerald","hair":"pastel_pink_curls"}'),
-      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', NULL),
-      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', NULL),
-      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', NULL)`,
+      `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, avatar_config, bio) VALUES
+      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"skin":"porcelain","eyes":"violet","hair":"dark_bob"}', 'Keeping Dollique friendly and bootleg-free.'),
+      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"skin":"pale","eyes":"emerald","hair":"pastel_pink_curls"}', 'OOAK repaints and pastel faceups, mostly Monster High.'),
+      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', NULL, 'I fix sticky vinyl, yellowed PVC and broken joints.'),
+      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', NULL, 'Collecting Nendoroids and scale figures since 2015.'),
+      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', NULL, 'Reroots, boil perms and custom Barbie styling.')`,
       [passwordHash, passwordHash, passwordHash, passwordHash, passwordHash]
     );
     console.log('✅ Users seeded: 5 entries (English).');
@@ -76,15 +79,17 @@ async function initDatabase() {
 
     // 6. Seed 6 Categories (All English)
     await connection.query(
-      `INSERT INTO categories (id, title, description) VALUES
-      (1, 'OOAK & Faceup', 'Painting techniques, pastels, acrylics, watercolor pencils, and Mr. Super Clear sealants.'),
-      (2, 'Reroot & Hair Styling', 'Hair rerooting methods, fiber selection (Saran, Nylon, Mohair), and boil washing.'),
-      (3, 'Restoration & Care', 'Stain removal, sticky plasticizer cleaning on PVC, yellowing recovery, and joint repairs.'),
-      (4, 'Identification (ID)', 'Community help identifying vintage and modern doll molds, releases, and anime figures.'),
-      (5, 'Legit Check & Bootlegs', 'Authentication guides for anime scale figures, Nendoroid bootleg checks, and packaging details.'),
-      (6, 'Sculpting & Body Mods', 'Custom body modifications, epoxy putty (Apoxie Sculpt), resin eye chips, and joint carving.')`
+      `INSERT INTO categories (id, title, description, status, created_by, rejection_reason) VALUES
+      (1, 'OOAK & Faceup', 'Painting techniques, pastels, acrylics, watercolor pencils, and Mr. Super Clear sealants.', 'approved', 1, NULL),
+      (2, 'Reroot & Hair Styling', 'Hair rerooting methods, fiber selection (Saran, Nylon, Mohair), and boil washing.', 'approved', 1, NULL),
+      (3, 'Restoration & Care', 'Stain removal, sticky plasticizer cleaning on PVC, yellowing recovery, and joint repairs.', 'approved', 1, NULL),
+      (4, 'Identification (ID)', 'Community help identifying vintage and modern doll molds, releases, and anime figures.', 'approved', 1, NULL),
+      (5, 'Legit Check & Bootlegs', 'Authentication guides for anime scale figures, Nendoroid bootleg checks, and packaging details.', 'approved', 1, NULL),
+      (6, 'Sculpting & Body Mods', 'Custom body modifications, epoxy putty (Apoxie Sculpt), resin eye chips, and joint carving.', 'approved', 1, NULL),
+      (7, 'BJD Wigs & Eyes', 'Ball-jointed doll wig sizing, mohair vs synthetic wigs, and acrylic or resin eye choices.', 'pending', 2, NULL),
+      (8, 'Cheap Figures Marketplace', 'Buy and sell figures for low prices.', 'rejected', 4, 'Selling is not allowed on Dollique, and the name invites bootlegs.')`
     );
-    console.log('✅ Categories seeded: 6 entries (English).');
+    console.log('✅ Categories seeded: 8 entries (1 pending, 1 rejected).');
 
     // 7. Seed 5 Posts (All English)
     await connection.query(
@@ -95,7 +100,14 @@ async function initDatabase() {
       (4, 4, 'Legit Check: Authentic Hatsune Miku Nendoroid or a bootleg replica?', 'Bought an unboxed Miku Nendoroid at a local convention. The neck joint has a matte texture, but there is no Good Smile Company logo stamped on the stand. What are the key details to verify authenticity?', 'active'),
       (5, 2, 'Which sealant should a beginner choose: Mr. Super Clear UV Cut Flat vs standard Matt?', 'Applying my first pastel and watercolor layers on doll vinyl. Is there a major difference in tooth, chalkiness, and yellowing protection between UV Cut Flat and standard Matt spray?', 'active')`
     );
-    console.log('✅ Posts seeded: 5 entries (English).');
+
+    // Two posts hidden by the moderator: one waits for an appeal decision, one has a running deletion timer
+    await connection.query(
+      `INSERT INTO posts (id, author_id, title, content, status, moderation_reason, moderated_at, delete_after) VALUES
+      (6, 4, 'Selling cheap Nendoroid copies, DM me for prices', 'Got a big batch of unboxed Nendoroids from an overseas factory, way cheaper than official stores. Message me privately if you want one.', 'inactive', 'Advertising bootleg figures is not allowed on Dollique.', NOW(), DATE_ADD(NOW(), INTERVAL 3 DAY)),
+      (7, 5, 'My OOAK repaint of a Rainbow High doll (photo spam)', 'Twenty identical photos of the same repaint, posted to bump the thread to the top.', 'inactive', 'Duplicate images used to game the feed ranking.', NOW(), NULL)`
+    );
+    console.log('✅ Posts seeded: 7 entries (2 hidden by moderation).');
 
     // 8. Seed Post Categories (M:N)
     await connection.query(
@@ -104,9 +116,11 @@ async function initDatabase() {
       (2, 3),
       (3, 2),
       (4, 5),
-      (5, 1)`
+      (5, 1),
+      (6, 5),
+      (7, 1)`
     );
-    console.log('✅ PostCategories seeded: 6 entries.');
+    console.log('✅ PostCategories seeded: 8 entries.');
 
     // 9. Seed 5 Post Images
     await connection.query(
@@ -152,7 +166,42 @@ async function initDatabase() {
     );
     console.log('✅ Favorites seeded: 5 entries.');
 
-    console.log('\n🎉 ALL 9 TABLES SUCCESSFULLY INITIALIZED & SEEDED (>= 5 rows each, English)!');
+    // 13. Seed 5 Notifications
+    await connection.query(
+      `INSERT INTO notifications (id, user_id, post_id, type, message, is_read) VALUES
+      (1, 4, 6, 'post_moderated', 'Your post "Selling cheap Nendoroid copies, DM me for prices" was hidden by a moderator. Reason: Advertising bootleg figures is not allowed on Dollique. You can appeal; otherwise the post will be deleted automatically.', 0),
+      (2, 5, 7, 'post_moderated', 'Your post "My OOAK repaint of a Rainbow High doll (photo spam)" was hidden by a moderator. Reason: Duplicate images used to game the feed ranking. You can appeal; otherwise the post will be deleted automatically.', 1),
+      (3, 4, 6, 'appeal_rejected', 'Your appeal for "Selling cheap Nendoroid copies, DM me for prices" was rejected: Selling copies is still advertising bootlegs. The post will be deleted automatically.', 0),
+      (4, 2, 5, 'post_restored', 'Your post "Which sealant should a beginner choose: Mr. Super Clear UV Cut Flat vs standard Matt?" is visible again. Appeal approved: brand names here are a fair comparison, not an ad.', 1),
+      (5, 3, NULL, 'post_deleted', 'Your post "Selling my old custom tools" was deleted because the moderation decision was not appealed in time.', 0),
+      (6, 4, NULL, 'category_rejected', 'Your category "Cheap Figures Marketplace" was rejected. Reason: Selling is not allowed on Dollique, and the name invites bootlegs.', 0),
+      (7, 5, NULL, 'profile_reset', 'A moderator reset your profile picture. Reason: The avatar contained a link to an external shop.', 1)`
+    );
+    console.log('✅ Notifications seeded: 7 entries.');
+
+    // 14. Seed 5 Appeals
+    await connection.query(
+      `INSERT INTO appeals (id, post_id, author_id, message, status, admin_response, resolved_at) VALUES
+      (1, 6, 4, 'These are not bootlegs, they are just cheaper because I import them myself.', 'rejected', 'Selling copies is still advertising bootlegs.', NOW()),
+      (2, 7, 5, 'Sorry, the photos uploaded several times by mistake. I can remove the duplicates.', 'pending', NULL, NULL),
+      (3, 5, 2, 'I only compared two sealants, I am not promoting the brand.', 'approved', 'Brand names here are a fair comparison, not an ad.', NOW()),
+      (4, 3, 5, 'The post was hidden after a false spam report, please check it again.', 'approved', 'Checked: the report was wrong.', NOW()),
+      (5, 4, 4, 'My legit check question got hidden, but it does not break any rule.', 'approved', 'Restored, legit checks are welcome.', NOW())`
+    );
+    console.log('✅ Appeals seeded: 5 entries.');
+
+    // 15. Seed 5 Violations (kai and eva are one strike away from an automatic ban)
+    await connection.query(
+      `INSERT INTO violations (id, user_id, type, target_id, reason, created_by, revoked) VALUES
+      (1, 4, 'post_hidden', 6, 'Advertising bootleg figures is not allowed on Dollique.', 1, 0),
+      (2, 4, 'category_rejected', 8, 'Selling is not allowed on Dollique, and the name invites bootlegs.', 1, 0),
+      (3, 5, 'post_hidden', 7, 'Duplicate images used to game the feed ranking.', 1, 0),
+      (4, 5, 'profile_reset', 5, 'The avatar contained a link to an external shop.', 1, 0),
+      (5, 2, 'post_hidden', 5, 'Looked like brand advertising.', 1, 1)`
+    );
+    console.log('✅ Violations seeded: 5 entries (1 revoked after an approved appeal).');
+
+    console.log('\n🎉 ALL 12 TABLES SUCCESSFULLY INITIALIZED & SEEDED (>= 5 rows each, English)!');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;

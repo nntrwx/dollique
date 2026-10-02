@@ -9,6 +9,8 @@ const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const appealRoutes = require('./routes/appealRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -33,6 +35,8 @@ app.get('/', (req, res) => {
       categories: '/api/categories',
       posts: '/api/posts',
       comments: '/api/comments',
+      appeals: '/api/appeals',
+      notifications: '/api/notifications',
     },
   });
 });
@@ -47,6 +51,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/appeals', appealRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Global error handler (handles Multer errors as 400 Bad Request)
 app.use((err, req, res, next) => {

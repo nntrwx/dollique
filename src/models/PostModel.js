@@ -1,6 +1,13 @@
 const pool = require('../../database/db');
 
 class PostModel {
+  // Inactive posts are visible only to their author and admins
+  static isVisibleTo(post, user) {
+    if (!post) return false;
+    if (post.status === 'active') return true;
+    return Boolean(user) && (user.role === 'admin' || user.id === post.authorId);
+  }
+
   // 1. Get all posts with sorting, filtering, pagination and strict access control
   static async findAll({
     page = 1,
@@ -85,6 +92,7 @@ class PostModel {
     const postsQuery = `
       SELECT 
         p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
+        p.moderation_reason, p.moderated_at, p.delete_after,
         u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
         u.profile_picture AS author_avatar, u.rating AS author_rating,
         COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 WHEN l.type = 'dislike' THEN -1 ELSE 0 END), 0) AS net_likes,
@@ -139,6 +147,11 @@ class PostModel {
       title: r.title,
       content: r.content,
       status: r.status,
+      moderation: r.moderated_at ? {
+        reason: r.moderation_reason,
+        moderatedAt: r.moderated_at,
+        deleteAfter: r.delete_after,
+      } : null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       netLikes: Number(r.net_likes) || 0,
@@ -173,6 +186,7 @@ class PostModel {
     const query = `
       SELECT 
         p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
+        p.moderation_reason, p.moderated_at, p.delete_after,
         u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
         u.profile_picture AS author_avatar, u.rating AS author_rating,
         COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 WHEN l.type = 'dislike' THEN -1 ELSE 0 END), 0) AS net_likes,
@@ -219,6 +233,11 @@ class PostModel {
       title: r.title,
       content: r.content,
       status: r.status,
+      moderation: r.moderated_at ? {
+        reason: r.moderation_reason,
+        moderatedAt: r.moderated_at,
+        deleteAfter: r.delete_after,
+      } : null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       netLikes: Number(r.net_likes) || 0,
@@ -325,6 +344,47 @@ class PostModel {
     } finally {
       conn.release();
     }
+  }
+
+  // Hide a post by moderator decision and start the deletion timer
+  static async setModeration(id, { reason, graceDays }) {
+    await pool.execute(`
+      UPDATE posts
+      SET status = 'inactive', moderation_reason = ?, moderated_at = NOW(),
+          delete_after = DATE_ADD(NOW(), INTERVAL ? DAY)
+      WHERE id = ?
+    `, [reason, String(Number(graceDays)), Number(id)]);
+    return await this.findById(id);
+  }
+
+  static async clearModeration(id) {
+    await pool.execute(`
+      UPDATE posts
+      SET status = 'active', moderation_reason = NULL, moderated_at = NULL, delete_after = NULL
+      WHERE id = ?
+    `, [Number(id)]);
+    return await this.findById(id);
+  }
+
+  // deleteAfter = null pauses the timer (while an appeal is reviewed)
+  static async setDeleteAfter(id, graceDays) {
+    if (graceDays === null) {
+      await pool.execute('UPDATE posts SET delete_after = NULL WHERE id = ?', [Number(id)]);
+    } else {
+      await pool.execute(
+        'UPDATE posts SET delete_after = DATE_ADD(NOW(), INTERVAL ? DAY) WHERE id = ?',
+        [String(Number(graceDays)), Number(id)]
+      );
+    }
+  }
+
+  static async findExpiredModerated() {
+    const [rows] = await pool.execute(`
+      SELECT id, author_id, title
+      FROM posts
+      WHERE status = 'inactive' AND delete_after IS NOT NULL AND delete_after <= NOW()
+    `);
+    return rows.map((r) => ({ id: r.id, authorId: r.author_id, title: r.title }));
   }
 
   // 5. Delete post
