@@ -7,7 +7,7 @@ class UserModel {
   static async findAll(isAdmin = false) {
     if (isAdmin) {
       const [rows] = await pool.execute(`
-        SELECT id, login, full_name, email, is_email_confirmed, profile_picture, avatar_config, bio, rating, role,
+        SELECT id, login, full_name, email, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role,
                banned_until, ban_reason, created_at,
                (SELECT COUNT(*) FROM violations v
                  WHERE v.user_id = users.id AND v.revoked = 0
@@ -20,7 +20,7 @@ class UserModel {
 
     // Public view: hide email for privacy, only confirmed users
     const [rows] = await pool.execute(`
-      SELECT id, login, full_name, is_email_confirmed, profile_picture, avatar_config, bio, rating, role, created_at
+      SELECT id, login, full_name, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
       FROM users
       WHERE is_email_confirmed = 1
       ORDER BY id ASC
@@ -36,7 +36,7 @@ class UserModel {
     // Email and ban details are private: only the user and admins see them
     const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason, token_version' : '';
     const [rows] = await pool.execute(`
-      SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, avatar_config, bio, rating, role, created_at
+      SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
       FROM users
       WHERE id = ?
     `, [userId]);
@@ -44,9 +44,9 @@ class UserModel {
     return rows[0] || null;
   }
 
-  // Avatar configs of everyone who built a doll (to see which catalog parts are in use)
-  static async findAvatarConfigs() {
-    const [rows] = await pool.execute('SELECT id, avatar_config FROM users WHERE avatar_config IS NOT NULL');
+  // Doll configs of everyone who built a doll (to see which catalog parts are in use)
+  static async findDollConfigs() {
+    const [rows] = await pool.execute('SELECT id, doll_config FROM users WHERE doll_config IS NOT NULL');
     return rows;
   }
 
@@ -54,7 +54,7 @@ class UserModel {
   static async findByLogin(login) {
     if (!login) return null;
     const [rows] = await pool.execute(`
-      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
+      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, doll_config, rating, role,
              banned_until, ban_reason, token_version
       FROM users
       WHERE login = ?
@@ -67,7 +67,7 @@ class UserModel {
   static async findByEmail(email) {
     if (!email) return null;
     const [rows] = await pool.execute(`
-      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
+      SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, doll_config, rating, role,
              banned_until, ban_reason, token_version
       FROM users
       WHERE email = ?
@@ -117,9 +117,13 @@ class UserModel {
       fields.push('role = ?');
       values.push(updateData.role);
     }
-    if (updateData.avatarConfig !== undefined) {
-      fields.push('avatar_config = ?');
-      values.push(updateData.avatarConfig ? JSON.stringify(updateData.avatarConfig) : null);
+    if (updateData.dollConfig !== undefined) {
+      fields.push('doll_config = ?');
+      values.push(updateData.dollConfig ? JSON.stringify(updateData.dollConfig) : null);
+    }
+    if (updateData.useDollAsAvatar !== undefined) {
+      fields.push('use_doll_as_avatar = ?');
+      values.push(updateData.useDollAsAvatar);
     }
     if (updateData.bio !== undefined) {
       fields.push('bio = ?');
