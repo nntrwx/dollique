@@ -11,6 +11,7 @@ const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const appealRoutes = require('./routes/appealRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const avatarPartRoutes = require('./routes/avatarPartRoutes');
 
 const app = express();
 
@@ -19,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static uploaded files (avatars, post images)
+// Serve static uploaded files (avatars, post images, doll layers)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
   // Browsers must not guess the type of uploaded files (blocks HTML/JS disguised as images)
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
@@ -40,6 +41,7 @@ app.get('/', (req, res) => {
       comments: '/api/comments',
       appeals: '/api/appeals',
       notifications: '/api/notifications',
+      avatarParts: '/api/avatar-parts',
     },
   });
 });
@@ -56,6 +58,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/appeals', appealRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/avatar-parts', avatarPartRoutes);
 
 // Global error handler (handles Multer errors as 400 Bad Request)
 app.use((err, req, res, next) => {

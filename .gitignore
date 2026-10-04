@@ -11,6 +11,8 @@ uploads/avatars/*
 !uploads/avatars/.gitkeep
 uploads/posts/*
 !uploads/posts/.gitkeep
+# Avatar parts uploaded by admins are ignored; the seed layers in the category folders ship with the repo
+uploads/avatar-parts/part-*
 
 
 # Logs

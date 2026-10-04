@@ -44,6 +44,12 @@ class UserModel {
     return rows[0] || null;
   }
 
+  // Avatar configs of everyone who built a doll (to see which catalog parts are in use)
+  static async findAvatarConfigs() {
+    const [rows] = await pool.execute('SELECT id, avatar_config FROM users WHERE avatar_config IS NOT NULL');
+    return rows;
+  }
+
   // 3. Find user by login (includes password_hash for auth checks)
   static async findByLogin(login) {
     if (!login) return null;

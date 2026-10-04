@@ -7,6 +7,7 @@ const NotificationModel = require('../models/NotificationModel');
 const ViolationModel = require('../models/ViolationModel');
 const ViolationService = require('../services/violationService');
 const EmailService = require('../services/emailService');
+const AvatarService = require('../services/avatarService');
 const { validateLogin, validateEmail } = require('../utils/validators');
 
 const BIO_MAX_LENGTH = 500;
@@ -45,6 +46,23 @@ class UserController {
     } catch (error) {
       console.error('Get user by ID error:', error);
       return res.status(500).json({ error: 'Internal server error while fetching user.' });
+    }
+  }
+
+  // GET /api/users/:user_id/avatar - The doll as ordered picture layers (first = bottom)
+  static async getUserAvatar(req, res) {
+    try {
+      const user = await UserModel.findById(req.params.user_id);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+
+      const config = AvatarService.parseStored(user.avatar_config);
+      const layers = config ? await AvatarService.buildLayers(config) : [];
+      return res.status(200).json({ user_id: user.id, avatar_config: config, layers });
+    } catch (error) {
+      console.error('Get user avatar error:', error);
+      return res.status(500).json({ error: 'Internal server error while building the avatar.' });
     }
   }
 
@@ -120,19 +138,18 @@ class UserController {
         avatarUrl = `/uploads/avatars/${req.file.filename}`;
       }
 
-      const { avatar_config } = req.body;
+      const { avatar_config } = req.body || {};
       const updateData = {};
 
       if (avatarUrl) {
         updateData.profilePicture = avatarUrl;
       }
 
-      if (avatar_config) {
-        try {
-          updateData.avatarConfig = typeof avatar_config === 'string' ? JSON.parse(avatar_config) : avatar_config;
-        } catch (e) {
-          return res.status(400).json({ error: 'Invalid JSON format for avatar_config.' });
-        }
+      if (avatar_config !== undefined) {
+        const current = await UserModel.findById(userId);
+        const { config, error } = await AvatarService.validateConfig(avatar_config, current && current.avatar_config);
+        if (error) return res.status(400).json({ error });
+        updateData.avatarConfig = config;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -209,12 +226,10 @@ class UserController {
         updateData.bio = cleanBio;
       }
 
-      if (avatar_config) {
-        try {
-          updateData.avatarConfig = typeof avatar_config === 'string' ? JSON.parse(avatar_config) : avatar_config;
-        } catch (e) {
-          return res.status(400).json({ error: 'Invalid JSON format for avatar_config.' });
-        }
+      if (avatar_config !== undefined) {
+        const { config, error } = await AvatarService.validateConfig(avatar_config, targetUser.avatar_config);
+        if (error) return res.status(400).json({ error });
+        updateData.avatarConfig = config;
       }
 
       // A user changing their own email must confirm the new address; an admin's change is trusted

@@ -19,13 +19,14 @@ async function initDatabase() {
     // 1. Create database and tables from schema.sql
     const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
     await connection.query(schemaSql);
-    console.log('✅ Schema executed: database & all 12 tables verified.');
+    console.log('✅ Schema executed: database & all 13 tables verified.');
 
     // Switch to database
     await connection.changeUser({ database: process.env.DB_NAME || 'dollique_db' });
 
     // 2. Clear old data for clean re-initialization
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+    await connection.query('TRUNCATE TABLE avatar_parts');
     await connection.query('TRUNCATE TABLE violations');
     await connection.query('TRUNCATE TABLE appeals');
     await connection.query('TRUNCATE TABLE notifications');
@@ -54,19 +55,62 @@ async function initDatabase() {
     // Hash common test password 'password123'
     const passwordHash = await bcrypt.hash('password123', 10);
 
-    // 4. Seed 5 Users (All English)
+    // 4. Seed 39 Avatar parts (doll layers; PNGs ship in uploads/avatar_parts/<folder>, 512x512 canvas)
+    await connection.query(
+      `INSERT INTO avatar_parts (id, category, name, image_url, back_image_url, layer, is_active) VALUES
+      (1, 'base', 'Porcelain, button eyes', '/uploads/avatar_parts/base/white_buttons.png', NULL, 10, 1),
+      (2, 'base', 'Porcelain, glossy eyes', '/uploads/avatar_parts/base/white_black.png', NULL, 10, 1),
+      (3, 'base', 'Ivory, sleepy eyes', '/uploads/avatar_parts/base/white_sleepy.png', NULL, 10, 1),
+      (4, 'base', 'Beige, amber eyes', '/uploads/avatar_parts/base/dark_orange.png', NULL, 10, 1),
+      (5, 'base', 'Beige, eyepatch', '/uploads/avatar_parts/base/brown_oneeye.png', NULL, 10, 1),
+      (6, 'base', 'Tan, green eyes', '/uploads/avatar_parts/base/yellow_green.png', NULL, 10, 1),
+      (7, 'base', 'Tan, closed eyes', '/uploads/avatar_parts/base/yellow_closed.png', NULL, 10, 1),
+      (8, 'base', 'Deep brown, golden eyes', '/uploads/avatar_parts/base/dark_yellow.png', NULL, 10, 1),
+      (9, 'base', 'Deep brown, grey eyes', '/uploads/avatar_parts/base/dark_grey.png', NULL, 10, 1),
+      (10, 'outfit', 'Maid dress', '/uploads/avatar_parts/clothes/maid.png', NULL, 30, 1),
+      (11, 'outfit', 'Striped pinafore', '/uploads/avatar_parts/clothes/pinafore.png', NULL, 30, 1),
+      (12, 'outfit', 'White lace nightgown', '/uploads/avatar_parts/clothes/white_dress.png', NULL, 30, 1),
+      (13, 'outfit', 'Lavender lolita dress', '/uploads/avatar_parts/clothes/purple_dress.png', NULL, 30, 1),
+      (14, 'outfit', 'Gothic lolita dress', '/uploads/avatar_parts/clothes/gothic_dress.png', NULL, 30, 1),
+      (15, 'outfit', 'Gothic vest and shorts', '/uploads/avatar_parts/clothes/gothic_outfit.png', NULL, 30, 1),
+      (16, 'outfit', 'School blazer', '/uploads/avatar_parts/clothes/school_outfit.png', NULL, 30, 1),
+      (17, 'outfit', 'Pink cardigan and plaid skirt', '/uploads/avatar_parts/clothes/cardigan.png', NULL, 30, 1),
+      (18, 'hair', 'Ash messy bun', '/uploads/avatar_parts/hair/ash_bun.png', NULL, 20, 1),
+      (19, 'hair', 'Black drill curls', '/uploads/avatar_parts/hair/black_curls.png', NULL, 20, 1),
+      (20, 'hair', 'Blonde twin tails', '/uploads/avatar_parts/hair/blonde_tails.png', NULL, 20, 1),
+      (21, 'hair', 'Dark curly crop', '/uploads/avatar_parts/hair/dark_boyhair.png', NULL, 20, 1),
+      (22, 'hair', 'Silver shaggy cut', '/uploads/avatar_parts/hair/grey_short.png', NULL, 20, 1),
+      (23, 'hair', 'Lavender side ponytail', '/uploads/avatar_parts/hair/lavender_tail.png', NULL, 20, 1),
+      (24, 'hair', 'Lilac bob', '/uploads/avatar_parts/hair/lily_short.png', NULL, 20, 1),
+      (25, 'hair', 'Mint braids', '/uploads/avatar_parts/hair/mint_brades.png', NULL, 20, 1),
+      (26, 'hair', 'Pink waves', '/uploads/avatar_parts/hair/pink_wave.png', NULL, 20, 1),
+      (27, 'hair', 'Chocolate mint twin tails', '/uploads/avatar_parts/hair/two_tails_blackteal.png', NULL, 20, 1),
+      (28, 'shoes', 'Black shoes', '/uploads/avatar_parts/shoes/black_shoes.png', NULL, 20, 1),
+      (29, 'shoes', 'Brown lace-up boots', '/uploads/avatar_parts/shoes/boots.png', NULL, 20, 1),
+      (30, 'shoes', 'Cream ballet flats', '/uploads/avatar_parts/shoes/cream_shoes.png', NULL, 20, 1),
+      (31, 'shoes', 'Mary Janes with socks', '/uploads/avatar_parts/shoes/mary_jane.png', NULL, 20, 1),
+      (32, 'shoes', 'Pink ballet flats', '/uploads/avatar_parts/shoes/pink_shoes.png', NULL, 20, 1),
+      (33, 'accessory', 'Black ribbon bow', '/uploads/avatar_parts/accs/black_ribbon.png', NULL, 50, 1),
+      (34, 'accessory', 'Cat ears', '/uploads/avatar_parts/accs/cat_ears.png', NULL, 50, 1),
+      (35, 'accessory', 'Cross hair clip', '/uploads/avatar_parts/accs/cross.png', NULL, 50, 1),
+      (36, 'accessory', 'Nurse cap', '/uploads/avatar_parts/accs/nurse_hat.png', NULL, 50, 1),
+      (37, 'accessory', 'Angel wing clips', '/uploads/avatar_parts/accs/wings.png', NULL, 50, 1)`
+    );
+    console.log('✅ Avatar parts seeded: 37 entries (2 retired outfits).');
+
+    // 5. Seed 5 Users (All English)
     await connection.query(
       `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, avatar_config, bio) VALUES
-      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"skin":"porcelain","eyes":"violet","hair":"dark_bob"}', 'Keeping Dollique friendly and bootleg-free.'),
-      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"skin":"pale","eyes":"emerald","hair":"pastel_pink_curls"}', 'OOAK repaints and pastel faceups, mostly Monster High.'),
-      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', NULL, 'I fix sticky vinyl, yellowed PVC and broken joints.'),
-      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', NULL, 'Collecting Nendoroids and scale figures since 2015.'),
-      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', NULL, 'Reroots, boil perms and custom Barbie styling.')`,
+      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"base":3,"hair":29,"outfit":14,"shoes":30,"accessories":[35]}', 'Keeping Dollique friendly and bootleg-free.'),
+      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"base":1,"hair":26,"outfit":10,"shoes":31,"accessories":[36]}', 'OOAK repaints and pastel faceups, mostly Monster High.'),
+      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', '{"base":5,"hair":25,"outfit":12,"shoes":31,"accessories":[37]}', 'I fix sticky vinyl, yellowed PVC and broken joints.'),
+      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', '{"base":8,"hair":23,"outfit":15,"shoes":30,"accessories":[]}', 'Collecting Nendoroids and scale figures since 2015.'),
+      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', '{"base":4,"hair":22,"outfit":18,"shoes":32,"accessories":[]}', 'Reroots, boil perms and custom Barbie styling.')`,
       [passwordHash, passwordHash, passwordHash, passwordHash, passwordHash]
     );
     console.log('✅ Users seeded: 5 entries (English).');
 
-    // 5. Seed 5 Tokens
+    // 6. Seed 5 Tokens
     await connection.query(
       `INSERT INTO tokens (id, user_id, token, type, expires_at) VALUES
       (1, 1, 'token_email_confirm_sample_admin_001', 'email_confirm', DATE_ADD(NOW(), INTERVAL 1 DAY)),
@@ -77,7 +121,7 @@ async function initDatabase() {
     );
     console.log('✅ Tokens seeded: 5 entries.');
 
-    // 6. Seed 6 Categories (All English)
+    // 7. Seed 6 Categories (All English)
     await connection.query(
       `INSERT INTO categories (id, title, description, status, created_by, rejection_reason) VALUES
       (1, 'OOAK & Faceup', 'Painting techniques, pastels, acrylics, watercolor pencils, and Mr. Super Clear sealants.', 'approved', 1, NULL),
@@ -91,7 +135,7 @@ async function initDatabase() {
     );
     console.log('✅ Categories seeded: 8 entries (1 pending, 1 rejected).');
 
-    // 7. Seed 5 Posts (All English)
+    // 8. Seed 5 Posts (All English)
     await connection.query(
       `INSERT INTO posts (id, author_id, title, content, status) VALUES
       (1, 2, 'How to safely remove factory face paint from a Monster High doll without melting the vinyl?', 'Hi everyone! Starting my first custom OOAK on a Draculaura doll. Should I use 100% pure acetone or regular non-acetone nail polish remover? I am worried about dissolving the vinyl head or leaving permanent shiny marks.', 'active'),
@@ -109,7 +153,7 @@ async function initDatabase() {
     );
     console.log('✅ Posts seeded: 7 entries (2 hidden by moderation).');
 
-    // 8. Seed Post Categories (M:N)
+    // 9. Seed Post Categories (M:N)
     await connection.query(
       `INSERT INTO post_categories (post_id, category_id) VALUES
       (1, 1), (1, 3),
@@ -122,7 +166,7 @@ async function initDatabase() {
     );
     console.log('✅ PostCategories seeded: 8 entries.');
 
-    // 9. Seed 5 Post Images
+    // 10. Seed 5 Post Images
     await connection.query(
       `INSERT INTO post_images (id, post_id, image_url) VALUES
       (1, 1, '/uploads/posts/sample-monster-high-face.png'),
@@ -133,7 +177,7 @@ async function initDatabase() {
     );
     console.log('✅ PostImages seeded: 5 entries.');
 
-    // 10. Seed 5 Comments (including nested reply) (All English)
+    // 11. Seed 5 Comments (including nested reply) (All English)
     await connection.query(
       `INSERT INTO comments (id, author_id, post_id, parent_id, content, status) VALUES
       (1, 3, 1, NULL, 'Use 100% pure acetone on a cotton pad, but wipe quickly and never leave the pad resting on the head. Immediately wash with mild hand soap and warm water afterwards.', 'active'),
@@ -144,7 +188,7 @@ async function initDatabase() {
     );
     console.log('✅ Comments seeded: 5 entries (English).');
 
-    // 11. Seed 5 Likes
+    // 12. Seed 5 Likes
     await connection.query(
       `INSERT INTO likes (id, author_id, post_id, comment_id, type) VALUES
       (1, 2, 2, NULL, 'like'),
@@ -155,7 +199,7 @@ async function initDatabase() {
     );
     console.log('✅ Likes seeded: 5 entries.');
 
-    // 12. Seed 5 Favorites
+    // 13. Seed 5 Favorites
     await connection.query(
       `INSERT INTO favorites (user_id, post_id) VALUES
       (1, 1),
@@ -166,7 +210,7 @@ async function initDatabase() {
     );
     console.log('✅ Favorites seeded: 5 entries.');
 
-    // 13. Seed 5 Notifications
+    // 14. Seed 5 Notifications
     await connection.query(
       `INSERT INTO notifications (id, user_id, post_id, type, message, is_read) VALUES
       (1, 4, 6, 'post_moderated', 'Your post "Selling cheap Nendoroid copies, DM me for prices" was hidden by a moderator. Reason: Advertising bootleg figures is not allowed on Dollique. You can appeal; otherwise the post will be deleted automatically.', 0),
@@ -179,7 +223,7 @@ async function initDatabase() {
     );
     console.log('✅ Notifications seeded: 7 entries.');
 
-    // 14. Seed 5 Appeals
+    // 15. Seed 5 Appeals
     await connection.query(
       `INSERT INTO appeals (id, post_id, author_id, message, status, admin_response, resolved_at) VALUES
       (1, 6, 4, 'These are not bootlegs, they are just cheaper because I import them myself.', 'rejected', 'Selling copies is still advertising bootlegs.', NOW()),
@@ -190,7 +234,7 @@ async function initDatabase() {
     );
     console.log('✅ Appeals seeded: 5 entries.');
 
-    // 15. Seed 5 Violations (kai and eva are one strike away from an automatic ban)
+    // 16. Seed 5 Violations (kai and eva are one strike away from an automatic ban)
     await connection.query(
       `INSERT INTO violations (id, user_id, type, target_id, reason, created_by, revoked) VALUES
       (1, 4, 'post_hidden', 6, 'Advertising bootleg figures is not allowed on Dollique.', 1, 0),
@@ -201,7 +245,7 @@ async function initDatabase() {
     );
     console.log('✅ Violations seeded: 5 entries (1 revoked after an approved appeal).');
 
-    console.log('\n🎉 ALL 12 TABLES SUCCESSFULLY INITIALIZED & SEEDED (>= 5 rows each, English)!');
+    console.log('\n🎉 ALL 13 TABLES SUCCESSFULLY INITIALIZED & SEEDED (>= 5 rows each, English)!');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;
