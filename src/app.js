@@ -20,7 +20,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static uploaded files (avatars, post images)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  // Browsers must not guess the type of uploaded files (blocks HTML/JS disguised as images)
+  setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+}));
 // Serve static admin dashboard
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 

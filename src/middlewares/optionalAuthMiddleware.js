@@ -1,20 +1,18 @@
-const jwt = require('jsonwebtoken');
+const TokenService = require('../services/tokenService');
 
 // Reads the Bearer token if present, but never blocks guests
-function optionalAuthMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (authHeader) {
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-
+async function optionalAuthMiddleware(req, res, next) {
+  try {
+    const token = TokenService.extract(req);
     if (token) {
-      try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
-      } catch (error) {
-        // Invalid token: continue as guest
-      }
+      // Invalid or revoked token: continue as guest
+      const user = await TokenService.verify(token);
+      if (user) req.user = user;
     }
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
 }
 
 module.exports = optionalAuthMiddleware;

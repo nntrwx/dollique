@@ -1,10 +1,13 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const UserModel = require('../models/UserModel');
 const NotificationModel = require('../models/NotificationModel');
 const ViolationModel = require('../models/ViolationModel');
 const ViolationService = require('../services/violationService');
+const EmailService = require('../services/emailService');
+const { validateLogin, validateEmail } = require('../utils/validators');
 
 const BIO_MAX_LENGTH = 500;
 
@@ -54,6 +57,12 @@ class UserController {
         return res.status(400).json({
           error: 'Required parameters: [login, password, password_confirmation, email, role].',
         });
+      }
+
+      const inputError = validateLogin(login) || validateEmail(email)
+        || (typeof password !== 'string' || password.length < 6 ? 'Password must be at least 6 characters long.' : null);
+      if (inputError) {
+        return res.status(400).json({ error: inputError });
       }
 
       if (password !== password_confirmation) {
@@ -152,7 +161,7 @@ class UserController {
         return res.status(403).json({ error: 'Forbidden: You can only update your own profile.' });
       }
 
-      const targetUser = await UserModel.findById(targetUserId);
+      const targetUser = await UserModel.findById(targetUserId, true);
       if (!targetUser) {
         return res.status(404).json({ error: 'User not found.' });
       }
@@ -171,16 +180,20 @@ class UserController {
       }
 
       if (login && login !== targetUser.login) {
+        const loginError = validateLogin(login);
+        if (loginError) return res.status(400).json({ error: loginError });
         const existingLogin = await UserModel.findByLogin(login);
-        if (existingLogin) {
+        if (existingLogin && existingLogin.id !== targetUserId) {
           return res.status(409).json({ error: 'Login is already taken.' });
         }
         updateData.login = login;
       }
 
       if (email && email !== targetUser.email) {
+        const emailError = validateEmail(email);
+        if (emailError) return res.status(400).json({ error: emailError });
         const existingEmail = await UserModel.findByEmail(email);
-        if (existingEmail) {
+        if (existingEmail && existingEmail.id !== targetUserId) {
           return res.status(409).json({ error: 'Email is already taken.' });
         }
         updateData.email = email;
@@ -197,13 +210,34 @@ class UserController {
       }
 
       if (avatar_config) {
-        updateData.avatarConfig = typeof avatar_config === 'string' ? JSON.parse(avatar_config) : avatar_config;
+        try {
+          updateData.avatarConfig = typeof avatar_config === 'string' ? JSON.parse(avatar_config) : avatar_config;
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON format for avatar_config.' });
+        }
       }
+
+      // A user changing their own email must confirm the new address; an admin's change is trusted
+      const needsConfirmation = Boolean(updateData.email) && requester.role !== 'admin';
+      if (updateData.email && !needsConfirmation) updateData.keepEmailConfirmed = true;
 
       const updatedUser = await UserModel.updateProfile(targetUserId, updateData);
 
+      if (needsConfirmation) {
+        const confirmationToken = crypto.randomBytes(32).toString('hex');
+        await UserModel.saveToken({
+          userId: targetUserId,
+          token: confirmationToken,
+          type: 'email_confirm',
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        });
+        await EmailService.sendConfirmationEmail(updateData.email, confirmationToken);
+      }
+
       return res.status(200).json({
-        message: 'Profile updated successfully.',
+        message: needsConfirmation
+          ? 'Profile updated. Please confirm your new email: a link was sent to it.'
+          : 'Profile updated successfully.',
         user: updatedUser,
       });
     } catch (error) {

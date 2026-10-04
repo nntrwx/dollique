@@ -95,7 +95,7 @@ class PostController {
       const { title, content, categories } = req.body;
       const authorId = req.user.id;
 
-      if (!title || !content || !categories) {
+      if (typeof title !== 'string' || typeof content !== 'string' || !title.trim() || !content.trim() || !categories) {
         return res.status(400).json({
           error: 'Required parameters: [title, content, categories].',
         });
@@ -122,6 +122,11 @@ class PostController {
         imageUrls = req.files.map((file) => `/uploads/posts/${file.filename}`);
       } else if (req.body.images) {
         imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        // Only real image links: no "javascript:" or other schemes
+        const invalid = imageUrls.filter((url) => typeof url !== 'string' || !/^(https?:\/\/|\/uploads\/posts\/)[^\s"'<>]+$/.test(url));
+        if (invalid.length > 0 || imageUrls.length > 5) {
+          return res.status(400).json({ error: 'Images must be up to 5 links starting with http(s):// or /uploads/posts/.' });
+        }
       }
 
       const newPost = await PostModel.create({
@@ -168,6 +173,12 @@ class PostController {
       const updateData = {};
 
       if (isAuthor) {
+        if (title !== undefined && typeof title !== 'string') {
+          return res.status(400).json({ error: 'Title must be a string.' });
+        }
+        if (content !== undefined && typeof content !== 'string') {
+          return res.status(400).json({ error: 'Content must be a string.' });
+        }
         if (title) {
           if (title.length > 255) return res.status(400).json({ error: 'Title cannot exceed 255 characters.' });
           updateData.title = title;

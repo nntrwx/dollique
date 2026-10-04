@@ -12,14 +12,22 @@ if (!fs.existsSync(postsDir)) {
   fs.mkdirSync(postsDir, { recursive: true });
 }
 
+// The extension comes from the checked MIME type, never from the client's file name,
+// so a file like "evil.html" can't be uploaded and served as a web page
+const EXTENSIONS = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, avatarsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const extension = path.extname(file.originalname).toLowerCase();
-    cb(null, `avatar-${uniqueSuffix}${extension}`);
+    cb(null, `avatar-${uniqueSuffix}${EXTENSIONS[file.mimetype]}`);
   },
 });
 
@@ -29,14 +37,12 @@ const postStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const extension = path.extname(file.originalname).toLowerCase();
-    cb(null, `post-${uniqueSuffix}${extension}`);
+    cb(null, `post-${uniqueSuffix}${EXTENSIONS[file.mimetype]}`);
   },
 });
 
 const imageFilter = (req, file, cb) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  if (EXTENSIONS[file.mimetype]) {
     cb(null, true);
   } else {
     cb(new Error('Only image files (JPEG, PNG, WEBP, GIF) are allowed!'), false);

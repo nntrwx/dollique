@@ -281,6 +281,7 @@
     .strikes-btn { white-space: nowrap; font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--editorial-border); background: var(--editorial-cream); cursor: pointer; }
     .strikes-btn.is-warning { background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
     .strikes-btn.is-danger { background: #FFF1F2; color: #9F1239; border-color: #FECDD3; }
+    .user-bio { display: block; max-width: 220px; margin-top: 3px; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ban-note { display: block; margin-top: 4px; font-size: 11px; color: #9F1239; }
     .dialog-error { font-size: 12px; color: #9F1239; margin-top: -6px; margin-bottom: 8px; display: none; }
     .btn-danger-solid { background: #9F1239; color: #FFFFFF; border-color: #9F1239; }
@@ -670,6 +671,11 @@
       return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
 
+    // Safe string argument for inline onclick="..." handlers
+    function jsArg(value) {
+      return escapeHtml(JSON.stringify(String(value ?? '')));
+    }
+
     function singular(entity) {
       return { categories: 'category', posts: 'post', users: 'user', comments: 'comment' }[entity] || entity;
     }
@@ -686,7 +692,7 @@
 
     function showLoginError(msg) {
       const errBox = document.getElementById('loginError');
-      errBox.innerHTML = `⚠ ${msg}`; errBox.style.display = 'block';
+      errBox.textContent = `⚠ ${msg}`; errBox.style.display = 'block';
     }
 
     function clearLoginError() {
@@ -734,7 +740,11 @@
       loadAppeals();
     }
 
-    function logout() {
+    async function logout() {
+      // Revoke the token on the server too, so it can't be reused
+      if (token) {
+        await fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
+      }
       localStorage.removeItem('dollique_admin_token');
       token = ''; showLogin(); showToast('Logged out successfully.');
     }
@@ -835,11 +845,11 @@
             </td>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${p.id}</b></td>
             <td>
-              <b>${p.title}</b><br><span style="font-size:12px; color:var(--text-muted);">${p.content.substring(0, 50)}...</span>
-              ${p.moderation ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('flag', 'inline-icon')}${p.moderation.reason} · auto-delete: ${p.moderation.deleteAfter ? formatDate(p.moderation.deleteAfter) : 'paused (appeal)'}</span>` : ''}
+              <b>${escapeHtml(p.title)}</b><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.content.substring(0, 50))}...</span>
+              ${p.moderation ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('flag', 'inline-icon')}${escapeHtml(p.moderation.reason)} · auto-delete: ${p.moderation.deleteAfter ? formatDate(p.moderation.deleteAfter) : 'paused (appeal)'}</span>` : ''}
             </td>
-            <td>${p.author ? p.author.login : 'ID: ' + p.authorId}</td>
-            <td>${p.categories ? p.categories.map(c => `<span class="cat-tag">${c.title}</span>`).join('') : '—'}</td>
+            <td>${p.author ? escapeHtml(p.author.login) : 'ID: ' + p.authorId}</td>
+            <td>${p.categories ? p.categories.map(c => `<span class="cat-tag">${escapeHtml(c.title)}</span>`).join('') : '—'}</td>
             <td><b>${p.netLikes || 0}</b></td>
             <td>
               <div style="display:flex; gap:6px; align-items:center;">
@@ -882,7 +892,7 @@
           <div class="nested-comment-item" style="margin-left:${depth * 24}px; ${cActive ? '' : 'opacity:0.6;'}">
             <div style="max-width: 650px;">
               ${depth > 0 ? '<span style="color:var(--text-muted);">↳ reply to #' + c.parentId + '</span><br>' : ''}
-              <b>@${c.author ? c.author.login : 'User#' + c.authorId}:</b> ${c.content}
+              <b>@${c.author ? escapeHtml(c.author.login) : 'User#' + c.authorId}:</b> ${escapeHtml(c.content)}
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
               <button class="btn-status-toggle ${cActive ? 'is-active' : 'is-inactive'}" style="padding:4px 8px;" onclick="toggleCommentStatus(${c.id}, '${c.status || 'active'}', ${postId})">
@@ -966,12 +976,12 @@
             <tr>
               <td><b style="font-family:var(--font-mono); font-size:11px;">#${a.id}</b></td>
               <td>
-                <b>#${a.postId} ${a.post ? a.post.title : ''}</b><br>
-                <span style="font-size:12px; color:var(--text-muted);">Reason: ${a.post && a.post.moderationReason ? a.post.moderationReason : '—'}</span><br>
+                <b>#${a.postId} ${a.post ? escapeHtml(a.post.title) : ''}</b><br>
+                <span style="font-size:12px; color:var(--text-muted);">Reason: ${a.post && a.post.moderationReason ? escapeHtml(a.post.moderationReason) : '—'}</span><br>
                 <span style="font-size:11px; color:var(--text-subtle);">Auto-delete: ${a.post && a.post.deleteAfter ? formatDate(a.post.deleteAfter) : (isPending ? 'paused' : '—')}</span>
               </td>
-              <td>${a.author ? a.author.login : 'User#' + a.authorId}</td>
-              <td style="max-width:280px;">${a.message}${a.adminResponse ? `<br><span style="font-size:12px; color:var(--text-muted);">↳ ${a.adminResponse}</span>` : ''}</td>
+              <td>${a.author ? escapeHtml(a.author.login) : 'User#' + a.authorId}</td>
+              <td style="max-width:280px;">${escapeHtml(a.message)}${a.adminResponse ? `<br><span style="font-size:12px; color:var(--text-muted);">↳ ${escapeHtml(a.adminResponse)}</span>` : ''}</td>
               <td><span class="badge ${badgeClass}">${a.status}</span></td>
               <td>
                 ${isPending ? `
@@ -1078,6 +1088,7 @@
           return;
         }
 
+        categoriesCache = cats;
         document.querySelector('#categoriesTable tbody').innerHTML = cats.map(c => {
           const badgeClass = c.status === 'approved' ? 'badge-active' : (c.status === 'rejected' ? 'badge-inactive' : 'badge-user');
           const moderationButtons = c.status === 'pending' ? `
@@ -1086,14 +1097,14 @@
           return `
           <tr>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${c.id}</b></td>
-            <td><b>${c.title}</b></td>
-            <td>${c.description || '—'}${c.rejection_reason ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('ban', 'inline-icon')}${c.rejection_reason}</span>` : ''}</td>
-            <td>${c.creator_login || '—'}</td>
+            <td><b>${escapeHtml(c.title)}</b></td>
+            <td>${escapeHtml(c.description || '—')}${c.rejection_reason ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('ban', 'inline-icon')}${escapeHtml(c.rejection_reason)}</span>` : ''}</td>
+            <td>${escapeHtml(c.creator_login || '—')}</td>
             <td><span class="badge ${badgeClass}">${c.status}</span></td>
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 ${moderationButtons}
-                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('categories', ${c.id}, '${c.title}', '${c.description || ''}')">Edit</button>
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('categories', ${c.id})">Edit</button>
                 <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('categories', ${c.id})">Delete</button>
               </div>
             </td>
@@ -1246,23 +1257,24 @@
       try {
         const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
         const users = await res.json();
+        usersCache = users;
         document.querySelector('#usersTable tbody').innerHTML = users.map(u => `
           <tr>
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${u.id}</b></td>
-            <td><b>${u.login}</b>${isBanned(u) ? `<span class="ban-note">${iconSvg('ban')} Banned until ${formatDate(u.banned_until)}</span>` : ''}</td>
-            <td>${u.fullName || u.full_name || '—'}</td>
-            <td><span style="font-family:var(--font-mono); font-size:11.5px;">${u.email}</span></td>
+            <td><b>${escapeHtml(u.login)}</b>${u.bio ? `<span class="user-bio">${escapeHtml(u.bio)}</span>` : ''}${isBanned(u) ? `<span class="ban-note">${iconSvg('ban')} Banned until ${formatDate(u.banned_until)}</span>` : ''}</td>
+            <td>${escapeHtml(u.fullName || u.full_name || '—')}</td>
+            <td><span style="font-family:var(--font-mono); font-size:11.5px;">${escapeHtml(u.email)}</span></td>
             <td><span class="badge badge-${u.role}">${u.role}</span></td>
             <td><b>★ ${u.rating}</b></td>
-            <td>${u.role === 'admin' ? '—' : `<button class="strikes-btn ${strikeTone(u.active_strikes)}" onclick="showViolations(${u.id}, '${u.login}')">${u.active_strikes} / ${BAN_STRIKES}</button>`}</td>
+            <td>${u.role === 'admin' ? '—' : `<button class="strikes-btn ${strikeTone(u.active_strikes)}" onclick="showViolations(${u.id}, ${jsArg(u.login)})">${u.active_strikes} / ${BAN_STRIKES}</button>`}</td>
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('users', ${u.id}, '${u.login}', '${u.fullName || u.full_name || ''}', '${u.email}', '${u.role}')">Edit</button>
-                <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="resetUserPassword('${u.email}')">Reset Pass</button>
-                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="resetProfile(${u.id}, '${u.login}')">Moderate</button>
+                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('users', ${u.id})">Edit</button>
+                <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="resetUserPassword(${jsArg(u.email)})">Reset Pass</button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="resetProfile(${u.id}, ${jsArg(u.login)})">Moderate</button>
                 ${u.role === 'admin' ? '' : isBanned(u)
-                  ? `<button class="btn" style="padding:4px 8px; font-size:11px;" onclick="unbanUser(${u.id}, '${u.login}')">Unban</button>`
-                  : `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="banUser(${u.id}, '${u.login}')">Ban</button>`}
+                  ? `<button class="btn" style="padding:4px 8px; font-size:11px;" onclick="unbanUser(${u.id}, ${jsArg(u.login)})">Unban</button>`
+                  : `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="banUser(${u.id}, ${jsArg(u.login)})">Ban</button>`}
                 <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteRecord('users', ${u.id})">Del</button>
               </div>
             </td>
@@ -1349,22 +1361,28 @@
       document.getElementById('crudModal').style.display = 'flex';
     }
 
-    function openEditModal(entity, id, param1 = '', param2 = '', param3 = '', param4 = '') {
+    let usersCache = [];
+    let categoriesCache = [];
+
+    function openEditModal(entity, id) {
       editingItem = { entity, id };
       document.getElementById('modalTitle').innerText = `Edit ${singular(entity)} #${id}`;
       const fields = document.getElementById('modalFields');
 
+      const cat = categoriesCache.find(c => c.id === id) || {};
+      const user = usersCache.find(u => u.id === id) || {};
       if (entity === 'categories') {
         fields.innerHTML = `
-          <div class="form-group"><label>Title</label><input required name="title" value="${param1}"></div>
-          <div class="form-group"><label>Description</label><textarea name="description" rows="3">${param2}</textarea></div>
+          <div class="form-group"><label>Title</label><input required name="title" value="${escapeHtml(cat.title)}"></div>
+          <div class="form-group"><label>Description</label><textarea name="description" rows="3">${escapeHtml(cat.description || '')}</textarea></div>
         `;
       } else if (entity === 'users') {
         fields.innerHTML = `
-          <div class="form-group"><label>Login</label><input required name="login" value="${param1}"></div>
-          <div class="form-group"><label>Full Name</label><input name="full_name" value="${param2}"></div>
-          <div class="form-group"><label>Email</label><input required type="email" name="email" value="${param3}"></div>
-          <div class="form-group"><label>Role</label><select name="role"><option value="user" ${param4==='user'?'selected':''}>User</option><option value="admin" ${param4==='admin'?'selected':''}>Admin</option></select></div>
+          <div class="form-group"><label>Login</label><input required name="login" value="${escapeHtml(user.login)}"></div>
+          <div class="form-group"><label>Full Name</label><input name="full_name" value="${escapeHtml(user.full_name || '')}"></div>
+          <div class="form-group"><label>Email</label><input required type="email" name="email" value="${escapeHtml(user.email)}"></div>
+          <div class="form-group"><label>Profile description</label><textarea name="bio" rows="3" maxlength="500">${escapeHtml(user.bio || '')}</textarea></div>
+          <div class="form-group"><label>Role</label><select name="role"><option value="user" ${user.role==='user'?'selected':''}>User</option><option value="admin" ${user.role==='admin'?'selected':''}>Admin</option></select></div>
         `;
       } else if (entity === 'posts') {
         fields.innerHTML = `

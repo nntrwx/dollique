@@ -1,32 +1,20 @@
-const jwt = require('jsonwebtoken');
 const UserModel = require('../models/UserModel');
+const TokenService = require('../services/tokenService');
 
 async function authMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-
-  if (!authHeader) {
+  const token = TokenService.extract(req);
+  if (!token) {
     return res.status(401).json({
       error: 'Authorization required. Please log in.',
     });
   }
 
-  // Extract clean token
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-
-  if (!token) {
-    return res.status(401).json({
-      error: 'Authorization token is missing.',
-    });
-  }
-
   try {
-    const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Security fix: verify that user still exists in database and get fresh role
-    const freshUser = await UserModel.findById(decodedUser.id, true);
+    // Verifies the signature and that the user still exists and has not logged out since
+    const freshUser = await TokenService.verify(token);
     if (!freshUser) {
       return res.status(401).json({
-        error: 'Unauthorized: User account no longer exists or was deleted.',
+        error: 'Invalid, expired or revoked authorization token. Please log in again.',
       });
     }
 
@@ -42,9 +30,7 @@ async function authMiddleware(req, res, next) {
     req.user = freshUser;
     next();
   } catch (error) {
-    return res.status(401).json({
-      error: 'Invalid or expired authorization token.',
-    });
+    next(error);
   }
 }
 

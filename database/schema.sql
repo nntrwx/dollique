@@ -35,6 +35,7 @@ CREATE TABLE users (
     banned_until TIMESTAMP NULL DEFAULT NULL,
     ban_reason TEXT DEFAULT NULL,
     strikes_reset_at TIMESTAMP NULL DEFAULT NULL,
+    token_version INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_login (login),

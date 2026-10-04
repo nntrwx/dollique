@@ -34,7 +34,7 @@ class UserModel {
     if (isNaN(userId)) return null;
 
     // Email and ban details are private: only the user and admins see them
-    const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason' : '';
+    const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason, token_version' : '';
     const [rows] = await pool.execute(`
       SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, avatar_config, bio, rating, role, created_at
       FROM users
@@ -49,7 +49,7 @@ class UserModel {
     if (!login) return null;
     const [rows] = await pool.execute(`
       SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
-             banned_until, ban_reason
+             banned_until, ban_reason, token_version
       FROM users
       WHERE login = ?
     `, [login]);
@@ -62,7 +62,7 @@ class UserModel {
     if (!email) return null;
     const [rows] = await pool.execute(`
       SELECT id, login, password_hash, full_name, email, is_email_confirmed, profile_picture, avatar_config, rating, role,
-             banned_until, ban_reason
+             banned_until, ban_reason, token_version
       FROM users
       WHERE email = ?
     `, [email]);
@@ -104,8 +104,8 @@ class UserModel {
     if (updateData.email) {
       fields.push('email = ?');
       values.push(updateData.email);
-      // Security fix: changing email resets verification status
-      fields.push('is_email_confirmed = 0');
+      // Changing email resets verification status (unless an admin changed it)
+      if (!updateData.keepEmailConfirmed) fields.push('is_email_confirmed = 0');
     }
     if (updateData.role) {
       fields.push('role = ?');
@@ -155,6 +155,11 @@ class UserModel {
       SET banned_until = NOW() + INTERVAL ? DAY, ban_reason = ?, strikes_reset_at = NOW()
       WHERE id = ?
     `, [Number(days), reason || null, Number(id)]);
+  }
+
+  // Every issued JWT carries the version it was signed with; bumping it invalidates all of them
+  static async bumpTokenVersion(id) {
+    await pool.execute('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [Number(id)]);
   }
 
   static async clearBan(id) {

@@ -1,8 +1,10 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const UserModel = require('../models/UserModel');
 const EmailService = require('../services/emailService');
+const TokenService = require('../services/tokenService');
+const LoginLimiter = require('../services/loginLimiter');
+const { validateLogin, validateEmail } = require('../utils/validators');
 
 class AuthController {
   // POST /api/auth/register
@@ -17,14 +19,14 @@ class AuthController {
         });
       }
 
-      // 2. Validate email format (Fix: reject invalid emails like 'abc')
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ error: 'Invalid email address format.' });
+      // 2. Validate login and email format
+      const formatError = validateLogin(login) || validateEmail(email);
+      if (formatError) {
+        return res.status(400).json({ error: formatError });
       }
 
-      // 3. Validate password strength (Fix: minimum 6 characters)
-      if (password.length < 6) {
+      // 3. Validate password strength (minimum 6 characters)
+      if (typeof password !== 'string' || password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
       }
 
@@ -117,9 +119,20 @@ class AuthController {
     try {
       const { login, email, password } = req.body;
 
-      if (!password || (!login && !email)) {
+      if (typeof password !== 'string' || !password || (!login && !email)
+          || (login && typeof login !== 'string') || (email && typeof email !== 'string')) {
         return res.status(400).json({
           error: 'Parameters [password] and at least one of [login, email] are required.',
+        });
+      }
+
+      const identifier = login || email;
+      const retryAfter = LoginLimiter.retryAfter(req.ip, identifier);
+      if (retryAfter > 0) {
+        res.set('Retry-After', String(retryAfter));
+        return res.status(429).json({
+          error: `Too many failed login attempts. Try again in ${Math.ceil(retryAfter / 60)} minute(s).`,
+          retryAfter,
         });
       }
 
@@ -130,14 +143,12 @@ class AuthController {
         user = await UserModel.findByEmail(email);
       }
 
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials.' });
-      }
-
-      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      const isPasswordValid = user ? await bcrypt.compare(password, user.password_hash) : false;
       if (!isPasswordValid) {
+        LoginLimiter.registerFailure(req.ip, identifier);
         return res.status(401).json({ error: 'Invalid credentials.' });
       }
+      LoginLimiter.reset(req.ip, identifier);
 
       if (!user.is_email_confirmed) {
         return res.status(403).json({
@@ -153,15 +164,7 @@ class AuthController {
         });
       }
 
-      const token = jwt.sign(
-        {
-          id: user.id,
-          login: user.login,
-          role: user.role,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      const token = TokenService.sign(user);
 
       return res.status(200).json({
         message: 'Login successful.',
@@ -183,8 +186,15 @@ class AuthController {
   }
 
   // POST /api/auth/logout
+  // Revokes every token of this user (all devices), so a stolen or old token stops working
   static async logout(req, res) {
-    return res.status(200).json({ message: 'Logged out successfully.' });
+    try {
+      await UserModel.bumpTokenVersion(req.user.id);
+      return res.status(200).json({ message: 'Logged out successfully.' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      return res.status(500).json({ error: 'Internal server error during logout.' });
+    }
   }
 
   // POST /api/auth/password-reset
@@ -266,7 +276,7 @@ class AuthController {
       const { confirm_token } = req.params;
       const { password, password_confirmation } = req.body;
 
-      if (!password || password.length < 6) {
+      if (typeof password !== 'string' || password.length < 6) {
         return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
       }
 
@@ -282,6 +292,8 @@ class AuthController {
       const newPasswordHash = await bcrypt.hash(password, 10);
       await UserModel.updatePassword(tokenRecord.userId, newPasswordHash);
       await UserModel.deleteToken(tokenRecord.id);
+      // Old sessions are signed out after a password change
+      await UserModel.bumpTokenVersion(tokenRecord.userId);
 
       return res.status(200).json({
         message: 'Password has been successfully updated. You can now log in.',

@@ -88,15 +88,14 @@ class CategoryModel {
         p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
         u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
         u.profile_picture AS author_avatar, u.rating AS author_rating,
-        COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 WHEN l.type = 'dislike' THEN -1 ELSE 0 END), 0) AS net_likes,
-        COUNT(DISTINCT c.id) AS comments_count
+        -- Subqueries instead of JOINs: joining likes and comments together multiplied the vote sum
+        (SELECT COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 ELSE -1 END), 0)
+           FROM likes l WHERE l.post_id = p.id) AS net_likes,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count
       FROM posts p
       JOIN post_categories pc ON p.id = pc.post_id
       JOIN users u ON p.author_id = u.id
-      LEFT JOIN likes l ON p.id = l.post_id
-      LEFT JOIN comments c ON p.id = c.post_id
       WHERE pc.category_id = ? AND ${statusCondition}
-      GROUP BY p.id, u.id
       ORDER BY p.created_at DESC
     `;
 

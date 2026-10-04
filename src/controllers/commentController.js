@@ -52,7 +52,7 @@ class CommentController {
       const { content, parent_id } = req.body;
       const authorId = req.user.id;
 
-      if (!content || !content.trim()) {
+      if (typeof content !== 'string' || !content.trim()) {
         return res.status(400).json({ error: 'Required parameter: [content].' });
       }
 
