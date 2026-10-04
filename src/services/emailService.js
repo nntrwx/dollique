@@ -35,6 +35,13 @@ class EmailService {
     return this.transporter;
   }
 
+  // Without SMTP settings letters go to a test Ethereal inbox, not to the real address.
+  // Print the link to view the letter so the confirmation / reset link can still be used.
+  static logPreview(info) {
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) console.log(`📬 [TEST INBOX] Open the letter here: ${previewUrl}`);
+  }
+
   static async sendConfirmationEmail(email, token) {
     try {
       const transporter = await this.getTransporter();
@@ -64,6 +71,7 @@ class EmailService {
       });
 
       console.log(`📧 [EMAIL SENT] Verification email delivered to: ${email}`);
+      this.logPreview(info);
     } catch (error) {
       console.error('Failed to send confirmation email via Nodemailer:', error);
     }
@@ -75,7 +83,7 @@ class EmailService {
       const resetUrl = `http://localhost:3000/api/auth/password-reset/${token}`;
       const senderEmail = process.env.SMTP_USER || 'no-reply@dollique.com';
 
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: `"Dollique" <${senderEmail}>`,
         to: email,
         subject: 'Dollique: Password Reset Request',
@@ -96,6 +104,7 @@ class EmailService {
       });
 
       console.log(`📧 [EMAIL SENT] Password reset email delivered to: ${email}`);
+      this.logPreview(info);
     } catch (error) {
       console.error('Failed to send password reset email via Nodemailer:', error);
     }
