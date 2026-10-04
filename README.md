@@ -135,7 +135,8 @@ The server will start at `http://localhost:3000`.
 | `GET` | `/api/users` | Get list of all users | Public |
 | `GET` | `/api/users/:user_id` | Get user profile data | Public |
 | `POST` | `/api/users` | Create user or admin (`[login, password, email, role]`) | Admin only |
-| `PATCH`| `/api/users/avatar` | Upload avatar image / set virtual doll config | Authenticated |
+| `PATCH`| `/api/users/avatar` | Upload the profile picture | Authenticated |
+| `GET`  | `/api/users/:user_id/doll` | Profile doll as ordered PNG layers + `use_doll_as_avatar` | Public |
 | `PATCH`| `/api/users/:user_id` | Update profile information | Owner / Admin |
 | `DELETE`| `/api/users/:user_id` | Delete user account | Owner / Admin |
 
@@ -180,5 +181,5 @@ The server will start at `http://localhost:3000`.
 
 ## 🌟 Creative Features (Act: Creative)
 1. **Favorites Hub:** Users can save important tutorials, restoration guides, or identification posts to their personal Favorites list.
-2. **Virtual Doll Avatar (`avatarConfig`):** Optional structured JSON configuration enabling users to customize and assemble a virtual doll avatar.
+2. **Profile Doll (`doll_config`):** Optional JSON of part IDs from the `doll_parts` catalog (set via `PATCH /api/users/:user_id`). With `use_doll_as_avatar: true` the doll is shown instead of the profile picture.
 3. **Automated Reputation System:** User rating reflects net community value (sum of all likes minus dislikes across all posts and comments).

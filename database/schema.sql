@@ -5,7 +5,7 @@ USE dollique_db;
 
 -- Drop old tables if they exist to guarantee clean recreation
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS avatar_parts;
+DROP TABLE IF EXISTS doll_parts;
 DROP TABLE IF EXISTS violations;
 DROP TABLE IF EXISTS appeals;
 DROP TABLE IF EXISTS notifications;
@@ -29,7 +29,8 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     is_email_confirmed BOOLEAN DEFAULT FALSE,
     profile_picture VARCHAR(255) DEFAULT '/uploads/avatars/default.png',
-    avatar_config JSON DEFAULT NULL,
+    doll_config JSON DEFAULT NULL,
+    use_doll_as_avatar BOOLEAN DEFAULT FALSE,
     bio TEXT DEFAULT NULL,
     rating INT DEFAULT 0,
     role ENUM('admin', 'user') DEFAULT 'user',
@@ -193,16 +194,15 @@ CREATE TABLE violations (
     INDEX idx_violation_target (type, target_id)
 ) ENGINE=InnoDB;
 
--- 13. Avatar parts (catalog of PNG layers the doll avatar is built from)
--- users.avatar_config stores part IDs: {"base": 1, "outfit": 3, "hair": null, "shoes": null, "accessories": []}
-CREATE TABLE avatar_parts (
+-- 13. Doll parts (catalog of PNG layers the profile doll is built from)
+-- users.doll_config stores part IDs: {"base": 1, "outfit": 3, "hair": null, "shoes": null, "accessories": []}
+CREATE TABLE doll_parts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category ENUM('base', 'hair', 'outfit', 'shoes', 'accessory') NOT NULL,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(255) NOT NULL,
-    back_image_url VARCHAR(255) DEFAULT NULL,
     layer INT NOT NULL DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_avatar_part_category (category, is_active)
+    INDEX idx_doll_part_category (category, is_active)
 ) ENGINE=InnoDB;

@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const AvatarPartModel = require('../models/AvatarPartModel');
-const AvatarService = require('../services/avatarService');
+const DollPartModel = require('../models/DollPartModel');
+const DollService = require('../services/dollService');
 
 const NAME_MAX_LENGTH = 100;
-const PARTS_URL = '/uploads/avatar-parts/';
+const PARTS_URL = '/uploads/doll_parts/';
 const uploadsRoot = path.join(__dirname, '../../uploads');
 
 // Only files uploaded through the API are removed; the seed layers that ship with the repo stay
@@ -13,15 +13,13 @@ function removeUploadedFile(url) {
   fs.unlink(path.join(uploadsRoot, url.replace('/uploads/', '')), () => {});
 }
 
-function uploadedUrl(req, field) {
-  const file = req.files && req.files[field] && req.files[field][0];
-  return file ? `${PARTS_URL}${file.filename}` : null;
+function uploadedUrl(req) {
+  return req.file ? `${PARTS_URL}${req.file.filename}` : null;
 }
 
-// Drop the files of a rejected request so they don't pile up on disk
+// Drop the file of a rejected request so it doesn't pile up on disk
 function discardUploads(req) {
-  removeUploadedFile(uploadedUrl(req, 'image'));
-  removeUploadedFile(uploadedUrl(req, 'back_image'));
+  removeUploadedFile(uploadedUrl(req));
 }
 
 function parseBoolean(value) {
@@ -43,8 +41,8 @@ function readFields(body, partial) {
   }
 
   if (body.category !== undefined || !partial) {
-    if (!AvatarService.CATEGORIES.includes(body.category)) {
-      return { error: `Category must be one of: ${AvatarService.CATEGORIES.join(', ')}.` };
+    if (!DollService.CATEGORIES.includes(body.category)) {
+      return { error: `Category must be one of: ${DollService.CATEGORIES.join(', ')}.` };
     }
     data.category = body.category;
   }
@@ -64,51 +62,51 @@ function readFields(body, partial) {
   return { data };
 }
 
-class AvatarPartController {
-  // GET /api/avatar-parts?category=outfit - Catalog for the doll editor
+class DollPartController {
+  // GET /api/doll-parts?category=outfit - Catalog for the doll editor
   // Everyone sees active parts; admins see all of them with usage counts (?active=true|false filters)
   static async getAllParts(req, res) {
     try {
       const { category, active } = req.query;
-      if (category && !AvatarService.CATEGORIES.includes(category)) {
-        return res.status(400).json({ error: `Category must be one of: ${AvatarService.CATEGORIES.join(', ')}.` });
+      if (category && !DollService.CATEGORIES.includes(category)) {
+        return res.status(400).json({ error: `Category must be one of: ${DollService.CATEGORIES.join(', ')}.` });
       }
 
       const isAdmin = req.user && req.user.role === 'admin';
-      let parts = await AvatarPartModel.findAll({ category, includeInactive: isAdmin });
+      let parts = await DollPartModel.findAll({ category, includeInactive: isAdmin });
 
       if (isAdmin) {
         const activeFilter = parseBoolean(active);
         if (activeFilter !== undefined && activeFilter !== null) {
           parts = parts.filter(p => Boolean(p.is_active) === activeFilter);
         }
-        const usage = await AvatarService.usageCounts();
+        const usage = await DollService.usageCounts();
         parts = parts.map(p => ({ ...p, used_by: usage.get(p.id) || 0 }));
       }
 
       return res.status(200).json(parts);
     } catch (error) {
-      console.error('Get avatar parts error:', error);
-      return res.status(500).json({ error: 'Internal server error while fetching avatar parts.' });
+      console.error('Get doll parts error:', error);
+      return res.status(500).json({ error: 'Internal server error while fetching doll parts.' });
     }
   }
 
-  // GET /api/avatar-parts/:part_id
+  // GET /api/doll-parts/:part_id
   static async getPartById(req, res) {
     try {
-      const part = await AvatarPartModel.findById(req.params.part_id);
-      if (!part) return res.status(404).json({ error: 'Avatar part not found.' });
+      const part = await DollPartModel.findById(req.params.part_id);
+      if (!part) return res.status(404).json({ error: 'Doll part not found.' });
       return res.status(200).json(part);
     } catch (error) {
-      console.error('Get avatar part error:', error);
-      return res.status(500).json({ error: 'Internal server error while fetching the avatar part.' });
+      console.error('Get doll part error:', error);
+      return res.status(500).json({ error: 'Internal server error while fetching the doll part.' });
     }
   }
 
-  // POST /api/avatar-parts - multipart: image (required), back_image, name, category, layer, is_active (admin)
+  // POST /api/doll-parts - multipart: image (required), name, category, layer, is_active (admin)
   static async createPart(req, res) {
     try {
-      const imageUrl = uploadedUrl(req, 'image');
+      const imageUrl = uploadedUrl(req);
       if (!imageUrl) {
         discardUploads(req);
         return res.status(400).json({ error: 'Upload the part picture in the "image" field (transparent PNG).' });
@@ -120,28 +118,27 @@ class AvatarPartController {
         return res.status(400).json({ error });
       }
 
-      const part = await AvatarPartModel.create({
+      const part = await DollPartModel.create({
         ...data,
-        layer: data.layer ?? AvatarService.DEFAULT_LAYERS[data.category],
+        layer: data.layer ?? DollService.DEFAULT_LAYERS[data.category],
         imageUrl,
-        backImageUrl: uploadedUrl(req, 'back_image'),
       });
 
-      return res.status(201).json({ message: 'Avatar part created successfully.', part });
+      return res.status(201).json({ message: 'Doll part created successfully.', part });
     } catch (error) {
       discardUploads(req);
-      console.error('Create avatar part error:', error);
-      return res.status(500).json({ error: 'Internal server error while creating the avatar part.' });
+      console.error('Create doll part error:', error);
+      return res.status(500).json({ error: 'Internal server error while creating the doll part.' });
     }
   }
 
-  // PATCH /api/avatar-parts/:part_id - any of the create fields; remove_back_image=true drops the back picture (admin)
+  // PATCH /api/doll-parts/:part_id - any of the create fields, a new image replaces the old one (admin)
   static async updatePart(req, res) {
     try {
-      const part = await AvatarPartModel.findById(req.params.part_id);
+      const part = await DollPartModel.findById(req.params.part_id);
       if (!part) {
         discardUploads(req);
-        return res.status(404).json({ error: 'Avatar part not found.' });
+        return res.status(404).json({ error: 'Doll part not found.' });
       }
 
       const { data, error } = readFields(req.body || {}, true);
@@ -152,7 +149,7 @@ class AvatarPartController {
 
       // Moving a worn part to another category would break the dolls that wear it
       if (data.category && data.category !== part.category) {
-        const usedBy = (await AvatarService.usageCounts()).get(part.id) || 0;
+        const usedBy = (await DollService.usageCounts()).get(part.id) || 0;
         if (usedBy > 0) {
           discardUploads(req);
           return res.status(409).json({
@@ -161,51 +158,46 @@ class AvatarPartController {
         }
       }
 
-      const newImage = uploadedUrl(req, 'image');
-      const newBackImage = uploadedUrl(req, 'back_image');
+      const newImage = uploadedUrl(req);
       if (newImage) data.imageUrl = newImage;
-      if (newBackImage) data.backImageUrl = newBackImage;
-      else if (parseBoolean((req.body || {}).remove_back_image)) data.backImageUrl = null;
 
       if (Object.keys(data).length === 0) {
         return res.status(400).json({ error: 'Nothing to update.' });
       }
 
-      const updated = await AvatarPartModel.update(part.id, data);
+      const updated = await DollPartModel.update(part.id, data);
       if (newImage) removeUploadedFile(part.image_url);
-      if (data.backImageUrl !== undefined) removeUploadedFile(part.back_image_url);
 
-      return res.status(200).json({ message: 'Avatar part updated successfully.', part: updated });
+      return res.status(200).json({ message: 'Doll part updated successfully.', part: updated });
     } catch (error) {
       discardUploads(req);
-      console.error('Update avatar part error:', error);
-      return res.status(500).json({ error: 'Internal server error while updating the avatar part.' });
+      console.error('Update doll part error:', error);
+      return res.status(500).json({ error: 'Internal server error while updating the doll part.' });
     }
   }
 
-  // DELETE /api/avatar-parts/:part_id (admin). Worn parts can only be deactivated.
+  // DELETE /api/doll-parts/:part_id (admin). Worn parts can only be deactivated.
   static async deletePart(req, res) {
     try {
-      const part = await AvatarPartModel.findById(req.params.part_id);
-      if (!part) return res.status(404).json({ error: 'Avatar part not found.' });
+      const part = await DollPartModel.findById(req.params.part_id);
+      if (!part) return res.status(404).json({ error: 'Doll part not found.' });
 
-      const usedBy = (await AvatarService.usageCounts()).get(part.id) || 0;
+      const usedBy = (await DollService.usageCounts()).get(part.id) || 0;
       if (usedBy > 0) {
         return res.status(409).json({
           error: `Part #${part.id} is worn by ${usedBy} user(s). Deactivate it instead: they keep it, nobody new can pick it.`,
         });
       }
 
-      await AvatarPartModel.delete(part.id);
+      await DollPartModel.delete(part.id);
       removeUploadedFile(part.image_url);
-      removeUploadedFile(part.back_image_url);
 
-      return res.status(200).json({ message: 'Avatar part deleted successfully.' });
+      return res.status(200).json({ message: 'Doll part deleted successfully.' });
     } catch (error) {
-      console.error('Delete avatar part error:', error);
-      return res.status(500).json({ error: 'Internal server error while deleting the avatar part.' });
+      console.error('Delete doll part error:', error);
+      return res.status(500).json({ error: 'Internal server error while deleting the doll part.' });
     }
   }
 }
 
-module.exports = AvatarPartController;
+module.exports = DollPartController;

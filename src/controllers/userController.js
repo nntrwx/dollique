@@ -7,7 +7,7 @@ const NotificationModel = require('../models/NotificationModel');
 const ViolationModel = require('../models/ViolationModel');
 const ViolationService = require('../services/violationService');
 const EmailService = require('../services/emailService');
-const AvatarService = require('../services/avatarService');
+const DollService = require('../services/dollService');
 const { validateLogin, validateEmail } = require('../utils/validators');
 
 const BIO_MAX_LENGTH = 500;
@@ -17,7 +17,7 @@ const RESETTABLE_FIELDS = {
   full_name: 'display name',
   bio: 'profile description',
 };
-// The virtual doll avatar (avatar_config) is built from site parts only, so it is never moderated
+// The profile doll (doll_config) is built from site parts only, so it is never moderated
 
 class UserController {
   // GET /api/users - Get all users
@@ -49,20 +49,25 @@ class UserController {
     }
   }
 
-  // GET /api/users/:user_id/avatar - The doll as ordered picture layers (first = bottom)
-  static async getUserAvatar(req, res) {
+  // GET /api/users/:user_id/doll - The profile doll as ordered picture layers (first = bottom)
+  static async getUserDoll(req, res) {
     try {
       const user = await UserModel.findById(req.params.user_id);
       if (!user) {
         return res.status(404).json({ error: 'User not found.' });
       }
 
-      const config = AvatarService.parseStored(user.avatar_config);
-      const layers = config ? await AvatarService.buildLayers(config) : [];
-      return res.status(200).json({ user_id: user.id, avatar_config: config, layers });
+      const config = DollService.parseStored(user.doll_config);
+      const layers = config ? await DollService.buildLayers(config) : [];
+      return res.status(200).json({
+        user_id: user.id,
+        use_doll_as_avatar: Boolean(user.use_doll_as_avatar),
+        doll_config: config,
+        layers,
+      });
     } catch (error) {
-      console.error('Get user avatar error:', error);
-      return res.status(500).json({ error: 'Internal server error while building the avatar.' });
+      console.error('Get user doll error:', error);
+      return res.status(500).json({ error: 'Internal server error while building the doll.' });
     }
   }
 
@@ -127,36 +132,18 @@ class UserController {
     }
   }
 
-  // PATCH /api/users/avatar - Upload user avatar
+  // PATCH /api/users/avatar - Upload the profile picture (the doll is edited via PATCH /api/users/:user_id)
   static async uploadAvatar(req, res) {
     try {
       const userId = req.user.id;
 
-      // If a file was uploaded via multer
-      let avatarUrl = null;
-      if (req.file) {
-        avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      if (!req.file) {
+        return res.status(400).json({ error: 'No avatar image file provided.' });
       }
 
-      const { avatar_config } = req.body || {};
-      const updateData = {};
-
-      if (avatarUrl) {
-        updateData.profilePicture = avatarUrl;
-      }
-
-      if (avatar_config !== undefined) {
-        const current = await UserModel.findById(userId);
-        const { config, error } = await AvatarService.validateConfig(avatar_config, current && current.avatar_config);
-        if (error) return res.status(400).json({ error });
-        updateData.avatarConfig = config;
-      }
-
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ error: 'No avatar image file or avatar_config provided.' });
-      }
-
-      const updatedUser = await UserModel.updateProfile(userId, updateData);
+      const updatedUser = await UserModel.updateProfile(userId, {
+        profilePicture: `/uploads/avatars/${req.file.filename}`,
+      });
 
       return res.status(200).json({
         message: 'Avatar updated successfully.',
@@ -183,7 +170,7 @@ class UserController {
         return res.status(404).json({ error: 'User not found.' });
       }
 
-      const { login, full_name, email, role, avatar_config, bio } = req.body;
+      const { login, full_name, email, role, doll_config, use_doll_as_avatar, bio } = req.body;
       const updateData = {};
 
       if (role) {
@@ -226,11 +213,25 @@ class UserController {
         updateData.bio = cleanBio;
       }
 
-      if (avatar_config !== undefined) {
-        const { config, error } = await AvatarService.validateConfig(avatar_config, targetUser.avatar_config);
+      if (doll_config !== undefined) {
+        const { config, error } = await DollService.validateConfig(doll_config, targetUser.doll_config);
         if (error) return res.status(400).json({ error });
-        updateData.avatarConfig = config;
+        updateData.dollConfig = config;
       }
+
+      // The user picks what the round avatar shows: the uploaded picture or the doll
+      if (use_doll_as_avatar !== undefined) {
+        if (typeof use_doll_as_avatar !== 'boolean') {
+          return res.status(400).json({ error: 'use_doll_as_avatar must be true or false.' });
+        }
+        const hasDoll = updateData.dollConfig !== undefined ? Boolean(updateData.dollConfig) : Boolean(targetUser.doll_config);
+        if (use_doll_as_avatar && !hasDoll) {
+          return res.status(400).json({ error: 'Build a doll first (doll_config) to use it as your avatar.' });
+        }
+        updateData.useDollAsAvatar = use_doll_as_avatar;
+      }
+      // Removing the doll switches the avatar back to the picture
+      if (updateData.dollConfig === null) updateData.useDollAsAvatar = false;
 
       // A user changing their own email must confirm the new address; an admin's change is trusted
       const needsConfirmation = Boolean(updateData.email) && requester.role !== 'admin';

@@ -11,7 +11,7 @@ const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const appealRoutes = require('./routes/appealRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-const avatarPartRoutes = require('./routes/avatarPartRoutes');
+const dollPartRoutes = require('./routes/dollPartRoutes');
 
 const app = express();
 
@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
       comments: '/api/comments',
       appeals: '/api/appeals',
       notifications: '/api/notifications',
-      avatarParts: '/api/avatar-parts',
+      dollParts: '/api/doll-parts',
     },
   });
 });
@@ -58,7 +58,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/appeals', appealRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/avatar-parts', avatarPartRoutes);
+app.use('/api/doll-parts', dollPartRoutes);
 
 // Global error handler (handles Multer errors as 400 Bad Request)
 app.use((err, req, res, next) => {

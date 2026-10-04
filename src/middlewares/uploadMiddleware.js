@@ -4,9 +4,9 @@ const fs = require('fs');
 
 const avatarsDir = path.join(__dirname, '../../uploads/avatars');
 const postsDir = path.join(__dirname, '../../uploads/posts');
-const avatarPartsDir = path.join(__dirname, '../../uploads/avatar-parts');
+const dollPartsDir = path.join(__dirname, '../../uploads/doll_parts');
 
-for (const dir of [avatarsDir, postsDir, avatarPartsDir]) {
+for (const dir of [avatarsDir, postsDir, dollPartsDir]) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -41,9 +41,9 @@ const postStorage = multer.diskStorage({
   },
 });
 
-const avatarPartStorage = multer.diskStorage({
+const dollPartStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, avatarPartsDir);
+    cb(null, dollPartsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -64,7 +64,7 @@ const transparentImageFilter = (req, file, cb) => {
   if (EXTENSIONS[file.mimetype] && file.mimetype !== 'image/jpeg') {
     cb(null, true);
   } else {
-    cb(new Error('Avatar parts must be transparent image files (PNG, WEBP, GIF)!'), false);
+    cb(new Error('Doll parts must be transparent image files (PNG, WEBP, GIF)!'), false);
   }
 };
 
@@ -80,8 +80,8 @@ const uploadPostImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-const uploadAvatarPart = multer({
-  storage: avatarPartStorage,
+const uploadDollPart = multer({
+  storage: dollPartStorage,
   fileFilter: transparentImageFilter,
   limits: { fileSize: 2 * 1024 * 1024 },
 });
@@ -89,5 +89,5 @@ const uploadAvatarPart = multer({
 module.exports = {
   uploadAvatar,
   uploadPostImage,
-  uploadAvatarPart,
+  uploadDollPart,
 };

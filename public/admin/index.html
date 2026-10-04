@@ -377,7 +377,7 @@
           </button>
         </li>
         <li>
-          <button class="tab-btn" onclick="switchTab('avatarParts')">
+          <button class="tab-btn" onclick="switchTab('dollParts')">
             <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="6" r="4"></circle><path d="M8 22l1.5-8h5L16 22"></path><path d="M9.5 14L6 11"></path><path d="M14.5 14L18 11"></path></svg>
             Doll Parts
           </button>
@@ -550,11 +550,11 @@
       </div>
 
       <!-- Вкладка деталей куклы -->
-      <div id="avatarPartsTab" class="card" style="display: none;">
+      <div id="dollPartsTab" class="card" style="display: none;">
         <div class="card-header">
           <div><h3 class="card-title">Doll Parts Catalog</h3><p class="card-desc">Layers users build their doll from. Retire a part to hide it from the editor: people who already wear it keep it</p></div>
           <div class="toolbar">
-            <select id="partCategoryFilter" class="filter-select" onchange="loadAvatarParts()">
+            <select id="partCategoryFilter" class="filter-select" onchange="loadDollParts()">
               <option value="">All categories</option>
               <option value="base">Bases</option>
               <option value="hair">Hair</option>
@@ -562,7 +562,7 @@
               <option value="shoes">Shoes</option>
               <option value="accessory">Accessories</option>
             </select>
-            <select id="partActiveFilter" class="filter-select" onchange="loadAvatarParts()">
+            <select id="partActiveFilter" class="filter-select" onchange="loadDollParts()">
               <option value="">Active and retired</option>
               <option value="true">Active only</option>
               <option value="false">Retired only</option>
@@ -728,7 +728,7 @@
     }
 
     function singular(entity) {
-      return { categories: 'category', posts: 'post', users: 'user', comments: 'comment', avatarParts: 'avatar part' }[entity] || entity;
+      return { categories: 'category', posts: 'post', users: 'user', comments: 'comment', dollParts: 'doll part' }[entity] || entity;
     }
 
     function showError(message) {
@@ -789,7 +789,7 @@
       loadCategories();
       loadUsers();
       loadAppeals();
-      loadAvatarParts();
+      loadDollParts();
     }
 
     async function logout() {
@@ -808,7 +808,7 @@
       document.getElementById('categoriesTab').style.display = 'none';
       document.getElementById('usersTab').style.display = 'none';
       document.getElementById('appealsTab').style.display = 'none';
-      document.getElementById('avatarPartsTab').style.display = 'none';
+      document.getElementById('dollPartsTab').style.display = 'none';
 
       event.currentTarget.classList.add('active');
       document.getElementById(`${tab}Tab`).style.display = 'block';
@@ -819,7 +819,7 @@
       else if (tab === 'categories') loadCategories();
       else if (tab === 'users') loadUsers();
       else if (tab === 'appeals') loadAppeals();
-      else if (tab === 'avatarParts') loadAvatarParts();
+      else if (tab === 'dollParts') loadDollParts();
     }
 
     async function loadStats() {
@@ -1370,7 +1370,7 @@
       });
       if (answer === null || answer === false) return;
       const endpoint = entity === 'comments' ? `/api/comments/${id}`
-        : entity === 'avatarParts' ? `/api/avatar-parts/${id}` : `/api/${entity}/${id}`;
+        : entity === 'dollParts' ? `/api/doll-parts/${id}` : `/api/${entity}/${id}`;
       const options = { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } };
       if (moderated && answer) {
         options.headers['Content-Type'] = 'application/json';
@@ -1383,7 +1383,7 @@
         else if (entity === 'comments') { loadPosts(); }
         else if (entity === 'categories') { loadCategories(); loadStats(); }
         else if (entity === 'users') { loadUsers(); loadStats(); }
-        else if (entity === 'avatarParts') { loadAvatarParts(); }
+        else if (entity === 'dollParts') { loadDollParts(); }
       } else {
         const err = await res.json().catch(() => ({}));
         showError(err.error || 'Failed to delete.');
@@ -1391,11 +1391,11 @@
     }
 
     // ---------- Doll parts catalog ----------
-    let avatarPartsCache = [];
+    let dollPartsCache = [];
     const PART_CATEGORIES = { base: 'Base', hair: 'Hair', outfit: 'Outfit', shoes: 'Shoes', accessory: 'Accessory' };
-    const PART_DEFAULT_LAYERS = { base: 10, shoes: 20, outfit: 30, hair: 40, accessory: 50 };
+    const PART_DEFAULT_LAYERS = { base: 10, hair: 20, shoes: 20, outfit: 30, accessory: 50 };
 
-    async function loadAvatarParts() {
+    async function loadDollParts() {
       const category = document.getElementById('partCategoryFilter').value;
       const active = document.getElementById('partActiveFilter').value;
       const params = new URLSearchParams();
@@ -1403,12 +1403,12 @@
       if (active) params.set('active', active);
       const grid = document.getElementById('partsGrid');
       try {
-        const res = await fetch('/api/avatar-parts' + (params.toString() ? `?${params}` : ''), {
+        const res = await fetch('/api/doll-parts' + (params.toString() ? `?${params}` : ''), {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         const parts = await res.json();
         if (!res.ok) { grid.innerHTML = `<div class="parts-empty">${escapeHtml(parts.error || 'Failed to load parts.')}</div>`; return; }
-        avatarPartsCache = parts;
+        dollPartsCache = parts;
 
         // Parts are drawn over a faded base so it's easy to see whether they line up
         const guide = parts.find(p => p.category === 'base' && p.is_active) || parts.find(p => p.category === 'base');
@@ -1419,18 +1419,17 @@
         grid.innerHTML = parts.map(p => `
           <div class="part-card ${p.is_active ? '' : 'is-retired'}">
             <div class="part-preview">
-              ${p.back_image_url ? `<img src="${escapeHtml(p.back_image_url)}" alt="">` : ''}
               ${guide && p.category !== 'base' ? `<img class="is-guide" src="${escapeHtml(guide.image_url)}" alt="">` : ''}
               <img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}">
             </div>
             <div class="part-body">
               <div class="part-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
-              <div><span class="cat-tag">${PART_CATEGORIES[p.category] || escapeHtml(p.category)}</span>${p.back_image_url ? '<span class="cat-tag">+ back</span>' : ''}</div>
+              <div><span class="cat-tag">${PART_CATEGORIES[p.category] || escapeHtml(p.category)}</span></div>
               <div class="part-meta">#${p.id} · layer ${p.layer} · worn by ${p.used_by ?? 0}</div>
               <div class="part-actions">
-                <button class="btn-status-toggle ${p.is_active ? 'is-active' : 'is-inactive'}" onclick="toggleAvatarPart(${p.id}, ${!p.is_active})">${p.is_active ? 'Active' : 'Retired'}</button>
-                <button class="btn" onclick="openEditModal('avatarParts', ${p.id})">Edit</button>
-                <button class="btn btn-danger" onclick="deleteRecord('avatarParts', ${p.id})">Delete</button>
+                <button class="btn-status-toggle ${p.is_active ? 'is-active' : 'is-inactive'}" onclick="toggleDollPart(${p.id}, ${!p.is_active})">${p.is_active ? 'Active' : 'Retired'}</button>
+                <button class="btn" onclick="openEditModal('dollParts', ${p.id})">Edit</button>
+                <button class="btn btn-danger" onclick="deleteRecord('dollParts', ${p.id})">Delete</button>
               </div>
             </div>
           </div>
@@ -1438,7 +1437,7 @@
       } catch (e) { console.error(e); }
     }
 
-    function avatarPartFields(part, isEdit) {
+    function dollPartFields(part, isEdit) {
       const options = Object.entries(PART_CATEGORIES)
         .map(([value, label]) => `<option value="${value}" ${part.category === value ? 'selected' : ''}>${label}</option>`).join('');
       return `
@@ -1448,27 +1447,21 @@
           <input type="number" name="layer" min="0" max="1000" value="${isEdit ? escapeHtml(part.layer) : ''}" placeholder="${PART_DEFAULT_LAYERS[part.category] ?? ''}"></div>
         <div class="form-group"><label>${isEdit ? 'Replace picture' : 'Picture'} <span class="form-hint">(transparent PNG, same canvas as the base)</span></label>
           <input type="file" name="image" accept="image/png,image/webp,image/gif" ${isEdit ? '' : 'required'}></div>
-        <div class="form-group"><label>Back picture <span class="form-hint">(optional: hair behind the body, wings)</span></label>
-          <input type="file" name="back_image" accept="image/png,image/webp,image/gif"></div>
-        ${isEdit && part.back_image_url ? '<label class="form-check"><input type="checkbox" name="remove_back_image"> Remove the current back picture</label>' : ''}
         <label class="form-check"><input type="checkbox" name="is_active" ${part.is_active ? 'checked' : ''}> Available in the doll editor</label>
       `;
     }
 
-    async function submitAvatarPart(form) {
+    async function submitDollPart(form) {
       const data = new FormData(form);
-      // Empty file inputs and unchecked boxes must not reach the API as junk values
-      for (const field of ['image', 'back_image']) {
-        const file = data.get(field);
-        if (!file || !file.size) data.delete(field);
-      }
+      // An empty file input and unchecked boxes must not reach the API as junk values
+      const file = data.get('image');
+      if (!file || !file.size) data.delete('image');
       if (data.get('layer') === '') data.delete('layer');
       data.set('is_active', form.is_active.checked ? 'true' : 'false');
-      if (form.remove_back_image) data.set('remove_back_image', form.remove_back_image.checked ? 'true' : 'false');
 
       const isEdit = Boolean(editingItem);
       try {
-        const res = await fetch(isEdit ? `/api/avatar-parts/${editingItem.id}` : '/api/avatar-parts', {
+        const res = await fetch(isEdit ? `/api/doll-parts/${editingItem.id}` : '/api/doll-parts', {
           method: isEdit ? 'PATCH' : 'POST',
           headers: { 'Authorization': 'Bearer ' + token },
           body: data
@@ -1477,13 +1470,13 @@
         if (!res.ok) return showError(result.error || 'Operation failed.');
         showToast(isEdit ? 'Part updated!' : 'Part added to the catalog!');
         closeModal();
-        loadAvatarParts();
+        loadDollParts();
       } catch (e) { showError('Server request failed.'); }
     }
 
-    async function toggleAvatarPart(id, makeActive) {
+    async function toggleDollPart(id, makeActive) {
       try {
-        const res = await fetch(`/api/avatar-parts/${id}`, {
+        const res = await fetch(`/api/doll-parts/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({ is_active: makeActive })
@@ -1491,7 +1484,7 @@
         const result = await res.json().catch(() => ({}));
         if (!res.ok) return showError(result.error || 'Failed to update the part.');
         showToast(makeActive ? `Part #${id} is back in the editor.` : `Part #${id} retired: wearers keep it.`);
-        loadAvatarParts();
+        loadDollParts();
       } catch (e) { showError('Server request failed.'); }
     }
 
@@ -1518,8 +1511,8 @@
           <div class="form-group"><label>Title</label><input required name="title"></div>
           <div class="form-group"><label>Description</label><textarea name="description" rows="3"></textarea></div>
         `;
-      } else if (activeTab === 'avatarParts') {
-        fields.innerHTML = avatarPartFields({ category: document.getElementById('partCategoryFilter').value || 'outfit', is_active: true }, false);
+      } else if (activeTab === 'dollParts') {
+        fields.innerHTML = dollPartFields({ category: document.getElementById('partCategoryFilter').value || 'outfit', is_active: true }, false);
       }
       document.getElementById('crudModal').style.display = 'flex';
     }
@@ -1534,7 +1527,7 @@
 
       const cat = categoriesCache.find(c => c.id === id) || {};
       const user = usersCache.find(u => u.id === id) || {};
-      const part = avatarPartsCache.find(p => p.id === id) || {};
+      const part = dollPartsCache.find(p => p.id === id) || {};
       if (entity === 'categories') {
         fields.innerHTML = `
           <div class="form-group"><label>Title</label><input required name="title" value="${escapeHtml(cat.title)}"></div>
@@ -1548,8 +1541,8 @@
           <div class="form-group"><label>Profile description</label><textarea name="bio" rows="3" maxlength="500">${escapeHtml(user.bio || '')}</textarea></div>
           <div class="form-group"><label>Role</label><select name="role"><option value="user" ${user.role==='user'?'selected':''}>User</option><option value="admin" ${user.role==='admin'?'selected':''}>Admin</option></select></div>
         `;
-      } else if (entity === 'avatarParts') {
-        fields.innerHTML = avatarPartFields(part, true);
+      } else if (entity === 'dollParts') {
+        fields.innerHTML = dollPartFields(part, true);
       } else if (entity === 'posts') {
         fields.innerHTML = `
           <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Notice: Post content is immutable per specification rules.</p>
@@ -1566,7 +1559,7 @@
 
     async function handleFormSubmit(e) {
       e.preventDefault();
-      if ((editingItem ? editingItem.entity : activeTab) === 'avatarParts') return submitAvatarPart(e.target);
+      if ((editingItem ? editingItem.entity : activeTab) === 'dollParts') return submitDollPart(e.target);
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData.entries());
 

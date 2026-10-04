@@ -16,8 +16,8 @@ router.patch('/avatar', authMiddleware, uploadAvatar.single('avatar'), UserContr
 // GET /api/users/:user_id - Get specific user data
 router.get('/:user_id', UserController.getUserById);
 
-// GET /api/users/:user_id/avatar - Doll avatar resolved into picture layers
-router.get('/:user_id/avatar', UserController.getUserAvatar);
+// GET /api/users/:user_id/doll - Profile doll resolved into picture layers
+router.get('/:user_id/doll', UserController.getUserDoll);
 
 // POST /api/users - Create user (Admin only)
 router.post('/', authMiddleware, requireAdmin, UserController.createUser);

@@ -26,7 +26,7 @@ async function initDatabase() {
 
     // 2. Clear old data for clean re-initialization
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
-    await connection.query('TRUNCATE TABLE avatar_parts');
+    await connection.query('TRUNCATE TABLE doll_parts');
     await connection.query('TRUNCATE TABLE violations');
     await connection.query('TRUNCATE TABLE appeals');
     await connection.query('TRUNCATE TABLE notifications');
@@ -55,57 +55,57 @@ async function initDatabase() {
     // Hash common test password 'password123'
     const passwordHash = await bcrypt.hash('password123', 10);
 
-    // 4. Seed 39 Avatar parts (doll layers; PNGs ship in uploads/avatar_parts/<folder>, 512x512 canvas)
+    // 4. Seed 37 Doll parts (profile doll layers; PNGs ship in uploads/doll_parts/<folder>, all on the same canvas)
     await connection.query(
-      `INSERT INTO avatar_parts (id, category, name, image_url, back_image_url, layer, is_active) VALUES
-      (1, 'base', 'Porcelain, button eyes', '/uploads/avatar_parts/base/white_buttons.png', NULL, 10, 1),
-      (2, 'base', 'Porcelain, glossy eyes', '/uploads/avatar_parts/base/white_black.png', NULL, 10, 1),
-      (3, 'base', 'Ivory, sleepy eyes', '/uploads/avatar_parts/base/white_sleepy.png', NULL, 10, 1),
-      (4, 'base', 'Beige, amber eyes', '/uploads/avatar_parts/base/dark_orange.png', NULL, 10, 1),
-      (5, 'base', 'Beige, eyepatch', '/uploads/avatar_parts/base/brown_oneeye.png', NULL, 10, 1),
-      (6, 'base', 'Tan, green eyes', '/uploads/avatar_parts/base/yellow_green.png', NULL, 10, 1),
-      (7, 'base', 'Tan, closed eyes', '/uploads/avatar_parts/base/yellow_closed.png', NULL, 10, 1),
-      (8, 'base', 'Deep brown, golden eyes', '/uploads/avatar_parts/base/dark_yellow.png', NULL, 10, 1),
-      (9, 'base', 'Deep brown, grey eyes', '/uploads/avatar_parts/base/dark_grey.png', NULL, 10, 1),
-      (10, 'outfit', 'Maid dress', '/uploads/avatar_parts/clothes/maid.png', NULL, 30, 1),
-      (11, 'outfit', 'Striped pinafore', '/uploads/avatar_parts/clothes/pinafore.png', NULL, 30, 1),
-      (12, 'outfit', 'White lace nightgown', '/uploads/avatar_parts/clothes/white_dress.png', NULL, 30, 1),
-      (13, 'outfit', 'Lavender lolita dress', '/uploads/avatar_parts/clothes/purple_dress.png', NULL, 30, 1),
-      (14, 'outfit', 'Gothic lolita dress', '/uploads/avatar_parts/clothes/gothic_dress.png', NULL, 30, 1),
-      (15, 'outfit', 'Gothic vest and shorts', '/uploads/avatar_parts/clothes/gothic_outfit.png', NULL, 30, 1),
-      (16, 'outfit', 'School blazer', '/uploads/avatar_parts/clothes/school_outfit.png', NULL, 30, 1),
-      (17, 'outfit', 'Pink cardigan and plaid skirt', '/uploads/avatar_parts/clothes/cardigan.png', NULL, 30, 1),
-      (18, 'hair', 'Ash messy bun', '/uploads/avatar_parts/hair/ash_bun.png', NULL, 20, 1),
-      (19, 'hair', 'Black drill curls', '/uploads/avatar_parts/hair/black_curls.png', NULL, 20, 1),
-      (20, 'hair', 'Blonde twin tails', '/uploads/avatar_parts/hair/blonde_tails.png', NULL, 20, 1),
-      (21, 'hair', 'Dark curly crop', '/uploads/avatar_parts/hair/dark_boyhair.png', NULL, 20, 1),
-      (22, 'hair', 'Silver shaggy cut', '/uploads/avatar_parts/hair/grey_short.png', NULL, 20, 1),
-      (23, 'hair', 'Lavender side ponytail', '/uploads/avatar_parts/hair/lavender_tail.png', NULL, 20, 1),
-      (24, 'hair', 'Lilac bob', '/uploads/avatar_parts/hair/lily_short.png', NULL, 20, 1),
-      (25, 'hair', 'Mint braids', '/uploads/avatar_parts/hair/mint_brades.png', NULL, 20, 1),
-      (26, 'hair', 'Pink waves', '/uploads/avatar_parts/hair/pink_wave.png', NULL, 20, 1),
-      (27, 'hair', 'Chocolate mint twin tails', '/uploads/avatar_parts/hair/two_tails_blackteal.png', NULL, 20, 1),
-      (28, 'shoes', 'Black shoes', '/uploads/avatar_parts/shoes/black_shoes.png', NULL, 20, 1),
-      (29, 'shoes', 'Brown lace-up boots', '/uploads/avatar_parts/shoes/boots.png', NULL, 20, 1),
-      (30, 'shoes', 'Cream ballet flats', '/uploads/avatar_parts/shoes/cream_shoes.png', NULL, 20, 1),
-      (31, 'shoes', 'Mary Janes with socks', '/uploads/avatar_parts/shoes/mary_jane.png', NULL, 20, 1),
-      (32, 'shoes', 'Pink ballet flats', '/uploads/avatar_parts/shoes/pink_shoes.png', NULL, 20, 1),
-      (33, 'accessory', 'Black ribbon bow', '/uploads/avatar_parts/accs/black_ribbon.png', NULL, 50, 1),
-      (34, 'accessory', 'Cat ears', '/uploads/avatar_parts/accs/cat_ears.png', NULL, 50, 1),
-      (35, 'accessory', 'Cross hair clip', '/uploads/avatar_parts/accs/cross.png', NULL, 50, 1),
-      (36, 'accessory', 'Nurse cap', '/uploads/avatar_parts/accs/nurse_hat.png', NULL, 50, 1),
-      (37, 'accessory', 'Angel wing clips', '/uploads/avatar_parts/accs/wings.png', NULL, 50, 1)`
+      `INSERT INTO doll_parts (id, category, name, image_url, layer, is_active) VALUES
+      (1, 'base', 'Porcelain, button eyes', '/uploads/doll_parts/base/white_buttons.png', 10, 1),
+      (2, 'base', 'Porcelain, glossy eyes', '/uploads/doll_parts/base/white_black.png', 10, 1),
+      (3, 'base', 'Ivory, sleepy eyes', '/uploads/doll_parts/base/white_sleepy.png', 10, 1),
+      (4, 'base', 'Beige, amber eyes', '/uploads/doll_parts/base/dark_orange.png', 10, 1),
+      (5, 'base', 'Beige, eyepatch', '/uploads/doll_parts/base/brown_oneeye.png', 10, 1),
+      (6, 'base', 'Tan, green eyes', '/uploads/doll_parts/base/yellow_green.png', 10, 1),
+      (7, 'base', 'Tan, closed eyes', '/uploads/doll_parts/base/yellow_closed.png', 10, 1),
+      (8, 'base', 'Deep brown, golden eyes', '/uploads/doll_parts/base/dark_yellow.png', 10, 1),
+      (9, 'base', 'Deep brown, grey eyes', '/uploads/doll_parts/base/dark_grey.png', 10, 1),
+      (10, 'outfit', 'Maid dress', '/uploads/doll_parts/clothes/maid.png', 30, 1),
+      (11, 'outfit', 'Striped pinafore', '/uploads/doll_parts/clothes/pinafore.png', 30, 1),
+      (12, 'outfit', 'White lace nightgown', '/uploads/doll_parts/clothes/white_dress.png', 30, 1),
+      (13, 'outfit', 'Lavender lolita dress', '/uploads/doll_parts/clothes/purple_dress.png', 30, 1),
+      (14, 'outfit', 'Gothic lolita dress', '/uploads/doll_parts/clothes/gothic_dress.png', 30, 1),
+      (15, 'outfit', 'Gothic vest and shorts', '/uploads/doll_parts/clothes/gothic_outfit.png', 30, 1),
+      (16, 'outfit', 'School blazer', '/uploads/doll_parts/clothes/school_outfit.png', 30, 1),
+      (17, 'outfit', 'Pink cardigan and plaid skirt', '/uploads/doll_parts/clothes/cardigan.png', 30, 1),
+      (18, 'hair', 'Ash messy bun', '/uploads/doll_parts/hair/ash_bun.png', 20, 1),
+      (19, 'hair', 'Black drill curls', '/uploads/doll_parts/hair/black_curls.png', 20, 1),
+      (20, 'hair', 'Blonde twin tails', '/uploads/doll_parts/hair/blonde_tails.png', 20, 1),
+      (21, 'hair', 'Dark curly crop', '/uploads/doll_parts/hair/dark_boyhair.png', 20, 1),
+      (22, 'hair', 'Silver shaggy cut', '/uploads/doll_parts/hair/grey_short.png', 20, 1),
+      (23, 'hair', 'Lavender side ponytail', '/uploads/doll_parts/hair/lavender_tail.png', 20, 1),
+      (24, 'hair', 'Lilac bob', '/uploads/doll_parts/hair/lily_short.png', 20, 1),
+      (25, 'hair', 'Mint braids', '/uploads/doll_parts/hair/mint_brades.png', 20, 1),
+      (26, 'hair', 'Pink waves', '/uploads/doll_parts/hair/pink_wave.png', 20, 1),
+      (27, 'hair', 'Chocolate mint twin tails', '/uploads/doll_parts/hair/two_tails_blackteal.png', 20, 1),
+      (28, 'shoes', 'Black shoes', '/uploads/doll_parts/shoes/black_shoes.png', 20, 1),
+      (29, 'shoes', 'Brown lace-up boots', '/uploads/doll_parts/shoes/boots.png', 20, 1),
+      (30, 'shoes', 'Cream ballet flats', '/uploads/doll_parts/shoes/cream_shoes.png', 20, 1),
+      (31, 'shoes', 'Mary Janes with socks', '/uploads/doll_parts/shoes/mary_jane.png', 20, 1),
+      (32, 'shoes', 'Pink ballet flats', '/uploads/doll_parts/shoes/pink_shoes.png', 20, 1),
+      (33, 'accessory', 'Black ribbon bow', '/uploads/doll_parts/accs/black_ribbon.png', 50, 1),
+      (34, 'accessory', 'Cat ears', '/uploads/doll_parts/accs/cat_ears.png', 50, 1),
+      (35, 'accessory', 'Cross hair clip', '/uploads/doll_parts/accs/cross.png', 50, 1),
+      (36, 'accessory', 'Nurse cap', '/uploads/doll_parts/accs/nurse_hat.png', 50, 1),
+      (37, 'accessory', 'Angel wing clips', '/uploads/doll_parts/accs/wings.png', 50, 1)`
     );
-    console.log('✅ Avatar parts seeded: 37 entries (2 retired outfits).');
+    console.log('✅ Doll parts seeded: 37 entries.');
 
     // 5. Seed 5 Users (All English)
     await connection.query(
-      `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, avatar_config, bio) VALUES
-      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"base":3,"hair":29,"outfit":14,"shoes":30,"accessories":[35]}', 'Keeping Dollique friendly and bootleg-free.'),
-      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"base":1,"hair":26,"outfit":10,"shoes":31,"accessories":[36]}', 'OOAK repaints and pastel faceups, mostly Monster High.'),
-      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', '{"base":5,"hair":25,"outfit":12,"shoes":31,"accessories":[37]}', 'I fix sticky vinyl, yellowed PVC and broken joints.'),
-      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', '{"base":8,"hair":23,"outfit":15,"shoes":30,"accessories":[]}', 'Collecting Nendoroids and scale figures since 2015.'),
-      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', '{"base":4,"hair":22,"outfit":18,"shoes":32,"accessories":[]}', 'Reroots, boil perms and custom Barbie styling.')`,
+      `INSERT INTO users (id, login, password_hash, full_name, email, is_email_confirmed, role, rating, profile_picture, doll_config, use_doll_as_avatar, bio) VALUES
+      (1, 'dollique_admin', ?, 'Chief Moderator', 'dollique.noreply@gmail.com', 1, 'admin', 15, '/uploads/avatars/default.png', '{"base":3,"hair":27,"outfit":14,"shoes":28,"accessories":[33]}', 1, 'Keeping Dollique friendly and bootleg-free.'),
+      (2, 'ooak_luna', ?, 'Luna Custom Arts', 'luna@gmail.com', 1, 'user', 28, '/uploads/avatars/default.png', '{"base":1,"hair":24,"outfit":10,"shoes":31,"accessories":[34]}', 1, 'OOAK repaints and pastel faceups, mostly Monster High.'),
+      (3, 'doll_doctor_alex', ?, 'Alex Restoration', 'alex.repair@gmail.com', 1, 'user', 42, '/uploads/avatars/default.png', '{"base":5,"hair":23,"outfit":12,"shoes":31,"accessories":[36]}', 0, 'I fix sticky vinyl, yellowed PVC and broken joints.'),
+      (4, 'figure_hunter_kai', ?, 'Kai Collector', 'kai.collector@gmail.com', 1, 'user', 19, '/uploads/avatars/default.png', '{"base":8,"hair":21,"outfit":15,"shoes":29,"accessories":[]}', 0, 'Collecting Nendoroids and scale figures since 2015.'),
+      (5, 'eva_customs', ?, 'Eva OOAK Studio', 'eva.ooak@gmail.com', 1, 'user', 31, '/uploads/avatars/default.png', '{"base":4,"hair":20,"outfit":11,"shoes":30,"accessories":[]}', 0, 'Reroots, boil perms and custom Barbie styling.')`,
       [passwordHash, passwordHash, passwordHash, passwordHash, passwordHash]
     );
     console.log('✅ Users seeded: 5 entries (English).');
