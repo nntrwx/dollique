@@ -110,7 +110,7 @@ Sample accounts, all with the password `password123`:
 | Login | Role |
 | :--- | :--- |
 | `dollique_admin` | admin |
-| `ooak_luna`, `doll_doctor_alex`, `figure_hunter_kai`, `eva_customs` | user |
+| `ooak.amy`, `draculaura.og`, `alex.figures`, `monix.dolls` | user |
 
 ### 5. Run
 ```bash
@@ -298,15 +298,15 @@ A doll is stored as part IDs, `{"base":3,"hair":27,"outfit":14,"shoes":28,"acces
 
 ## Progress by CBL stages
 
-**Engage.** We picked a niche we care about: doll customizing and figure collecting. Generic Q&A sites don't handle this community well: questions about materials, repaints and authenticity get lost, and good answers are hard to find. So the idea became a Q&A platform where the community votes useful answers up.
+**Engage.** I chose a niche that interests me and that I thought would make an unusual idea: doll customizing and figure collecting. Generic Q&A sites don't handle this community well: questions about materials, repaints and authenticity get lost, and good answers are hard to find. So the idea became a Q&A platform where the community votes useful answers up.
 
-**Investigate.** We studied the USOF requirements and broke them into entities: users, posts, categories, comments, likes. Then we designed the relational schema with foreign keys and unique constraints and chose the stack. The first version used Prisma ORM. We later replaced it with `mysql2` and plain SQL to keep full control over the queries and follow the MVC structure required by the task.
+**Investigate.** I studied the USOF requirements and broke them into entities: users, posts, categories, comments, likes. Then I designed the relational schema with foreign keys and unique constraints and chose the stack: Express, MySQL with `mysql2` and plain SQL, following the MVC structure required by the task.
 
 **Act.**
 1. Base API: authentication with email confirmation, CRUD for all entities, likes, rating, sorting, filters and pagination.
 2. Access rules for inactive content, admin panel, seed data in every table.
 3. Moderation flow: hidden posts with reasons, notifications, appeals, automatic deletion, user-suggested categories.
 4. Strikes and auto-ban, profile reset by admins, security fixes: token revocation, login limiter, safer uploads.
-5. Creative feature: the profile doll. We drew the parts, built the catalog with admin management, and added the option to use the doll instead of the profile picture.
+5. Creative feature: the profile doll. I created the part images, built the catalog with admin management, and added the option to use the doll instead of the profile picture.
 
 **Next steps.** A frontend (USOF Part 2) with the doll editor, post subscriptions, and images for the sample posts.
