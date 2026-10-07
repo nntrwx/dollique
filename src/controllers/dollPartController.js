@@ -7,7 +7,6 @@ const NAME_MAX_LENGTH = 100;
 const PARTS_URL = '/uploads/doll_parts/';
 const uploadsRoot = path.join(__dirname, '../../uploads');
 
-// Only files uploaded through the API are removed; the seed layers that ship with the repo stay
 function removeUploadedFile(url) {
   if (!url || !url.startsWith(`${PARTS_URL}part-`)) return;
   fs.unlink(path.join(uploadsRoot, url.replace('/uploads/', '')), () => {});
@@ -17,7 +16,6 @@ function uploadedUrl(req) {
   return req.file ? `${PARTS_URL}${req.file.filename}` : null;
 }
 
-// Drop the file of a rejected request so it doesn't pile up on disk
 function discardUploads(req) {
   removeUploadedFile(uploadedUrl(req));
 }
@@ -29,7 +27,6 @@ function parseBoolean(value) {
   return null;
 }
 
-// Validates name/category/layer/is_active; `partial` allows missing fields (PATCH)
 function readFields(body, partial) {
   const data = {};
 
@@ -63,8 +60,7 @@ function readFields(body, partial) {
 }
 
 class DollPartController {
-  // GET /api/doll-parts?category=outfit - Catalog for the doll editor
-  // Everyone sees active parts; admins see all of them with usage counts (?active=true|false filters)
+  // GET /api/doll-parts?category=outfit
   static async getAllParts(req, res) {
     try {
       const { category, active } = req.query;
@@ -103,7 +99,7 @@ class DollPartController {
     }
   }
 
-  // POST /api/doll-parts - multipart: image (required), name, category, layer, is_active (admin)
+  // POST /api/doll-parts
   static async createPart(req, res) {
     try {
       const imageUrl = uploadedUrl(req);
@@ -132,7 +128,7 @@ class DollPartController {
     }
   }
 
-  // PATCH /api/doll-parts/:part_id - any of the create fields, a new image replaces the old one (admin)
+  // PATCH /api/doll-parts/:part_id
   static async updatePart(req, res) {
     try {
       const part = await DollPartModel.findById(req.params.part_id);
@@ -147,7 +143,6 @@ class DollPartController {
         return res.status(400).json({ error });
       }
 
-      // Moving a worn part to another category would break the dolls that wear it
       if (data.category && data.category !== part.category) {
         const usedBy = (await DollService.usageCounts()).get(part.id) || 0;
         if (usedBy > 0) {
@@ -176,7 +171,7 @@ class DollPartController {
     }
   }
 
-  // DELETE /api/doll-parts/:part_id (admin). Worn parts can only be deactivated.
+  // DELETE /api/doll-parts/:part_id (admin).
   static async deletePart(req, res) {
     try {
       const part = await DollPartModel.findById(req.params.part_id);

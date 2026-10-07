@@ -2,11 +2,9 @@ const pool = require('../../database/db');
 
 const PART_FIELDS = 'id, category, name, image_url, layer, is_active, created_at';
 
-// MySQL BOOLEAN comes back as 0/1
 const toPart = (row) => ({ ...row, is_active: Boolean(row.is_active) });
 
 class DollPartModel {
-  // 1. Catalog list; guests and users only see active parts
   static async findAll({ category, includeInactive = false } = {}) {
     const conditions = [];
     const params = [];
@@ -25,7 +23,6 @@ class DollPartModel {
     return rows.map(toPart);
   }
 
-  // 2. Find one part by ID
   static async findById(id) {
     const partId = Number(id);
     if (!Number.isInteger(partId)) return null;
@@ -34,7 +31,6 @@ class DollPartModel {
     return rows[0] ? toPart(rows[0]) : null;
   }
 
-  // 3. Find several parts at once (used to validate and render an doll_config)
   static async findByIds(ids) {
     if (!ids.length) return [];
     const placeholders = ids.map(() => '?').join(', ');
@@ -45,7 +41,6 @@ class DollPartModel {
     return rows.map(toPart);
   }
 
-  // 4. Create a part
   static async create({ category, name, imageUrl, layer, isActive = true }) {
     const [result] = await pool.execute(
       `INSERT INTO doll_parts (category, name, image_url, layer, is_active)
@@ -55,7 +50,6 @@ class DollPartModel {
     return this.findById(result.insertId);
   }
 
-  // 5. Update only the provided fields
   static async update(id, data) {
     const columns = {
       category: 'category',
@@ -81,7 +75,6 @@ class DollPartModel {
     return this.findById(id);
   }
 
-  // 6. Delete a part
   static async delete(id) {
     const [result] = await pool.execute('DELETE FROM doll_parts WHERE id = ?', [Number(id)]);
     return result.affectedRows > 0;

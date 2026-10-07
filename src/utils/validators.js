@@ -1,5 +1,3 @@
-// Shared input checks. Each returns an error message or null.
-
 const LOGIN_PATTERN = /^[a-zA-Z0-9_.-]{3,50}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

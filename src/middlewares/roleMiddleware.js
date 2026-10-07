@@ -4,7 +4,6 @@ function requireAdmin(req, res, next) {
       error: 'Forbidden: Admin access required for this action.',
     });
   }
-
   next();
 }
 

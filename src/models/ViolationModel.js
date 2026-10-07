@@ -23,7 +23,6 @@ class ViolationModel {
     return result.insertId;
   }
 
-  // Cancels an active strike, e.g. when a hidden post is restored. Returns how many were revoked.
   static async revokeByTarget(type, targetId) {
     const [result] = await pool.execute(
       'UPDATE violations SET revoked = 1 WHERE type = ? AND target_id = ? AND revoked = 0',
@@ -32,7 +31,6 @@ class ViolationModel {
     return result.affectedRows;
   }
 
-  // Strikes that still count: not revoked and given after the last ban
   static async countActive(userId, since = null) {
     const [rows] = await pool.execute(
       `SELECT COUNT(*) AS cnt FROM violations

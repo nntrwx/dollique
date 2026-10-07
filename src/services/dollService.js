@@ -1,18 +1,15 @@
 const DollPartModel = require('../models/DollPartModel');
 const UserModel = require('../models/UserModel');
 
-// Default draw order of each category (bigger = drawn on top). Admins can override it per part.
 const DEFAULT_LAYERS = { base: 10, hair: 20, shoes: 20, outfit: 30, accessory: 50 };
 const CATEGORIES = Object.keys(DEFAULT_LAYERS);
 
-// Single-choice slots of doll_config and the catalog category each one takes
 const SLOTS = { base: 'base', hair: 'hair', outfit: 'outfit', shoes: 'shoes' };
 const MAX_ACCESSORIES = 3;
 
 const isId = (value) => Number.isInteger(value) && value > 0;
 
 class DollService {
-  // MySQL returns JSON columns parsed, MariaDB returns them as text
   static parseStored(raw) {
     if (!raw) return null;
     if (typeof raw === 'object') return raw;
@@ -23,7 +20,6 @@ class DollService {
     }
   }
 
-  // All part IDs a config points to
   static partIds(config) {
     if (!config || typeof config !== 'object') return [];
     const ids = Object.keys(SLOTS).map(slot => config[slot]);
@@ -31,9 +27,6 @@ class DollService {
     return ids.filter(isId);
   }
 
-  // Checks a new doll_config and returns it in the canonical shape:
-  // { base, hair, outfit, shoes, accessories: [] }. null means "remove the doll".
-  // Parts the user already wears may stay even if an admin has retired them since.
   static async validateConfig(input, currentConfig = null) {
     let config = input;
     if (typeof config === 'string') {
@@ -100,7 +93,6 @@ class DollService {
     return { config: normalized };
   }
 
-  // Ordered list of images to stack on top of each other (first = bottom)
   static async buildLayers(rawConfig) {
     const config = this.parseStored(rawConfig);
     const parts = await DollPartModel.findByIds(this.partIds(config));
@@ -115,7 +107,6 @@ class DollService {
       }));
   }
 
-  // How many users wear each part: Map(partId -> count)
   static async usageCounts() {
     const counts = new Map();
     for (const row of await UserModel.findDollConfigs()) {

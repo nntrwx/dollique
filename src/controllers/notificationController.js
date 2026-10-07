@@ -1,7 +1,7 @@
 const NotificationModel = require('../models/NotificationModel');
 
 class NotificationController {
-  // GET /api/notifications?unread=true - Notifications of the logged-in user
+  // GET /api/notifications?unread=true
   static async getMyNotifications(req, res) {
     try {
       const unreadOnly = req.query.unread === 'true';
@@ -52,7 +52,6 @@ class NotificationController {
     }
   }
 
-  // Loads a notification and checks it belongs to the user; sends the error response itself
   static async findOwned(req, res) {
     const notificationId = Number(req.params.notification_id);
     if (isNaN(notificationId)) {

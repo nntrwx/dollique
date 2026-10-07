@@ -1,14 +1,12 @@
 const pool = require('../../database/db');
 
 class CommentModel {
-  // Inactive comments are visible only to their author and admins
   static isVisibleTo(comment, user) {
     if (!comment) return false;
     if (comment.status === 'active') return true;
     return Boolean(user) && (user.role === 'admin' || user.id === comment.authorId);
   }
 
-  // 1. Get all comments for a post (Admin gets all statuses, users get active)
   static async findByPostId(postId, currentUser = null) {
     const pId = Number(postId);
     if (isNaN(pId)) return [];
@@ -16,7 +14,6 @@ class CommentModel {
     let statusCondition = "c.status = 'active'";
     const queryParams = [pId];
 
-    // Если передан пользователь с ролью admin, разрешаем видеть все комментарии (включая inactive)
     if (currentUser && currentUser.role === 'admin') {
       statusCondition = "1=1"; 
     } else if (currentUser) {
@@ -77,7 +74,6 @@ class CommentModel {
     return rootComments;
   }
 
-  // 2. Find single comment by ID
   static async findById(id) {
     const commentId = Number(id);
     if (isNaN(commentId)) return null;
@@ -114,7 +110,6 @@ class CommentModel {
     };
   }
 
-  // 3. Create comment or reply
   static async create({ authorId, postId, content, parentId = null }) {
     const [result] = await pool.execute(`
       INSERT INTO comments (author_id, post_id, parent_id, content, status)
@@ -124,14 +119,18 @@ class CommentModel {
     return await this.findById(result.insertId);
   }
 
-  // 4. Update status (active / inactive) — строго UPDATE, запись не удаляется
   static async updateStatus(id, status) {
     const commentId = Number(id);
     await pool.execute('UPDATE comments SET status = ? WHERE id = ?', [status, commentId]);
     return await this.findById(commentId);
   }
 
-  // 5. Delete comment
+  static async updateContent(id, content) {
+    const commentId = Number(id);
+    await pool.execute('UPDATE comments SET content = ? WHERE id = ?', [content, commentId]);
+    return await this.findById(commentId);
+  }
+
   static async delete(id) {
     const commentId = Number(id);
     const [result] = await pool.execute('DELETE FROM comments WHERE id = ?', [commentId]);

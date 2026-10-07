@@ -12,45 +12,37 @@ class AuthController {
     try {
       const { login, password, password_confirmation, email, full_name } = req.body;
 
-      // 1. Validate required fields
       if (!login || !password || !password_confirmation || !email) {
         return res.status(400).json({
           error: 'Required parameters: [login, password, password_confirmation, email].',
         });
       }
 
-      // 2. Validate login and email format
       const formatError = validateLogin(login) || validateEmail(email);
       if (formatError) {
         return res.status(400).json({ error: formatError });
       }
 
-      // 3. Validate password strength (minimum 6 characters)
       if (typeof password !== 'string' || password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
       }
 
-      // 4. Validate that passwords match
       if (password !== password_confirmation) {
         return res.status(400).json({ error: 'Password and password confirmation do not match.' });
       }
 
-      // 5. Check if login already exists
       const existingLogin = await UserModel.findByLogin(login);
       if (existingLogin) {
         return res.status(409).json({ error: 'User with this login already exists.' });
       }
 
-      // 6. Check if email already exists
       const existingEmail = await UserModel.findByEmail(email);
       if (existingEmail) {
         return res.status(409).json({ error: 'User with this email already exists.' });
       }
 
-      // 7. Hash password
       const passwordHash = await bcrypt.hash(password, 10);
 
-      // 8. Create user in database
       const newUser = await UserModel.create({
         login,
         passwordHash,
@@ -60,7 +52,6 @@ class AuthController {
         isEmailConfirmed: false,
       });
 
-      // 9. Generate confirmation token
       const confirmationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -71,7 +62,6 @@ class AuthController {
         expiresAt: tokenExpiresAt,
       });
 
-      // 10. Send confirmation email
       await EmailService.sendConfirmationEmail(email, confirmationToken);
 
       return res.status(201).json({
@@ -96,16 +86,6 @@ class AuthController {
 
       await UserModel.confirmEmail(tokenRecord.userId);
       await UserModel.deleteToken(tokenRecord.id);
-
-      // If clicked from browser URL, return a nice HTML confirmation
-      if (req.method === 'GET') {
-        return res.send(`
-          <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1 style="color: #2e7d32;">🎉 Email Confirmed!</h1>
-            <p>Your Dollique account has been successfully verified. You can now log in.</p>
-          </div>
-        `);
-      }
 
       return res.status(200).json({ message: 'Email confirmed successfully. You can now log in.' });
     } catch (error) {
@@ -186,7 +166,6 @@ class AuthController {
   }
 
   // POST /api/auth/logout
-  // Revokes every token of this user (all devices), so a stolen or old token stops working
   static async logout(req, res) {
     try {
       await UserModel.bumpTokenVersion(req.user.id);
@@ -234,43 +213,26 @@ class AuthController {
     }
   }
 
-  // GET /api/auth/password-reset/:confirm_token - Opens reset form when clicked in email
-  static async renderPasswordResetPage(req, res) {
+  // GET /api/auth/password-reset/:confirm_token
+  static async checkPasswordResetToken(req, res) {
     try {
       const { confirm_token } = req.params;
       const tokenRecord = await UserModel.findToken(confirm_token, 'password_reset');
 
       if (!tokenRecord) {
-        return res.status(400).send(`
-          <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h2 style="color: #c62828;">❌ Invalid or Expired Token</h2>
-            <p>This password reset link is invalid or has expired.</p>
-          </div>
-        `);
+        return res.status(400).json({ error: 'Invalid or expired password reset token.' });
       }
 
-      // Return a working HTML form that POSTs to this token
-      return res.send(`
-        <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 25px; border: 1px solid #ddd; border-radius: 8px;">
-          <h2 style="color: #333; text-align: center;">Reset Your Password</h2>
-          <form method="POST" action="/api/auth/password-reset/${confirm_token}">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold;">New Password:</label>
-            <input type="password" name="password" required minlength="6" style="width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 15px;" placeholder="At least 6 characters" />
-            
-            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Confirm New Password:</label>
-            <input type="password" name="password_confirmation" required minlength="6" style="width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 20px;" placeholder="Repeat password" />
-            
-            <button type="submit" style="width: 100%; padding: 12px; background-color: #d81b60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Update Password</button>
-          </form>
-        </div>
-      `);
+      return res.status(200).json({
+        message: 'Token is valid. Send POST to this URL with password and password_confirmation.',
+      });
     } catch (error) {
-      console.error('Render reset page error:', error);
+      console.error('Check reset token error:', error);
       return res.status(500).json({ error: 'Internal server error.' });
     }
   }
 
-  // POST /api/auth/password-reset/:confirm_token - Confirm new password
+  // POST /api/auth/password-reset/:confirm_token
   static async confirmPasswordReset(req, res) {
     try {
       const { confirm_token } = req.params;
@@ -292,7 +254,6 @@ class AuthController {
       const newPasswordHash = await bcrypt.hash(password, 10);
       await UserModel.updatePassword(tokenRecord.userId, newPasswordHash);
       await UserModel.deleteToken(tokenRecord.id);
-      // Old sessions are signed out after a password change
       await UserModel.bumpTokenVersion(tokenRecord.userId);
 
       return res.status(200).json({

@@ -12,8 +12,6 @@ for (const dir of [avatarsDir, postsDir, dollPartsDir]) {
   }
 }
 
-// The extension comes from the checked MIME type, never from the client's file name,
-// so a file like "evil.html" can't be uploaded and served as a web page
 const EXTENSIONS = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
@@ -59,7 +57,6 @@ const imageFilter = (req, file, cb) => {
   }
 };
 
-// Doll layers are stacked on top of each other, so they need transparency: no JPEG
 const transparentImageFilter = (req, file, cb) => {
   if (EXTENSIONS[file.mimetype] && file.mimetype !== 'image/jpeg') {
     cb(null, true);

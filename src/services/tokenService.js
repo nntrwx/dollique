@@ -1,8 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/UserModel');
 
-// JWT helpers. A token is valid only while its "tv" matches users.token_version,
-// so logout or a password reset revokes every token issued before it.
 class TokenService {
   static sign(user) {
     return jwt.sign(
@@ -18,7 +16,6 @@ class TokenService {
     return authHeader.replace(/^Bearer\s+/i, '').trim() || null;
   }
 
-  // Returns the fresh user for a valid, not revoked token, otherwise null
   static async verify(token) {
     let decoded;
     try {

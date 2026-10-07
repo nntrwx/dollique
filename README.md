@@ -220,7 +220,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 ### Posts `/api/posts`
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| GET | `/` | Posts. Query: `page`, `limit`, `sort=likes\|date`, `categories=1,2`, `date_from`, `date_to`, `status=active\|inactive` | Public |
+| GET | `/` | Posts. Query: `page`, `limit`, `sort=likes\|date`, `order=desc\|asc`, `search`, `categories=1,2`, `date_from`, `date_to`, `status=active\|inactive` | Public |
 | GET | `/favorites` | My saved posts | User |
 | GET | `/:post_id` | One post | Public* |
 | POST | `/` | Create: `title, content, categories`, up to 5 files in `images` | User |
@@ -238,7 +238,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
 | GET | `/:comment_id` | One comment | Public* |
-| PATCH | `/:comment_id` | Change `status` (`active` / `inactive`) | Author / Admin |
+| PATCH | `/:comment_id` | Author edits `content`; author or admin changes `status` (`active` / `inactive`) | Author / Admin |
 | DELETE | `/:comment_id` | Delete | Author / post author / Admin |
 | GET / POST / DELETE | `/:comment_id/like` | List votes / vote / remove my vote | Public* / User |
 
@@ -248,7 +248,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 | GET | `/` | Approved categories (admins see all, authors also see their own suggestions) | Public |
 | GET | `/:category_id` | One category | Public |
 | GET | `/:category_id/posts` | Posts in the category | Public |
-| POST | `/` | Create: `title, description` (from a user it becomes a `pending` suggestion) | User |
+| POST | `/` | Create: `title, description`. From an admin it is approved at once, from a user it becomes a `pending` suggestion | User / Admin |
 | PATCH | `/:category_id` | Edit, or approve / reject with `status` and `reason` | Admin |
 | DELETE | `/:category_id` | Delete | Admin |
 

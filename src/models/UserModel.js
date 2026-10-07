@@ -3,7 +3,6 @@ const pool = require('../../database/db');
 const DEFAULT_AVATAR = '/uploads/avatars/default.png';
 
 class UserModel {
-  // 1. Get all users (public sees only confirmed users and NO private emails; admin sees all)
   static async findAll(isAdmin = false) {
     if (isAdmin) {
       const [rows] = await pool.execute(`
@@ -18,7 +17,6 @@ class UserModel {
       return rows;
     }
 
-    // Public view: hide email for privacy, only confirmed users
     const [rows] = await pool.execute(`
       SELECT id, login, full_name, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
       FROM users
@@ -28,12 +26,10 @@ class UserModel {
     return rows;
   }
 
-  // 2. Find user by ID
   static async findById(id, isSelfOrAdmin = false) {
     const userId = Number(id);
     if (isNaN(userId)) return null;
 
-    // Email and ban details are private: only the user and admins see them
     const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason, token_version' : '';
     const [rows] = await pool.execute(`
       SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
@@ -44,13 +40,11 @@ class UserModel {
     return rows[0] || null;
   }
 
-  // Doll configs of everyone who built a doll (to see which catalog parts are in use)
   static async findDollConfigs() {
     const [rows] = await pool.execute('SELECT id, doll_config FROM users WHERE doll_config IS NOT NULL');
     return rows;
   }
 
-  // 3. Find user by login (includes password_hash for auth checks)
   static async findByLogin(login) {
     if (!login) return null;
     const [rows] = await pool.execute(`
@@ -63,7 +57,6 @@ class UserModel {
     return rows[0] || null;
   }
 
-  // 4. Find user by email (includes password_hash for auth checks)
   static async findByEmail(email) {
     if (!email) return null;
     const [rows] = await pool.execute(`
@@ -76,7 +69,6 @@ class UserModel {
     return rows[0] || null;
   }
 
-  // 5. Create new user
   static async create({ login, passwordHash, fullName, email, role = 'user', isEmailConfirmed = false }) {
     const [result] = await pool.execute(`
       INSERT INTO users (login, password_hash, full_name, email, role, is_email_confirmed)
@@ -110,7 +102,6 @@ class UserModel {
     if (updateData.email) {
       fields.push('email = ?');
       values.push(updateData.email);
-      // Changing email resets verification status (unless an admin changed it)
       if (!updateData.keepEmailConfirmed) fields.push('is_email_confirmed = 0');
     }
     if (updateData.role) {
@@ -144,7 +135,6 @@ class UserModel {
     return await this.findById(userId, true);
   }
 
-  // Moderator resets profile fields to safe defaults (login is used as the display name)
   static async resetProfileFields(id, fields) {
     const userId = Number(id);
     const sets = [];
@@ -158,7 +148,6 @@ class UserModel {
     return await this.findById(userId, true);
   }
 
-  // Ban until NOW() + days. Strikes start counting again from this moment.
   static async setBan(id, days, reason) {
     await pool.execute(`
       UPDATE users
@@ -167,7 +156,6 @@ class UserModel {
     `, [Number(days), reason || null, Number(id)]);
   }
 
-  // Every issued JWT carries the version it was signed with; bumping it invalidates all of them
   static async bumpTokenVersion(id) {
     await pool.execute('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [Number(id)]);
   }
@@ -188,31 +176,25 @@ class UserModel {
     return Boolean(user && user.banned_until && new Date(user.banned_until) > new Date());
   }
 
-  // 7. Update profile picture
   static async updateAvatar(id, profilePicture) {
     const userId = Number(id);
     await pool.execute('UPDATE users SET profile_picture = ? WHERE id = ?', [profilePicture, userId]);
     return await this.findById(userId, true);
   }
 
-  // 8. Delete user
   static async delete(id) {
     const userId = Number(id);
     const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
     return result.affectedRows > 0;
   }
 
-  // 9. Confirm email
   static async confirmEmail(userId) {
     await pool.execute('UPDATE users SET is_email_confirmed = 1 WHERE id = ?', [Number(userId)]);
   }
 
-  // 10. Update password hash
   static async updatePassword(userId, newPasswordHash) {
     await pool.execute('UPDATE users SET password_hash = ? WHERE id = ?', [newPasswordHash, Number(userId)]);
   }
-
-  // --- Token Management ---
 
   static async saveToken({ userId, token, type, expiresAt }) {
     const [result] = await pool.execute(`

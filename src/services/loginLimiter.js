@@ -1,13 +1,9 @@
-// Slows down password guessing: too many failed logins lock the login (per IP) for a while.
-// Kept in memory, so it resets when the server restarts; enough for a single-server app.
-
 const MAX_ATTEMPTS = Number(process.env.LOGIN_MAX_ATTEMPTS) || 5;
 const WINDOW_MINUTES = Number(process.env.LOGIN_WINDOW_MINUTES) || 15;
 const WINDOW_MS = WINDOW_MINUTES * 60 * 1000;
-// Many different logins from one IP is also suspicious
 const MAX_ATTEMPTS_PER_IP = MAX_ATTEMPTS * 4;
 
-const failures = new Map(); // key -> { count, firstAt }
+const failures = new Map();
 
 function keysFor(ip, identifier) {
   return [`id:${ip}:${String(identifier).toLowerCase()}`, `ip:${ip}`];
@@ -23,7 +19,6 @@ function entry(key) {
 }
 
 class LoginLimiter {
-  // Seconds until the next attempt is allowed, or 0 if the attempt may go ahead
   static retryAfter(ip, identifier) {
     const [idKey, ipKey] = keysFor(ip, identifier);
     const limits = [[entry(idKey), MAX_ATTEMPTS], [entry(ipKey), MAX_ATTEMPTS_PER_IP]];
@@ -54,7 +49,6 @@ class LoginLimiter {
   }
 }
 
-// Drop stale entries so the map does not grow forever
 setInterval(() => {
   for (const key of failures.keys()) entry(key);
 }, WINDOW_MS).unref();

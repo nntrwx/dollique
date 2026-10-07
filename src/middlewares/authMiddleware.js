@@ -10,7 +10,6 @@ async function authMiddleware(req, res, next) {
   }
 
   try {
-    // Verifies the signature and that the user still exists and has not logged out since
     const freshUser = await TokenService.verify(token);
     if (!freshUser) {
       return res.status(401).json({
@@ -18,7 +17,6 @@ async function authMiddleware(req, res, next) {
       });
     }
 
-    // A banned user cannot act until the ban ends, even with a token issued before the ban
     if (UserModel.isBanned(freshUser)) {
       return res.status(403).json({
         error: `Your account is banned until ${new Date(freshUser.banned_until).toISOString()}.`,

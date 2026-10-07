@@ -3,7 +3,7 @@ const NotificationModel = require('../models/NotificationModel');
 const ViolationService = require('../services/violationService');
 
 class CategoryController {
-  // GET /api/categories - Get all categories
+  // GET /api/categories
   static async getAllCategories(req, res) {
     try {
       const { status } = req.query;
@@ -19,7 +19,7 @@ class CategoryController {
     }
   }
 
-  // GET /api/categories/:category_id - Get specified category
+  // GET /api/categories/:category_id
   static async getCategoryById(req, res) {
     try {
       const { category_id } = req.params;
@@ -36,7 +36,7 @@ class CategoryController {
     }
   }
 
-  // GET /api/categories/:category_id/posts - Get all posts associated with category
+  // GET /api/categories/:category_id/posts
   static async getCategoryPosts(req, res) {
     try {
       const { category_id } = req.params;
@@ -54,7 +54,7 @@ class CategoryController {
     }
   }
 
-  // POST /api/categories - Admin creates a category, a user suggests one for moderation
+  // POST /api/categories
   static async createCategory(req, res) {
     try {
       const title = req.body.title ? String(req.body.title).trim() : '';
@@ -93,7 +93,7 @@ class CategoryController {
     }
   }
 
-  // PATCH /api/categories/:category_id - Update category (Admin only)
+  // PATCH /api/categories/:category_id
   static async updateCategory(req, res) {
     try {
       const { category_id } = req.params;
@@ -138,7 +138,6 @@ class CategoryController {
               : `Your category "${updatedCategory.title}" was rejected. Reason: ${cleanReason}`,
           });
 
-          // A category that breaks the rules is a strike; approving it later cancels the strike
           if (status === 'rejected') {
             await ViolationService.record({
               userId: category.created_by, type: 'category_rejected', targetId: category.id,
@@ -160,7 +159,7 @@ class CategoryController {
     }
   }
 
-  // DELETE /api/categories/:category_id - Delete category (Admin only)
+  // DELETE /api/categories/:category_id
   static async deleteCategory(req, res) {
     try {
       const { category_id } = req.params;

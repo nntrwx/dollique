@@ -3,7 +3,6 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 
-// Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -15,21 +14,16 @@ const dollPartRoutes = require('./routes/dollPartRoutes');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static uploaded files (avatars, post images, doll layers)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
-  // Browsers must not guess the type of uploaded files (blocks HTML/JS disguised as images)
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
 }));
-// Serve static admin dashboard
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
 
-// Health check and root route
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to Dollique API!',
@@ -50,7 +44,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Dollique API', timestamp: new Date() });
 });
 
-// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -60,10 +53,9 @@ app.use('/api/appeals', appealRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/doll-parts', dollPartRoutes);
 
-// Global error handler (handles Multer errors as 400 Bad Request)
 app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError || (err.message && err.message.includes('image files'))) {
-    return res.status(400).json({ error: err.message });
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ error: 'Too many files: a post can have up to 5 images.' });
   }
 
   console.error('Server error:', err);

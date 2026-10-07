@@ -8,7 +8,6 @@ class EmailService {
       return this.transporter;
     }
 
-    // Use real SMTP if configured in .env
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -20,7 +19,6 @@ class EmailService {
       return this.transporter;
     }
 
-    // Fallback: Ethereal test account if no credentials provided
     const testAccount = await nodemailer.createTestAccount();
     this.transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -35,8 +33,6 @@ class EmailService {
     return this.transporter;
   }
 
-  // Without SMTP settings letters go to a test Ethereal inbox, not to the real address.
-  // Print the link to view the letter so the confirmation / reset link can still be used.
   static logPreview(info) {
     const previewUrl = nodemailer.getTestMessageUrl(info);
     if (previewUrl) console.log(`📬 [TEST INBOX] Open the letter here: ${previewUrl}`);
@@ -50,15 +46,15 @@ class EmailService {
 
       const info = await transporter.sendMail({
         from: `"Dollique" <${senderEmail}>`,
-        to: email, // Any recipient email address
+        to: email,
         subject: 'Welcome to Dollique! Confirm your email address',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; border: 1px solid #eee; border-radius: 8px;">
-            <h2 style="color: #d81b60;">Welcome to Dollique!</h2>
+            <h2 style="color: #e29fb7;">Welcome to Dollique!</h2>
             <p>Thank you for joining our community of doll customizers, OOAK artists, and figure collectors.</p>
             <p>Please click the button below to confirm your email and activate your account:</p>
             <div style="margin: 25px 0;">
-              <a href="${confirmationUrl}" style="background-color: #d81b60; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">
+              <a href="${confirmationUrl}" style="background-color: #e29fb5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">
                 Confirm My Account
               </a>
             </div>

@@ -7,7 +7,6 @@ const ViolationService = require('../services/violationService');
 const NotificationModel = require('../models/NotificationModel');
 
 class PostController {
-  // Posts can only use existing, approved categories
   static async validateCategories(categoryIds) {
     if (!categoryIds.length) return 'At least one category is required.';
     const approved = await CategoryModel.findApprovedIds(categoryIds);
@@ -18,13 +17,15 @@ class PostController {
     return null;
   }
 
-  // GET /api/posts - Get all posts (with pagination, sorting & filters)
+  // GET /api/posts
   static async getAllPosts(req, res) {
     try {
       const {
         page = 1,
         limit = 10,
         sort = 'likes',
+        order = 'desc',
+        search,
         categories,
         date_from,
         date_to,
@@ -35,6 +36,8 @@ class PostController {
         page,
         limit,
         sort,
+        order,
+        search,
         categories,
         dateFrom: date_from,
         dateTo: date_to,
@@ -49,7 +52,7 @@ class PostController {
     }
   }
 
-  // GET /api/posts/:post_id - Get specified post data
+  // GET /api/posts/:post_id
   static async getPostById(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -69,7 +72,7 @@ class PostController {
     }
   }
 
-  // GET /api/posts/:post_id/categories - Get all categories of a post
+  // GET /api/posts/:post_id/categories
   static async getPostCategories(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -89,7 +92,7 @@ class PostController {
     }
   }
 
-  // POST /api/posts - Create new post
+  // POST /api/posts
   static async createPost(req, res) {
     try {
       const { title, content, categories } = req.body;
@@ -122,7 +125,6 @@ class PostController {
         imageUrls = req.files.map((file) => `/uploads/posts/${file.filename}`);
       } else if (req.body.images) {
         imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-        // Only real image links: no "javascript:" or other schemes
         const invalid = imageUrls.filter((url) => typeof url !== 'string' || !/^(https?:\/\/|\/uploads\/posts\/)[^\s"'<>]+$/.test(url));
         if (invalid.length > 0 || imageUrls.length > 5) {
           return res.status(400).json({ error: 'Images must be up to 5 links starting with http(s):// or /uploads/posts/.' });
@@ -147,7 +149,7 @@ class PostController {
     }
   }
 
-  // PATCH /api/posts/:post_id - Update post
+  // PATCH /api/posts/:post_id
   static async updatePost(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -194,7 +196,6 @@ class PostController {
         return res.status(400).json({ error: 'Status must be either "active" or "inactive".' });
       }
 
-      // A moderator decision on someone else's post goes through the moderation flow
       const isModeration = isAdmin && !isAuthor && status && status !== post.status;
 
       if (status && !isModeration) {
@@ -224,7 +225,6 @@ class PostController {
           ? await ModerationService.hidePost(post, reason, req.user.id)
           : await ModerationService.restorePost(post);
       } else if (status === 'active' && post.moderation) {
-        // Admin re-activating their own moderated post also clears the timer
         updatedPost = await PostModel.clearModeration(postId);
       }
 
@@ -238,7 +238,7 @@ class PostController {
     }
   }
 
-  // DELETE /api/posts/:post_id - Delete post
+  // DELETE /api/posts/:post_id
   static async deletePost(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -259,7 +259,6 @@ class PostController {
       await PostModel.delete(postId);
       await RatingService.recalculateUserRating(post.authorId);
 
-      // Deleting by an admin replaces the "hidden" strike (if any) with a "deleted" one, so it is not counted twice
       if (requester.role === 'admin' && requester.id !== post.authorId) {
         const reason = String((req.body && req.body.reason) || '').trim()
           || (post.moderation && post.moderation.reason) || 'The post breaks the community rules.';
@@ -281,7 +280,7 @@ class PostController {
     }
   }
 
-  // GET /api/posts/:post_id/like - Get all likes under post
+  // GET /api/posts/:post_id/like
   static async getPostLikes(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -302,7 +301,7 @@ class PostController {
     }
   }
 
-  // POST /api/posts/:post_id/like - Create or update like/dislike under post
+  // POST /api/posts/:post_id/like
   static async likePost(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -322,7 +321,6 @@ class PostController {
         return res.status(404).json({ error: 'Post not found.' });
       }
 
-      // Security fix: cannot vote on inactive/locked posts
       if (post.status !== 'active') {
         return res.status(403).json({ error: 'Cannot vote on inactive or locked posts.' });
       }
@@ -340,7 +338,7 @@ class PostController {
     }
   }
 
-  // DELETE /api/posts/:post_id/like - Remove like/dislike under post
+  // DELETE /api/posts/:post_id/like
   static async deletePostLike(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -368,7 +366,7 @@ class PostController {
     }
   }
 
-  // POST /api/posts/:post_id/appeal - Author disputes a moderator decision
+  // POST /api/posts/:post_id/appeal
   static async appealPost(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -396,7 +394,7 @@ class PostController {
     }
   }
 
-  // POST /api/posts/:post_id/favorite - Add or remove post from favorites
+  // POST /api/posts/:post_id/favorite
   static async toggleFavorite(req, res) {
     try {
       const postId = Number(req.params.post_id);
@@ -422,7 +420,7 @@ class PostController {
     }
   }
 
-  // GET /api/posts/favorites - Get all favorite posts
+  // GET /api/posts/favorites
   static async getFavorites(req, res) {
     try {
       const userId = req.user.id;

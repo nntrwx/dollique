@@ -1,9 +1,6 @@
--- Dollique MySQL Database Schema
-
 CREATE DATABASE IF NOT EXISTS dollique_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE dollique_db;
 
--- Drop old tables if they exist to guarantee clean recreation
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS doll_parts;
 DROP TABLE IF EXISTS violations;
@@ -44,7 +41,7 @@ CREATE TABLE users (
     INDEX idx_user_email (email)
 ) ENGINE=InnoDB;
 
--- 2. Tokens (Email verification & Password reset)
+-- 2. Tokens
 CREATE TABLE tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -88,7 +85,7 @@ CREATE TABLE posts (
     INDEX idx_post_created (created_at)
 ) ENGINE=InnoDB;
 
--- 5. Post Categories (Many-to-Many)
+-- 5. Post Categories
 CREATE TABLE post_categories (
     post_id INT NOT NULL,
     category_id INT NOT NULL,
@@ -138,7 +135,7 @@ CREATE TABLE likes (
     UNIQUE KEY uq_user_comment_like (author_id, comment_id)
 ) ENGINE=InnoDB;
 
--- 9. Favorites (Act: Creative)
+-- 9. Favorites
 CREATE TABLE favorites (
     user_id INT NOT NULL,
     post_id INT NOT NULL,
@@ -148,7 +145,7 @@ CREATE TABLE favorites (
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 10. Notifications (system messages for users)
+-- 10. Notifications
 CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -162,7 +159,7 @@ CREATE TABLE notifications (
     INDEX idx_notification_user (user_id, is_read)
 ) ENGINE=InnoDB;
 
--- 11. Appeals (author disputes a moderation decision)
+-- 11. Appeals
 CREATE TABLE appeals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,
@@ -177,7 +174,7 @@ CREATE TABLE appeals (
     INDEX idx_appeal_status (status)
 ) ENGINE=InnoDB;
 
--- 12. Violations (strikes that lead to an automatic ban)
+-- 12. Violations
 CREATE TABLE violations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -194,8 +191,7 @@ CREATE TABLE violations (
     INDEX idx_violation_target (type, target_id)
 ) ENGINE=InnoDB;
 
--- 13. Doll parts (catalog of PNG layers the profile doll is built from)
--- users.doll_config stores part IDs: {"base": 1, "outfit": 3, "hair": null, "shoes": null, "accessories": []}
+-- 13. Doll parts
 CREATE TABLE doll_parts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category ENUM('base', 'hair', 'outfit', 'shoes', 'accessory') NOT NULL,

@@ -1,25 +1,24 @@
 const pool = require('../../database/db');
 
 class PostModel {
-  // Inactive posts are visible only to their author and admins
   static isVisibleTo(post, user) {
     if (!post) return false;
     if (post.status === 'active') return true;
     return Boolean(user) && (user.role === 'admin' || user.id === post.authorId);
   }
 
-  // 1. Get all posts with sorting, filtering, pagination and strict access control
   static async findAll({
     page = 1,
     limit = 10,
     sort = 'likes',
+    order = 'desc',
+    search,
     categories,
     dateFrom,
     dateTo,
     status,
     currentUser = null,
   }) {
-    // Sanitize pagination: limit between 1 and 100, page >= 1
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
     const offset = (pageNum - 1) * limitNum;
@@ -27,10 +26,8 @@ class PostModel {
     const conditions = [];
     const params = [];
 
-    // Security fix: Strict visibility rule
     if (!currentUser || currentUser.role !== 'admin') {
       if (currentUser) {
-        // Authenticated user sees all active posts OR their own inactive posts
         if (status === 'inactive') {
           conditions.push("p.status = 'inactive' AND p.author_id = ?");
           params.push(currentUser.id);
@@ -41,18 +38,15 @@ class PostModel {
           params.push(currentUser.id);
         }
       } else {
-        // Guest can NEVER see inactive posts
         conditions.push("p.status = 'active'");
       }
     } else {
-      // Admin can filter by any status if requested
       if (status && ['active', 'inactive'].includes(status)) {
         conditions.push("p.status = ?");
         params.push(status);
       }
     }
 
-    // Filter by categories (supports array or comma-separated string)
     if (categories) {
       const catIds = (Array.isArray(categories) ? categories : String(categories).split(','))
         .map((id) => parseInt(id, 10))
@@ -65,7 +59,13 @@ class PostModel {
       }
     }
 
-    // Filter by date interval
+    const query = typeof search === 'string' ? search.trim() : '';
+    if (query) {
+      const pattern = `%${query.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+      conditions.push("(p.title LIKE ? OR p.content LIKE ?)");
+      params.push(pattern, pattern);
+    }
+
     if (dateFrom && !isNaN(Date.parse(dateFrom))) {
       conditions.push("p.created_at >= ?");
       params.push(new Date(dateFrom));
@@ -77,18 +77,16 @@ class PostModel {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Fix: Sort by net score (likes minus dislikes), not just raw vote count
-    let orderClause = "ORDER BY net_likes DESC, p.created_at DESC";
+    const direction = String(order).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    let orderClause = `ORDER BY net_likes ${direction}, p.created_at DESC`;
     if (sort === 'date') {
-      orderClause = "ORDER BY p.created_at DESC";
+      orderClause = `ORDER BY p.created_at ${direction}, p.id ${direction}`;
     }
 
-    // Count total matching posts
     const countQuery = `SELECT COUNT(*) AS total FROM posts p ${whereClause}`;
     const [countRows] = await pool.execute(countQuery, params);
     const totalCount = countRows[0] ? countRows[0].total : 0;
 
-    // Fetch posts with aggregated votes and comments
     const postsQuery = `
       SELECT 
         p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
@@ -108,7 +106,6 @@ class PostModel {
 
     const [rows] = await pool.execute(postsQuery, params);
 
-    // Fetch categories and images for the retrieved posts
     const postIds = rows.map((r) => r.id);
     let categoriesMap = {};
     let imagesMap = {};
@@ -177,7 +174,6 @@ class PostModel {
     };
   }
 
-  // 2. Find post by ID
   static async findById(id) {
     const postId = Number(id);
     if (isNaN(postId)) return null;
@@ -202,7 +198,6 @@ class PostModel {
 
     const r = rows[0];
 
-    // Get categories
     const [cats] = await pool.execute(`
       SELECT c.id, c.title, c.description
       FROM post_categories pc
@@ -210,14 +205,12 @@ class PostModel {
       WHERE pc.post_id = ?
     `, [postId]);
 
-    // Get images
     const [imgs] = await pool.execute(`
       SELECT id, image_url
       FROM post_images
       WHERE post_id = ?
     `, [postId]);
 
-    // Get likes detail
     const [likes] = await pool.execute(`
       SELECT l.id, l.author_id, l.type, l.created_at, u.login AS author_login
       FROM likes l
@@ -253,7 +246,6 @@ class PostModel {
     };
   }
 
-  // 3. Create post with transaction for categories and images
   static async create({ authorId, title, content, categoryIds = [], imageUrls = [] }) {
     const conn = await pool.getConnection();
     try {
@@ -266,7 +258,6 @@ class PostModel {
 
       const newPostId = postResult.insertId;
 
-      // Link categories
       for (const catId of categoryIds) {
         const id = Number(catId);
         if (!isNaN(id)) {
@@ -277,7 +268,6 @@ class PostModel {
         }
       }
 
-      // Link images
       for (const imgUrl of imageUrls) {
         await conn.execute(`
           INSERT INTO post_images (post_id, image_url)
@@ -295,7 +285,6 @@ class PostModel {
     }
   }
 
-  // 4. Update post with transaction
   static async update(id, { title, content, status, categoryIds }) {
     const postId = Number(id);
     const conn = await pool.getConnection();
@@ -344,7 +333,6 @@ class PostModel {
     }
   }
 
-  // Hide a post by moderator decision and start the deletion timer
   static async setModeration(id, { reason, graceDays }) {
     await pool.execute(`
       UPDATE posts
@@ -364,7 +352,6 @@ class PostModel {
     return await this.findById(id);
   }
 
-  // deleteAfter = null pauses the timer (while an appeal is reviewed)
   static async setDeleteAfter(id, graceDays) {
     if (graceDays === null) {
       await pool.execute('UPDATE posts SET delete_after = NULL WHERE id = ?', [Number(id)]);
@@ -385,14 +372,12 @@ class PostModel {
     return rows.map((r) => ({ id: r.id, authorId: r.author_id, title: r.title }));
   }
 
-  // 5. Delete post
   static async delete(id) {
     const postId = Number(id);
     const [result] = await pool.execute("DELETE FROM posts WHERE id = ?", [postId]);
     return result.affectedRows > 0;
   }
 
-  // 6. Favorites (Act: Creative) - Toggle save
   static async toggleFavorite(userId, postId) {
     const uId = Number(userId);
     const pId = Number(postId);
@@ -410,7 +395,6 @@ class PostModel {
     return { action: 'added', isFavorite: true };
   }
 
-  // 7. Get user's favorites
   static async findUserFavorites(userId) {
     const uId = Number(userId);
     if (isNaN(uId)) return [];

@@ -1,7 +1,6 @@
 const pool = require('../../database/db');
 
 class LikeModel {
-  // 1. Get all likes for a post
   static async findPostLikes(postId) {
     const pId = Number(postId);
     if (isNaN(pId)) return [];
@@ -34,7 +33,6 @@ class LikeModel {
     }));
   }
 
-  // 2. Get all likes for a comment
   static async findCommentLikes(commentId) {
     const cId = Number(commentId);
     if (isNaN(cId)) return [];
@@ -67,7 +65,6 @@ class LikeModel {
     }));
   }
 
-  // 3. Vote on post using atomic UPSERT (immune to race conditions)
   static async voteOnPost(authorId, postId, type) {
     const userId = Number(authorId);
     const pId = Number(postId);
@@ -85,7 +82,6 @@ class LikeModel {
     return rows[0] || null;
   }
 
-  // 4. Remove vote from post
   static async removePostVote(authorId, postId) {
     const userId = Number(authorId);
     const pId = Number(postId);
@@ -97,7 +93,6 @@ class LikeModel {
     return result.affectedRows > 0;
   }
 
-  // 5. Vote on comment using atomic UPSERT
   static async voteOnComment(authorId, commentId, type) {
     const userId = Number(authorId);
     const cId = Number(commentId);
@@ -115,7 +110,6 @@ class LikeModel {
     return rows[0] || null;
   }
 
-  // 6. Remove vote from comment
   static async removeCommentVote(authorId, commentId) {
     const userId = Number(authorId);
     const cId = Number(commentId);

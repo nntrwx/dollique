@@ -13,7 +13,6 @@ class ModerationError extends Error {
   }
 }
 
-// Business rules of post moderation: hide -> notify -> appeal -> restore or auto-delete
 class ModerationService {
   static get graceDays() {
     return GRACE_DAYS;
@@ -78,7 +77,6 @@ class ModerationService {
     }
 
     const appeal = await AppealModel.create({ postId: post.id, authorId: user.id, message: String(message).trim() });
-    // The deletion timer is paused while a moderator reviews the appeal
     await PostModel.setDeleteAfter(post.id, null);
     return appeal;
   }
@@ -118,7 +116,6 @@ class ModerationService {
     return await AppealModel.findById(resolved.id);
   }
 
-  // Called by the scheduler: removes hidden posts whose timer ran out
   static async deleteExpiredPosts() {
     const expired = await PostModel.findExpiredModerated();
 

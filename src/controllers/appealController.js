@@ -2,7 +2,6 @@ const AppealModel = require('../models/AppealModel');
 const ModerationService = require('../services/moderationService');
 
 class AppealController {
-  // GET /api/appeals?status=pending - Admin: list appeals
   static async getAllAppeals(req, res) {
     try {
       const { status } = req.query;

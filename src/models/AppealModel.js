@@ -63,7 +63,6 @@ class AppealModel {
     return rows[0] ? this.format(rows[0]) : null;
   }
 
-  // Appeals submitted since the post was last hidden (older ones belong to a previous moderation)
   static async findForCurrentModeration(postId, moderatedAt) {
     const [rows] = await pool.execute(
       'SELECT * FROM appeals WHERE post_id = ? AND created_at >= ? ORDER BY created_at DESC',

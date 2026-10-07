@@ -1,31 +1,25 @@
-# Dependencies
 node_modules/
 
-# Environment variables & secrets (CRITICAL: NEVER COMMIT)
 .env
 .env.local
 .env.*.local
 
-# Uploaded files (keep directories via .gitkeep, ignore actual uploaded files)
 uploads/avatars/*
 !uploads/avatars/.gitkeep
+!uploads/avatars/default.png
 uploads/posts/*
 !uploads/posts/.gitkeep
-# Doll parts uploaded by admins are ignored; the seed layers in the category folders ship with the repo
+!uploads/posts/sample-*
 uploads/doll_parts/part-*
 
-
-# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
 
-# OS generated files
 .DS_Store
 Thumbs.db
 
-# IDE & Editor settings
 .vscode/
 .idea/
 

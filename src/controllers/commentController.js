@@ -13,7 +13,6 @@ function snippet(text) {
 }
 
 class CommentController {
-  // A comment is visible when both the comment and its post are visible to the user
   static async isCommentVisible(comment, user) {
     if (!CommentModel.isVisibleTo(comment, user)) return false;
     const post = await PostModel.findById(comment.postId);
@@ -121,7 +120,7 @@ class CommentController {
         return res.status(400).json({ error: 'Invalid comment_id format.' });
       }
 
-      const { status } = req.body;
+      const { status, content } = req.body;
       const requester = req.user;
 
       const comment = await CommentModel.findById(commentId);
@@ -133,13 +132,33 @@ class CommentController {
         return res.status(403).json({ error: 'Forbidden: Insufficient rights.' });
       }
 
+      if (content !== undefined) {
+        if (requester.id !== comment.authorId) {
+          return res.status(403).json({ error: 'Forbidden: Only the author can edit the text of a comment.' });
+        }
+        if (typeof content !== 'string' || !content.trim()) {
+          return res.status(400).json({ error: 'Comment content cannot be empty.' });
+        }
+        if (content.length > 5000) {
+          return res.status(400).json({ error: 'Comment content cannot exceed 5000 characters.' });
+        }
+        const post = await PostModel.findById(comment.postId);
+        if (!post || post.status !== 'active') {
+          return res.status(403).json({ error: 'Forbidden: Comments under inactive posts cannot be edited.' });
+        }
+        if (status === undefined) {
+          const edited = await CommentModel.updateContent(commentId, content.trim());
+          return res.status(200).json({ message: 'Comment updated successfully.', comment: edited });
+        }
+        await CommentModel.updateContent(commentId, content.trim());
+      }
+
       if (!status || !['active', 'inactive'].includes(status)) {
-        return res.status(400).json({ error: 'Status must be either "active" or "inactive".' });
+        return res.status(400).json({ error: 'Provide [content] to edit the comment or [status] ("active" or "inactive").' });
       }
 
       const updatedComment = await CommentModel.updateStatus(commentId, status);
 
-      // An admin hiding someone else's comment gives the author a strike; showing it again cancels the strike
       if (requester.role === 'admin' && requester.id !== comment.authorId && status !== comment.status) {
         if (status === 'inactive') {
           const reason = String(req.body.reason || '').trim() || DEFAULT_REASON;
@@ -181,7 +200,6 @@ class CommentController {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      // Admin, the comment author and the author of the post can delete a comment
       const post = await PostModel.findById(comment.postId);
       const isPostAuthor = post && requester.id === post.authorId;
       if (requester.role !== 'admin' && requester.id !== comment.authorId && !isPostAuthor) {
@@ -193,7 +211,6 @@ class CommentController {
       await CommentModel.delete(commentId);
       await RatingService.recalculateUserRating(comment.authorId);
 
-      // Deleting by an admin replaces the "hidden" strike (if any) with a "deleted" one, so it is not counted twice
       if (requester.role === 'admin' && requester.id !== comment.authorId) {
         const reason = String((req.body && req.body.reason) || '').trim() || DEFAULT_REASON;
         await ViolationService.revoke('comment_hidden', commentId);
@@ -256,7 +273,6 @@ class CommentController {
         return res.status(404).json({ error: 'Comment not found.' });
       }
 
-      // Security fix: cannot vote on inactive comments
       if (comment.status !== 'active') {
         return res.status(403).json({ error: 'Cannot vote on inactive comments.' });
       }

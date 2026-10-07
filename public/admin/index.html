@@ -229,6 +229,17 @@
       padding: 1px 8px; border-radius: 999px; font-size: 10.5px; margin: 2px 4px 2px 0;
     }
 
+    .post-thumbs { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .post-thumbs img {
+      width: 44px; height: 44px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--dash); cursor: zoom-in; transition: transform .15s ease;
+    }
+    .post-thumbs img:hover { transform: scale(1.06); }
+    .post-full { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--dash); }
+    .post-full-text { font-size: 13px; line-height: 1.55; white-space: pre-wrap; color: var(--ink-950); max-width: 760px; }
+    .post-full-images { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .post-full-images img { height: 180px; max-width: 100%; border-radius: 10px; border: 1px solid var(--dash); cursor: zoom-in; }
+
     .btn {
       padding: 6px 13px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; white-space: nowrap;
       border: 1px solid var(--line); background: rgba(255, 255, 255, 0.6); color: var(--ink-950);
@@ -481,7 +492,6 @@
         <button class="btn btn-primary" id="createBtn" onclick="openCreateModal()">+ New post</button>
       </div>
 
-      <!-- Вкладка постов -->
       <div id="postsTab" class="card">
         <div class="card-header">
           <div>
@@ -516,7 +526,6 @@
         </div>
       </div>
 
-      <!-- Вкладка категорий -->
       <div id="categoriesTab" class="card" style="display: none;">
         <div class="card-header">
           <div><h3 class="card-title">Categories</h3><p class="card-desc">Edit categories and approve or reject the ones users suggest</p></div>
@@ -546,7 +555,6 @@
         </div>
       </div>
 
-      <!-- Вкладка пользователей -->
       <div id="usersTab" class="card" style="display: none;">
         <div class="card-header">
           <div><h3 class="card-title">Users</h3><p class="card-desc">Accounts, roles, strikes and bans</p></div>
@@ -570,7 +578,6 @@
         </div>
       </div>
 
-      <!-- Вкладка апелляций -->
       <div id="appealsTab" class="card" style="display: none;">
         <div class="card-header">
           <div><h3 class="card-title">Appeals</h3><p class="card-desc">Approve to restore a hidden post, reject to restart its deletion timer</p></div>
@@ -600,7 +607,6 @@
         </div>
       </div>
 
-      <!-- Вкладка деталей куклы -->
       <div id="dollPartsTab" class="card" style="display: none;">
         <div class="card-header">
           <div><h3 class="card-title">Doll Parts</h3><p class="card-desc">Layers users build their doll from. A retired part leaves the editor, but people who wear it keep it</p></div>
@@ -670,8 +676,6 @@
 
     window.onload = () => { if (token) showDashboard(); else showLogin(); };
 
-    // Styled replacement for prompt/confirm/alert. Resolves with the text (input), true (confirm) or null (cancel)
-    // Feather-style icons, same look as the sidebar icons
     const ICONS = {
       message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
       flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line>',
@@ -773,7 +777,6 @@
       return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
 
-    // Safe string argument for inline onclick="..." handlers
     function jsArg(value) {
       return escapeHtml(JSON.stringify(String(value ?? '')));
     }
@@ -786,20 +789,17 @@
       return showDialog({ title: 'Something went wrong', message, icon: 'alert', cancelText: '', danger: true });
     }
 
-    // Plays the closing animation, then hides the overlay
     function hideOverlay(overlay) {
       overlay.classList.add('is-closing');
       overlay._hide = setTimeout(() => { overlay.style.display = 'none'; overlay.classList.remove('is-closing'); }, 160);
     }
 
-    // Opens an overlay, cancelling a closing animation that may still be running (dialogs often open back to back)
     function showOverlay(overlay) {
       clearTimeout(overlay._hide);
       overlay.classList.remove('is-closing');
       overlay.style.display = 'flex';
     }
 
-    // Counts a stat number up from its current value
     function animateNumber(el, to) {
       const from = Number(el.innerText) || 0;
       if (from === to || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.innerText = to; return; }
@@ -872,7 +872,6 @@
     }
 
     async function logout() {
-      // Revoke the token on the server too, so it can't be reused
       if (token) {
         await fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
       }
@@ -918,7 +917,6 @@
       } catch (e) { console.error('Stats error:', e); }
     }
 
-    // Загрузка постов и комментариев с передачей Bearer token в запросах к комментариям
     async function loadPosts() {
       const status = document.getElementById('statusFilter').value;
       const url = status ? `/api/posts?status=${status}&limit=50` : '/api/posts?limit=50';
@@ -979,6 +977,7 @@
             <td><b style="font-family:var(--font-mono); font-size:11px;">#${p.id}</b></td>
             <td>
               <b>${escapeHtml(p.title)}</b><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.content.substring(0, 50))}...</span>
+              ${p.images && p.images.length ? `<div class="post-thumbs">${p.images.map(src => `<img src="${escapeHtml(src)}" alt="" loading="lazy" onclick="window.open(this.src, '_blank')">`).join('')}</div>` : ''}
               ${p.moderation ? `<br><span style="font-size:11px; color:#9F1239;">${iconSvg('flag', 'inline-icon')}${escapeHtml(p.moderation.reason)} · auto-delete: ${p.moderation.deleteAfter ? formatDate(p.moderation.deleteAfter) : 'paused (appeal)'}</span>` : ''}
             </td>
             <td>${p.author ? escapeHtml(p.author.login) : 'ID: ' + p.authorId}</td>
@@ -1000,6 +999,10 @@
             <tr class="comments-dropdown-row">
               <td colspan="7">
                 <div style="padding: 10px 14px;">
+                  <div class="post-full">
+                    <div class="post-full-text">${escapeHtml(p.content)}</div>
+                    ${p.images && p.images.length ? `<div class="post-full-images">${p.images.map(src => `<img src="${escapeHtml(src)}" alt="" loading="lazy" onclick="window.open(this.src, '_blank')">`).join('')}</div>` : ''}
+                  </div>
                   <div style="font-weight:700; font-size:12px; margin-bottom:8px; color:var(--ink-950);">${iconSvg('message', 'inline-icon')} Comments for Post #${p.id}:</div>
           `;
           if (comments.length === 0) {
@@ -1471,8 +1474,6 @@
 
     // ---------- Doll parts catalog ----------
     let dollPartsCache = [];
-    // The doll layers are 1024×1024 PNGs. Showing dozens of them at full size makes scrolling the catalog stutter,
-    // so each one is shrunk once to a 256px preview (cached for the session) and only when its card gets near the screen
     const THUMB_SIZE = 256;
     const thumbCache = new Map();
     const thumbObserver = 'IntersectionObserver' in window
@@ -1537,7 +1538,6 @@
           grid.innerHTML = '<div class="parts-empty">No parts here yet. Upload a transparent PNG drawn on the same canvas as the base.</div>';
           return;
         }
-        // Real src is set later by loadPartThumbs, as a small preview
         const img = (src, cls, alt) => `<img class="${cls}" data-src="${escapeHtml(src)}" alt="${alt}" width="256" height="256">`;
         grid.innerHTML = parts.map((p, i) => `
           <div class="part-card ${p.is_active ? '' : 'is-retired'}" style="--i:${Math.min(i, 10)}">
@@ -1577,7 +1577,6 @@
 
     async function submitDollPart(form) {
       const data = new FormData(form);
-      // An empty file input and unchecked boxes must not reach the API as junk values
       const file = data.get('image');
       if (!file || !file.size) data.delete('image');
       if (data.get('layer') === '') data.delete('layer');

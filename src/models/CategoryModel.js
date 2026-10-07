@@ -6,14 +6,12 @@ const CATEGORY_FIELDS = `
 `;
 
 class CategoryModel {
-  // Approved categories are public; pending/rejected ones only for their creator and admins
   static isVisibleTo(category, user) {
     if (!category) return false;
     if (category.status === 'approved') return true;
     return Boolean(user) && (user.role === 'admin' || user.id === category.created_by);
   }
 
-  // 1. Get all categories visible to the user (admin may filter by status)
   static async findAll({ user = null, status } = {}) {
     const conditions = [];
     const params = [];
@@ -41,7 +39,6 @@ class CategoryModel {
     return rows;
   }
 
-  // 2. Find category by ID
   static async findById(id) {
     const categoryId = Number(id);
     if (isNaN(categoryId)) return null;
@@ -56,7 +53,6 @@ class CategoryModel {
     return rows[0] || null;
   }
 
-  // 3. Find category by title (to verify uniqueness)
   static async findByTitle(title) {
     if (!title) return null;
     const [rows] = await pool.execute(`
@@ -68,7 +64,6 @@ class CategoryModel {
     return rows[0] || null;
   }
 
-  // 4. Get posts for category (Security fix: hide inactive posts from guests)
   static async findPostsByCategoryId(categoryId, currentUser = null) {
     const catId = Number(categoryId);
     if (isNaN(catId)) return [];
@@ -121,7 +116,6 @@ class CategoryModel {
     }));
   }
 
-  // Returns the ids from the list that point to approved categories
   static async findApprovedIds(ids) {
     const cleanIds = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
     if (cleanIds.length === 0) return [];
@@ -134,7 +128,6 @@ class CategoryModel {
     return rows.map((r) => r.id);
   }
 
-  // 5. Create category (admin: approved at once, user: waits for moderation)
   static async create({ title, description, status = 'approved', createdBy = null }) {
     const [result] = await pool.execute(`
       INSERT INTO categories (title, description, status, created_by)
@@ -144,7 +137,6 @@ class CategoryModel {
     return await this.findById(result.insertId);
   }
 
-  // Moderation decision on a user-suggested category
   static async setStatus(id, status, rejectionReason = null) {
     await pool.execute(
       'UPDATE categories SET status = ?, rejection_reason = ? WHERE id = ?',
@@ -153,7 +145,6 @@ class CategoryModel {
     return await this.findById(id);
   }
 
-  // 6. Update category (Admin only)
   static async update(id, { title, description }) {
     const categoryId = Number(id);
     const existing = await this.findById(categoryId);
@@ -171,7 +162,6 @@ class CategoryModel {
     return await this.findById(categoryId);
   }
 
-  // 7. Delete category (Admin only)
   static async delete(id) {
     const categoryId = Number(id);
     const [result] = await pool.execute('DELETE FROM categories WHERE id = ?', [categoryId]);

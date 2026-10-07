@@ -14,7 +14,6 @@ const LABELS = {
   profile_reset: 'profile reset by a moderator',
 };
 
-// Strikes for breaking the rules: every BAN_STRIKES active strikes ban the user for BAN_DAYS
 class ViolationService {
   static get banStrikes() {
     return BAN_STRIKES;
@@ -29,7 +28,6 @@ class ViolationService {
     return await ViolationModel.countActive(userId, since);
   }
 
-  // Records a strike and bans the user once the limit is reached. Admins never get strikes.
   static async record({ userId, type, targetId = null, reason = null, adminId = null }) {
     const user = await UserModel.findById(userId, true);
     if (!user || user.role === 'admin') return null;
@@ -52,7 +50,6 @@ class ViolationService {
     return { strikes, banned: false };
   }
 
-  // Cancels a strike when the moderator's decision is undone (post restored, appeal approved, comment re-activated)
   static async revoke(type, targetId) {
     return await ViolationModel.revokeByTarget(type, targetId);
   }

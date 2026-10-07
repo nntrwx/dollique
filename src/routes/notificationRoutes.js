@@ -6,10 +6,10 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-// GET /api/notifications - Own notifications (?unread=true)
+// GET /api/notifications - Own notifications
 router.get('/', NotificationController.getMyNotifications);
 
-// PATCH /api/notifications/read-all - Mark all as read (before /:notification_id)
+// PATCH /api/notifications/read-all - Mark all as read 
 router.patch('/read-all', NotificationController.markAllAsRead);
 
 // PATCH /api/notifications/:notification_id/read - Mark one as read

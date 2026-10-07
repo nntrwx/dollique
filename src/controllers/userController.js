@@ -17,10 +17,9 @@ const RESETTABLE_FIELDS = {
   full_name: 'display name',
   bio: 'profile description',
 };
-// The profile doll (doll_config) is built from site parts only, so it is never moderated
 
 class UserController {
-  // GET /api/users - Get all users
+  // GET /api/users
   static async getAllUsers(req, res) {
     try {
       const isAdmin = req.user && req.user.role === 'admin';
@@ -32,7 +31,7 @@ class UserController {
     }
   }
 
-  // GET /api/users/:user_id - Get specified user data
+  // GET /api/users/:user_id
   static async getUserById(req, res) {
     try {
       const { user_id } = req.params;
@@ -49,7 +48,7 @@ class UserController {
     }
   }
 
-  // GET /api/users/:user_id/doll - The profile doll as ordered picture layers (first = bottom)
+  // GET /api/users/:user_id/doll
   static async getUserDoll(req, res) {
     try {
       const user = await UserModel.findById(req.params.user_id);
@@ -71,7 +70,7 @@ class UserController {
     }
   }
 
-  // POST /api/users - Create new user (Admin only)
+  // POST /api/users
   static async createUser(req, res) {
     try {
       const { login, password, password_confirmation, email, role, full_name } = req.body;
@@ -132,7 +131,7 @@ class UserController {
     }
   }
 
-  // PATCH /api/users/avatar - Upload the profile picture (the doll is edited via PATCH /api/users/:user_id)
+  // PATCH /api/users/avatar
   static async uploadAvatar(req, res) {
     try {
       const userId = req.user.id;
@@ -155,7 +154,7 @@ class UserController {
     }
   }
 
-  // PATCH /api/users/:user_id - Update user data
+  // PATCH /api/users/:user_id
   static async updateUser(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
@@ -219,7 +218,6 @@ class UserController {
         updateData.dollConfig = config;
       }
 
-      // The user picks what the round avatar shows: the uploaded picture or the doll
       if (use_doll_as_avatar !== undefined) {
         if (typeof use_doll_as_avatar !== 'boolean') {
           return res.status(400).json({ error: 'use_doll_as_avatar must be true or false.' });
@@ -230,10 +228,8 @@ class UserController {
         }
         updateData.useDollAsAvatar = use_doll_as_avatar;
       }
-      // Removing the doll switches the avatar back to the picture
       if (updateData.dollConfig === null) updateData.useDollAsAvatar = false;
 
-      // A user changing their own email must confirm the new address; an admin's change is trusted
       const needsConfirmation = Boolean(updateData.email) && requester.role !== 'admin';
       if (updateData.email && !needsConfirmation) updateData.keepEmailConfirmed = true;
 
@@ -262,7 +258,7 @@ class UserController {
     }
   }
 
-  // POST /api/users/:user_id/profile-reset - Admin resets inappropriate profile data
+  // POST /api/users/:user_id/profile-reset
   static async resetProfile(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
@@ -296,7 +292,6 @@ class UserController {
 
       const updatedUser = await UserModel.resetProfileFields(targetUserId, cleanFields);
 
-      // Remove the uploaded file so the inappropriate image is not served anymore
       const oldPicture = targetUser.profile_picture;
       if (cleanFields.includes('profile_picture') && oldPicture
           && oldPicture.startsWith('/uploads/avatars/') && oldPicture !== UserModel.DEFAULT_AVATAR) {
@@ -325,7 +320,7 @@ class UserController {
     }
   }
 
-  // GET /api/users/:user_id/violations - Strike history (admin or the user)
+  // GET /api/users/:user_id/violations
   static async getViolations(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
@@ -347,7 +342,6 @@ class UserController {
         banStrikes: ViolationService.banStrikes,
         bannedUntil: UserModel.isBanned(targetUser) ? targetUser.banned_until : null,
         banReason: UserModel.isBanned(targetUser) ? targetUser.ban_reason : null,
-        // counts = false for strikes that were cancelled or given before the last ban
         violations: (await ViolationModel.findByUser(targetUserId)).map((v) => ({
           ...v,
           counts: !v.revoked && (!resetAt || new Date(v.createdAt) > new Date(resetAt)),
@@ -359,7 +353,7 @@ class UserController {
     }
   }
 
-  // POST /api/users/:user_id/ban - Manual ban (Admin only)
+  // POST /api/users/:user_id/ban
   static async banUser(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
@@ -392,7 +386,7 @@ class UserController {
     }
   }
 
-  // DELETE /api/users/:user_id/ban - Lift the ban early (Admin only)
+  // DELETE /api/users/:user_id/ban
   static async unbanUser(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
@@ -416,7 +410,7 @@ class UserController {
     }
   }
 
-  // DELETE /api/users/:user_id - Delete user
+  // DELETE /api/users/:user_id
   static async deleteUser(req, res) {
     try {
       const targetUserId = Number(req.params.user_id);
