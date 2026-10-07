@@ -1,25 +1,17 @@
 {
   "name": "dollique",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Dollique: Q&A backend for doll customizers and figure collectors (USOF)",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "db:init": "node database/initDb.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nntrwx/dollique.git"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/nntrwx/dollique/issues"
-  },
-  "homepage": "https://github.com/nntrwx/dollique#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",

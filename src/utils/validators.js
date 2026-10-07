@@ -15,4 +15,11 @@ function validateEmail(email) {
   return null;
 }
 
-module.exports = { validateLogin, validateEmail };
+function validatePassword(password) {
+  if (typeof password !== 'string' || password.length < 6) {
+    return 'Password must be at least 6 characters long.';
+  }
+  return null;
+}
+
+module.exports = { validateLogin, validateEmail, validatePassword };

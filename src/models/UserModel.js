@@ -176,10 +176,21 @@ class UserModel {
     return Boolean(user && user.banned_until && new Date(user.banned_until) > new Date());
   }
 
-  static async updateAvatar(id, profilePicture) {
+  // Rating = likes minus dislikes on all posts and comments of the user
+  static async recalculateRating(id) {
     const userId = Number(id);
-    await pool.execute('UPDATE users SET profile_picture = ? WHERE id = ?', [profilePicture, userId]);
-    return await this.findById(userId, true);
+    await pool.execute(`
+      UPDATE users SET rating = (
+        SELECT COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 ELSE -1 END), 0)
+        FROM likes l
+        LEFT JOIN posts p ON l.post_id = p.id
+        LEFT JOIN comments c ON l.comment_id = c.id
+        WHERE p.author_id = ? OR c.author_id = ?
+      )
+      WHERE id = ?
+    `, [userId, userId, userId]);
+    const [rows] = await pool.execute('SELECT rating FROM users WHERE id = ?', [userId]);
+    return rows[0] ? rows[0].rating : 0;
   }
 
   static async delete(id) {

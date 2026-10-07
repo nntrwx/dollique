@@ -4,7 +4,7 @@ const UserModel = require('../models/UserModel');
 const EmailService = require('../services/emailService');
 const TokenService = require('../services/tokenService');
 const LoginLimiter = require('../services/loginLimiter');
-const { validateLogin, validateEmail } = require('../utils/validators');
+const { validateLogin, validateEmail, validatePassword } = require('../utils/validators');
 
 class AuthController {
   // POST /api/auth/register
@@ -18,13 +18,9 @@ class AuthController {
         });
       }
 
-      const formatError = validateLogin(login) || validateEmail(email);
+      const formatError = validateLogin(login) || validateEmail(email) || validatePassword(password);
       if (formatError) {
         return res.status(400).json({ error: formatError });
-      }
-
-      if (typeof password !== 'string' || password.length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
       }
 
       if (password !== password_confirmation) {
@@ -238,8 +234,9 @@ class AuthController {
       const { confirm_token } = req.params;
       const { password, password_confirmation } = req.body;
 
-      if (typeof password !== 'string' || password.length < 6) {
-        return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError });
       }
 
       if (password_confirmation && password !== password_confirmation) {

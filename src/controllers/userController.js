@@ -8,7 +8,7 @@ const ViolationModel = require('../models/ViolationModel');
 const ViolationService = require('../services/violationService');
 const EmailService = require('../services/emailService');
 const DollService = require('../services/dollService');
-const { validateLogin, validateEmail } = require('../utils/validators');
+const { validateLogin, validateEmail, validatePassword } = require('../utils/validators');
 
 const BIO_MAX_LENGTH = 500;
 
@@ -81,8 +81,7 @@ class UserController {
         });
       }
 
-      const inputError = validateLogin(login) || validateEmail(email)
-        || (typeof password !== 'string' || password.length < 6 ? 'Password must be at least 6 characters long.' : null);
+      const inputError = validateLogin(login) || validateEmail(email) || validatePassword(password);
       if (inputError) {
         return res.status(400).json({ error: inputError });
       }
