@@ -201,7 +201,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 | POST | `/login` | Log in with `login` or `email` + `password` (email must be confirmed) | Public |
 | POST | `/logout` | Log out: all tokens of the user stop working | User |
 | POST | `/password-reset` | Send a reset link to `email` | Public |
-| GET / POST | `/password-reset/:confirm_token` | Reset form / set `password, password_confirmation` | Public |
+| GET / POST | `/password-reset/:confirm_token` | GET checks the link, POST sets password, password_confirmation | Public |
 
 ### Users `/api/users`
 | Method | Endpoint | Description | Access |
@@ -309,4 +309,4 @@ A doll is stored as part IDs, `{"base":3,"hair":27,"outfit":14,"shoes":28,"acces
 4. Strikes and auto-ban, profile reset by admins, security fixes: token revocation, login limiter, safer uploads.
 5. Creative feature: the profile doll. I created the part images, built the catalog with admin management, and added the option to use the doll instead of the profile picture.
 
-**Next steps.** A frontend (USOF Part 2) with the doll editor, post subscriptions, and images for the sample posts.
+**Next steps.** A frontend (USOF Part 2).

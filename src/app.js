@@ -57,6 +57,9 @@ app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError && err.code === 'LIMIT_UNEXPECTED_FILE') {
     return res.status(400).json({ error: 'Too many files: a post can have up to 5 images.' });
   }
+  if (err instanceof multer.MulterError || (err.message && err.message.includes('image files'))) {
+    return res.status(400).json({ error: err.message });
+  }
 
   console.error('Server error:', err);
   return res.status(err.status || 500).json({
