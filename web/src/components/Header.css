@@ -1,0 +1,217 @@
+/* Floating glass bar, like the title bar of the admin window. */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px var(--gutter) 0;
+}
+
+.header__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 8px 10px 8px 16px;
+  border-radius: 22px;
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+
+.header__logo {
+  display: flex;
+  align-items: center;
+  color: var(--ink-950);
+  font-family: var(--font-script);
+  font-size: 34px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.header__logo:hover {
+  color: var(--ink-950);
+}
+
+.header__bow {
+  width: 30px;
+  height: 18px;
+  margin-right: -4px;
+  transform: rotate(-12deg) translateY(-8px);
+}
+
+/* Tabs: mono pills, the active one is dark like in the admin panel. */
+.header__nav {
+  display: flex;
+  gap: 6px;
+}
+
+.header__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.header__tab .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.header__tab:hover {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink-950);
+}
+
+.header__tab--active,
+.header__tab--active:hover {
+  border-color: transparent;
+  background: var(--dark-pill);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 8px rgba(31, 28, 29, 0.25);
+}
+
+.header__search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  max-width: 300px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-subtle);
+}
+
+.header__search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.header__search-input {
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink-950);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 2px 2px 10px;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.header__profile:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: inherit;
+}
+
+.header__who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.header__login {
+  max-width: 140px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Doubled class: wins over .icon-button from global.css, which loads later. */
+.header__user .header__burger {
+  display: none;
+  color: var(--ink-950);
+}
+
+.header__user .header__burger:hover {
+  color: var(--accent);
+}
+
+/* Tablet: the tabs fold under the burger. */
+@media (max-width: 960px) {
+  .header__bar {
+    flex-wrap: wrap;
+  }
+
+  .header__user .header__burger {
+    display: inline-flex;
+  }
+
+  .header__nav {
+    display: none;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    order: 5;
+    padding-top: 8px;
+    border-top: 1px dashed var(--dash);
+  }
+
+  .header__nav--open {
+    display: flex;
+  }
+}
+
+/* Phone: search gets its own row. */
+@media (max-width: 600px) {
+  .header {
+    padding-top: 8px;
+  }
+
+  .header__bar {
+    gap: 8px;
+  }
+
+  .header__logo {
+    font-size: 28px;
+  }
+
+  .header__user {
+    margin-left: auto;
+  }
+
+  .header__search {
+    flex-basis: 100%;
+    max-width: none;
+    order: 4;
+  }
+
+  .header__login {
+    max-width: 90px;
+  }
+
+  /* The avatar already leads to sign in, so the extra button can go. */
+  .header__user .header__guest-link {
+    display: none;
+  }
+}

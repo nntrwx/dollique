@@ -1,0 +1,26 @@
+{
+  "name": "usof",
+  "version": "1.0.0",
+  "description": "USOF: Q&A web app (React frontend in web/, Express API in API/)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api:install": "npm --prefix API install",
+    "api:db": "npm --prefix API run db:init",
+    "api": "npm --prefix API start",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.13.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^8.3.4"
+  }
+}

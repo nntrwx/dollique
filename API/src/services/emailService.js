@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 class EmailService {
   static transporter = null;
 
@@ -41,7 +43,7 @@ class EmailService {
   static async sendConfirmationEmail(email, token) {
     try {
       const transporter = await this.getTransporter();
-      const confirmationUrl = `http://localhost:3000/api/auth/confirm-email/${token}`;
+      const confirmationUrl = `${FRONTEND_URL}/confirm-email/${token}`;
       const senderEmail = process.env.SMTP_USER || 'no-reply@dollique.com';
 
       const info = await transporter.sendMail({
@@ -76,7 +78,7 @@ class EmailService {
   static async sendPasswordResetEmail(email, token) {
     try {
       const transporter = await this.getTransporter();
-      const resetUrl = `http://localhost:3000/api/auth/password-reset/${token}`;
+      const resetUrl = `${FRONTEND_URL}/password-reset/${token}`;
       const senderEmail = process.env.SMTP_USER || 'no-reply@dollique.com';
 
       const info = await transporter.sendMail({
