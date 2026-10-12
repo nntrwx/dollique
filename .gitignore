@@ -1,16 +1,17 @@
 node_modules/
+dist/
 
 .env
 .env.local
 .env.*.local
 
-uploads/avatars/*
-!uploads/avatars/.gitkeep
-!uploads/avatars/default.png
-uploads/posts/*
-!uploads/posts/.gitkeep
-!uploads/posts/sample-*
-uploads/doll_parts/part-*
+API/uploads/avatars/*
+!API/uploads/avatars/.gitkeep
+!API/uploads/avatars/default.png
+API/uploads/posts/*
+!API/uploads/posts/.gitkeep
+!API/uploads/posts/sample-*
+API/uploads/doll_parts/part-*
 
 npm-debug.log*
 yarn-debug.log*
