@@ -3,8 +3,11 @@ import { useSelector } from 'react-redux';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { api } from '../api/client';
+import AdminPostActions from '../components/AdminPostActions';
+import Dropdown from '../components/Dropdown';
 import { DoodleCircle, DoodleUnderline, starPath } from '../components/Doodle';
 import FeedFilters from '../components/FeedFilters';
+import FollowButton from '../components/FollowButton';
 import { LaceDivider, RibbonLace } from '../components/Lace';
 import Pagination from '../components/Pagination';
 import Pixel from '../components/Pixel';
@@ -62,25 +65,6 @@ function HeroArt() {
       </div>
       <span className="hero__bunny"><Pixel name="bunny" color="#c98a9c" size={40} /></span>
     </div>
-  );
-}
-
-// Follow / unfollow a category (its posts go to the "For you" feed).
-function FollowButton({
-  on, title, onClick, compact = false,
-}) {
-  return (
-    <button
-      type="button"
-      className={`follow${on ? ' on' : ''}${compact ? ' follow--compact' : ''}`}
-      aria-pressed={on}
-      aria-label={on ? `Unfollow ${title}` : `Follow ${title}`}
-      title={on ? 'Following: click to unfollow' : 'Follow: its posts will show in “For you”'}
-      onClick={onClick}
-    >
-      <Pixel name="heart" size={compact ? 9 : 10} />
-      {!compact && <span>{on ? `Following ${title}` : `Follow ${title}`}</span>}
-    </button>
   );
 }
 
@@ -422,26 +406,31 @@ function HomePage() {
 
           <div className={`feed${loading ? ' feed--loading' : ''}`}>
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} onCategoryClick={(id) => updateParams({ categories: String(id) })} />
+              <PostCard
+                key={post.id}
+                post={post}
+                onCategoryClick={(id) => updateParams({ categories: String(id) })}
+                actions={user?.role === 'admin' && post.authorId !== user.id ? (
+                  <AdminPostActions
+                    post={post}
+                    onChange={(changed) => setPosts((list) => list.map((item) => (item.id === changed.id ? changed : item)))}
+                    onDelete={(id) => setPosts((list) => list.filter((item) => item.id !== id))}
+                  />
+                ) : null}
+              />
             ))}
           </div>
 
           {posts.length > 0 && (
             <Pagination page={params.page} totalPages={pagination.totalPages} onChange={changePage}>
               <span className="mono">per page</span>
-              <label className="field">
-                <b>{params.limit}</b>
-                {' ▾'}
-                <select
-                  value={params.limit}
-                  aria-label="Posts per page"
-                  onChange={(event) => updateParams({
-                    limit: Number(event.target.value) === DEFAULT_LIMIT ? '' : event.target.value,
-                  })}
-                >
-                  {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
-                </select>
-              </label>
+              <Dropdown
+                ariaLabel="Posts per page"
+                className="dd--right"
+                value={params.limit}
+                options={PAGE_SIZES.map((size) => ({ value: size, label: String(size) }))}
+                onChange={(next) => updateParams({ limit: next === DEFAULT_LIMIT ? '' : next })}
+              />
             </Pagination>
           )}
         </div>

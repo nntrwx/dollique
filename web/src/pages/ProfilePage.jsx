@@ -4,6 +4,8 @@ import { Link, useParams } from 'react-router-dom';
 
 import { api } from '../api/client';
 import { forgetUserDoll, getDollParts, getUserDoll } from '../api/dolls';
+import AdminPostActions from '../components/AdminPostActions';
+import AdminUserPanel from '../components/AdminUserPanel';
 import { DEFAULT_AVATAR } from '../components/Avatar';
 import ConfirmButton from '../components/ConfirmButton';
 import { DoodleCircle } from '../components/Doodle';
@@ -104,6 +106,7 @@ function ProfilePage() {
   const me = useSelector(selectCurrentUser);
   const dispatch = useDispatch();
   const isMe = me?.id === userId;
+  const isAdmin = me?.role === 'admin';
   const fileRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
@@ -126,7 +129,8 @@ function ProfilePage() {
     api.get(`/users/${userId}`)
       .then(setProfile)
       .catch((err) => setLoadError(err.status === 404 ? 'This user does not exist.' : err.message));
-  }, [userId]);
+    // signing in as an admin adds the ban state to the answer
+  }, [userId, me?.id]);
 
   useEffect(() => {
     getDollParts().then(setParts).catch(() => setParts([]));
@@ -258,6 +262,22 @@ function ProfilePage() {
     </span>
   );
 
+  // an admin can hide or delete someone else's post right from the list
+  const adminActions = (post) => (isAdmin && post.authorId !== me.id ? (
+    <AdminPostActions
+      post={post}
+      onChange={(changed) => setPosts((current) => ({
+        ...current,
+        list: current.list.map((item) => (item.id === changed.id ? changed : item)),
+      }))}
+      onDelete={(postId) => setPosts((current) => ({
+        ...current,
+        list: current.list.filter((item) => item.id !== postId),
+        total: current.total - 1,
+      }))}
+    />
+  ) : null);
+
   const list = tab === 'posts' ? posts.list : favorites || [];
 
   return (
@@ -297,7 +317,10 @@ function ProfilePage() {
               </div>
             </div>
             {isMe && !editing && (
-              <button type="button" className="nbtn nbtn--sm idrow__edit" onClick={startEditing}>Edit profile</button>
+              <span className="idrow__edit">
+                <button type="button" className="nbtn nbtn--sm" onClick={startEditing}>Edit profile</button>
+                <Link to="/settings" className="link-button">Settings</Link>
+              </span>
             )}
           </div>
 
@@ -380,6 +403,10 @@ function ProfilePage() {
               </span>
             </div>
           )}
+
+          {isAdmin && !isMe && profile.role !== 'admin' && (
+            <AdminUserPanel profile={profile} onChange={setProfile} />
+          )}
         </section>
 
         <div className="ptabs">
@@ -422,7 +449,7 @@ function ProfilePage() {
               post={post}
               compact
               showAuthor={tab === 'favorites'}
-              actions={tab === 'posts' && isMe ? ownActions(post) : null}
+              actions={adminActions(post) || (tab === 'posts' && isMe ? ownActions(post) : null)}
             />
           ))}
         </div>

@@ -35,13 +35,17 @@ class UserController {
   static async getUserById(req, res) {
     try {
       const { user_id } = req.params;
-      const user = await UserModel.findById(user_id);
+      // the user themself and admins also get the email and the ban state
+      const isSelfOrAdmin = Boolean(req.user) && (req.user.role === 'admin' || req.user.id === Number(user_id));
+      const user = await UserModel.findById(user_id, isSelfOrAdmin);
 
       if (!user) {
         return res.status(404).json({ error: 'User not found.' });
       }
 
-      return res.status(200).json(user);
+      // token_version is only for checking tokens, it never leaves the server
+      const { token_version: tokenVersion, ...publicUser } = user;
+      return res.status(200).json(publicUser);
     } catch (error) {
       console.error('Get user by ID error:', error);
       return res.status(500).json({ error: 'Internal server error while fetching user.' });

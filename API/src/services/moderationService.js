@@ -1,6 +1,7 @@
 const PostModel = require('../models/PostModel');
 const AppealModel = require('../models/AppealModel');
 const NotificationModel = require('../models/NotificationModel');
+const UserModel = require('../models/UserModel');
 const RatingService = require('./ratingService');
 const ViolationService = require('./violationService');
 
@@ -18,7 +19,7 @@ class ModerationService {
     return GRACE_DAYS;
   }
 
-  static async hidePost(post, reason, adminId = null) {
+  static async hidePost(post, reason) {
     const cleanReason = reason && String(reason).trim()
       ? String(reason).trim()
       : 'The post breaks the community rules.';
@@ -32,9 +33,9 @@ class ModerationService {
       message: `Your post "${post.title}" was hidden by a moderator. Reason: ${cleanReason} `
         + `You can appeal within ${GRACE_DAYS} days; otherwise the post will be deleted automatically.`,
     });
-    await ViolationService.record({
-      userId: post.authorId, type: 'post_hidden', targetId: post.id, reason: cleanReason, adminId,
-    });
+    // No strike yet: the author may still appeal. The strike comes only if the post is
+    // really deleted (appeal rejected or no appeal in time), so a hide can't ban someone
+    // before they had a chance to explain.
 
     return updatedPost;
   }
@@ -78,7 +79,23 @@ class ModerationService {
 
     const appeal = await AppealModel.create({ postId: post.id, authorId: user.id, message: String(message).trim() });
     await PostModel.setDeleteAfter(post.id, null);
+
+    // every admin hears about it in their notification bell
+    const adminIds = await UserModel.findAdminIds();
+    await Promise.all(adminIds.map((adminId) => NotificationModel.create({
+      userId: adminId,
+      postId: post.id,
+      type: 'appeal_submitted',
+      message: `${user.login} appealed against hiding "${post.title}".`,
+    })));
     return appeal;
+  }
+
+  // The latest appeal sent since the post was hidden (or null), for the post page.
+  static async currentAppeal(post) {
+    if (!post.moderation) return null;
+    const [latest] = await AppealModel.findForCurrentModeration(post.id, post.moderation.moderatedAt);
+    return latest || null;
   }
 
   static async resolveAppeal(appeal, { status, adminResponse }) {
@@ -103,17 +120,31 @@ class ModerationService {
         message: `Your appeal for "${post.title}" was approved, the post is visible again.${response ? ' ' + response : ''}`,
       });
     } else {
-      await PostModel.setDeleteAfter(post.id, GRACE_DAYS);
+      // A rejected appeal is the final decision: the post is deleted right away.
+      // The appeal is deleted with it (ON DELETE CASCADE), so its last state is kept for the answer.
+      const finalAppeal = await AppealModel.findById(resolved.id);
+      await PostModel.delete(post.id);
+      await RatingService.recalculateUserRating(post.authorId);
+      await this.strikeForDeletedPost(post);
       await NotificationModel.create({
         userId: post.authorId,
-        postId: post.id,
         type: 'appeal_rejected',
-        message: `Your appeal for "${post.title}" was rejected${response ? ': ' + response : '.'} `
-          + `The post will be deleted automatically in ${GRACE_DAYS} days.`,
+        message: `Your appeal for "${post.title}" was rejected and the post was deleted.`
+          + (response ? ` Moderator: ${response}` : ''),
       });
+      return finalAppeal;
     }
 
     return await AppealModel.findById(resolved.id);
+  }
+
+  // The strike for a hidden post that ended up deleted.
+  static async strikeForDeletedPost(post) {
+    // posts hidden before this rule already got their strike when they were hidden
+    if (await ViolationService.hasActive('post_hidden', post.id)) return;
+    await ViolationService.record({
+      userId: post.authorId, type: 'post_hidden', targetId: post.id, reason: post.moderation?.reason || null,
+    });
   }
 
   static async deleteExpiredPosts() {
@@ -122,10 +153,11 @@ class ModerationService {
     for (const post of expired) {
       await PostModel.delete(post.id);
       await RatingService.recalculateUserRating(post.authorId);
+      await this.strikeForDeletedPost(post);
       await NotificationModel.create({
         userId: post.authorId,
         type: 'post_deleted',
-        message: `Your post "${post.title}" was deleted because the moderation decision was not appealed in time.`,
+        message: `Your post "${post.title}" was deleted: it was not restored after moderation.`,
       });
     }
 

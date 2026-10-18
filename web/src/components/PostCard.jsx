@@ -22,7 +22,7 @@ function PostCard({
       {/* a post without photos is just text, without an empty picture box */}
       {cover && (
         <Link to={`/posts/${post.id}`} className="post__pic" tabIndex={-1} aria-hidden="true">
-          <img src={cover} alt="" loading="lazy" />
+          <img src={cover} alt="" loading="lazy" decoding="async" />
           {post.images.length > 1 && <span className="post__more">{`+${post.images.length - 1}`}</span>}
         </Link>
       )}

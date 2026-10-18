@@ -1,5 +1,7 @@
 /* sign in, password and email pages: one glass card, a doll on the left, the form on the right */
 .auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 980px; margin: 56px auto 30px; padding: 0; overflow: hidden; }
+/* the sign-in card sits right over the dotted drawings, so it keeps the real blur */
+.auth { -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); }
 
 .hello { position: relative; display: flex; flex-direction: column; padding: 34px 32px 0; background: linear-gradient(180deg, rgba(246, 227, 232, .6), rgba(246, 227, 232, .15)); border-right: 1px solid rgba(255, 255, 255, .7); }
 .hello h2 { margin: 6px 0 10px; font: 400 54px/.95 var(--serif); letter-spacing: -.02em; }
@@ -22,7 +24,7 @@
 .auth__row a { color: var(--ink-2); text-decoration: none; }
 .auth__row a:hover { color: var(--pink-deep); }
 .auth__footer { margin: 18px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); }
-.auth__footer a, .auth__link { color: var(--ink); font-weight: 500; text-decoration: none; background: linear-gradient(var(--pink), var(--pink)) 0 90% / 100% 35% no-repeat; }
+.auth__footer a { color: var(--ink); font-weight: 500; text-decoration: none; background: linear-gradient(var(--pink), var(--pink)) 0 90% / 100% 35% no-repeat; }
 .auth__note { display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; padding: 12px 14px; border-radius: 14px; background: rgba(246, 227, 232, .6); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .auth__note .px { margin-top: 2px; }
 .form { margin: 0; }

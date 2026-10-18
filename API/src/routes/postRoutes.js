@@ -16,7 +16,7 @@ router.post('/', authMiddleware, uploadPostImage.array('images', 5), PostControl
 router.get('/favorites', authMiddleware, PostController.getFavorites);
 
 router.get('/:post_id', optionalAuth, PostController.getPostById);
-router.patch('/:post_id', authMiddleware, PostController.updatePost);
+router.patch('/:post_id', authMiddleware, uploadPostImage.array('images', 5), PostController.updatePost);
 router.delete('/:post_id', authMiddleware, PostController.deletePost);
 
 router.post('/:post_id/appeal', authMiddleware, PostController.appealPost);

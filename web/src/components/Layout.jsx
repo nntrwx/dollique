@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import Footer from './Footer';
@@ -42,7 +43,10 @@ function Layout() {
       </div>
       <Header />
       <main className="layout__main">
-        <Outlet />
+        {/* a page opened for the first time is still loading: keep the header and footer meanwhile */}
+        <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

@@ -148,6 +148,7 @@ class PostModel {
         SELECT id, post_id, image_url
         FROM post_images
         WHERE post_id IN (${idPlaceholders})
+        ORDER BY id
       `, postIds);
 
       imgRows.forEach((ir) => {
@@ -228,6 +229,7 @@ class PostModel {
       SELECT id, image_url
       FROM post_images
       WHERE post_id = ?
+      ORDER BY id
     `, [postId]);
 
     const [likes] = await pool.execute(`
@@ -304,7 +306,9 @@ class PostModel {
     }
   }
 
-  static async update(id, { title, content, status, categoryIds }) {
+  static async update(id, {
+    title, content, status, categoryIds, imageUrls,
+  }) {
     const postId = Number(id);
     const conn = await pool.getConnection();
 
@@ -339,6 +343,13 @@ class PostModel {
           if (!isNaN(cId)) {
             await conn.execute("INSERT IGNORE INTO post_categories (post_id, category_id) VALUES (?, ?)", [postId, cId]);
           }
+        }
+      }
+
+      if (Array.isArray(imageUrls)) {
+        await conn.execute('DELETE FROM post_images WHERE post_id = ?', [postId]);
+        for (const imgUrl of imageUrls) {
+          await conn.execute('INSERT INTO post_images (post_id, image_url) VALUES (?, ?)', [postId, imgUrl]);
         }
       }
 
@@ -384,11 +395,18 @@ class PostModel {
 
   static async findExpiredModerated() {
     const [rows] = await pool.execute(`
-      SELECT id, author_id, title
-      FROM posts
-      WHERE status = 'inactive' AND delete_after IS NOT NULL AND delete_after <= NOW()
+      SELECT id, author_id, title, moderation_reason
+      FROM posts p
+      WHERE p.status = 'inactive' AND (
+        (p.delete_after IS NOT NULL AND p.delete_after <= NOW())
+        -- posts whose appeal was rejected before rejection started deleting them at once
+        OR EXISTS (SELECT 1 FROM appeals a
+          WHERE a.post_id = p.id AND a.status = 'rejected' AND a.created_at >= p.moderated_at)
+      )
     `);
-    return rows.map((r) => ({ id: r.id, authorId: r.author_id, title: r.title }));
+    return rows.map((r) => ({
+      id: r.id, authorId: r.author_id, title: r.title, moderation: { reason: r.moderation_reason },
+    }));
   }
 
   static async delete(id) {

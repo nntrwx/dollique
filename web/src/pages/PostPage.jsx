@@ -10,8 +10,10 @@ import Avatar from '../components/Avatar';
 import CommentForm from '../components/CommentForm';
 import CommentItem from '../components/CommentItem';
 import ConfirmButton from '../components/ConfirmButton';
+import Dropdown from '../components/Dropdown';
 import DollFigure from '../components/DollFigure';
 import ImageGallery from '../components/ImageGallery';
+import ModerationNotice from '../components/ModerationNotice';
 import Pixel from '../components/Pixel';
 import VoteButtons from '../components/VoteButtons';
 import { selectCurrentUser } from '../store/authSlice';
@@ -144,8 +146,6 @@ function PostPage() {
   const [myCommentVotes, setMyCommentVotes] = useState({});
   const [commentSort, setCommentSort] = useState('likes-asc');
   const [hideReason, setHideReason] = useState(null); // null = form closed
-  const [appealText, setAppealText] = useState('');
-  const [appealSent, setAppealSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const loadPost = useCallback(async () => {
@@ -266,18 +266,6 @@ function PostPage() {
     navigate('/', { replace: true });
   });
 
-  const sendAppeal = (event) => {
-    event.preventDefault();
-    if (!appealText.trim()) {
-      setActionError('Write why the post should be returned.');
-      return;
-    }
-    run(async () => {
-      await api.post(`/posts/${post.id}/appeal`, { message: appealText.trim() });
-      setAppealSent(true);
-    });
-  };
-
   // Everything comments need, passed down the tree in one object.
   const thread = {
     user,
@@ -331,32 +319,13 @@ function PostPage() {
       {actionError && <p className="alert alert--error">{actionError}</p>}
 
       {post.moderation && (isAuthor || isAdmin) && (
-        <section className="notice glass">
-          <h2 className="section-title">Hidden by a moderator</h2>
-          <p>
-            <strong>Reason:</strong>
-            {' '}
-            {post.moderation.reason}
-          </p>
-          {post.moderation.deleteAfter && (
-            <p className="muted">{`The post will be deleted on ${formatDate(post.moderation.deleteAfter)} unless the appeal is accepted.`}</p>
-          )}
-          {isAuthor && (appealSent ? (
-            <p className="alert alert--success">Appeal sent. The deletion timer is paused until a moderator reviews it.</p>
-          ) : (
-            <form className="notice__form" onSubmit={sendAppeal}>
-              <textarea
-                className="textarea"
-                rows={2}
-                maxLength={2000}
-                placeholder="Explain why the post should be returned…"
-                value={appealText}
-                onChange={(event) => setAppealText(event.target.value)}
-              />
-              <button type="submit" className="nbtn nbtn--ink nbtn--sm">Send appeal</button>
-            </form>
-          ))}
-        </section>
+        <ModerationNotice
+          post={post}
+          isAuthor={isAuthor}
+          isAdmin={isAdmin}
+          onChanged={loadPost}
+          onDeleted={() => navigate('/', { replace: true })}
+        />
       )}
 
       {!isActive && !post.moderation && isAdmin && !isAuthor && (
@@ -488,16 +457,13 @@ function PostPage() {
               {commentsTotal > 1 && (
                 <div className="chead__sort">
                   <span className="mono">sort</span>
-                  <label className="field">
-                    {COMMENT_SORTS[commentSort].label}
-                    {' '}
-                    <b>{COMMENT_SORTS[commentSort].dir}</b>
-                    <select value={commentSort} aria-label="Sort comments" onChange={(event) => setCommentSort(event.target.value)}>
-                      {Object.entries(COMMENT_SORTS).map(([value, sort]) => (
-                        <option key={value} value={value}>{`${sort.label}: ${sort.dir}`}</option>
-                      ))}
-                    </select>
-                  </label>
+                  <Dropdown
+                    ariaLabel="Sort comments"
+                    className="dd--right"
+                    value={commentSort}
+                    options={Object.entries(COMMENT_SORTS).map(([key, sort]) => ({ value: key, label: `${sort.label}: ${sort.dir}` }))}
+                    onChange={setCommentSort}
+                  />
                 </div>
               )}
             </div>

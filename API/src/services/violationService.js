@@ -50,6 +50,10 @@ class ViolationService {
     return { strikes, banned: false };
   }
 
+  static async hasActive(type, targetId) {
+    return await ViolationModel.hasActive(type, targetId);
+  }
+
   static async revoke(type, targetId) {
     return await ViolationModel.revokeByTarget(type, targetId);
   }

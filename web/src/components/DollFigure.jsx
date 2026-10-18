@@ -11,6 +11,8 @@ function DollFigure({ layers, label = 'Doll', className = '' }) {
           className={part.highlight ? 'hl' : undefined}
           src={part.image_url}
           alt=""
+          loading="lazy"
+          decoding="async"
         />
       ))}
     </span>

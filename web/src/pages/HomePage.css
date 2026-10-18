@@ -30,11 +30,13 @@
 .tabs .underline { position: absolute; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 18px); overflow: visible; pointer-events: none; }
 .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
 .datef { position: relative; }
-.datef__pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; display: flex; flex-direction: column; gap: 10px; width: 230px; padding: 16px; border-radius: 18px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .86); }
-.datef__pop label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.datef__pop input { height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, .8); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; }
-.datef__pop .link-button { align-self: flex-start; }
-.datef__pop .fl__error { margin: 0; }
+/* an open calendar must float over the feed and the footer */
+.layout__main:has(.datef--open) { z-index: 3; }
+.datef--open { z-index: 21; }
+.datef--open .dd__btn { background: #fff; }
+.datef--open .dd__caret { transform: rotate(-90deg); color: var(--pink-deep); }
+.datef__pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; display: flex; flex-direction: column; gap: 6px; padding: 16px 16px 14px; border-radius: 22px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .94); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), 0 14px 36px rgba(90, 40, 65, .18); transform-origin: top right; animation: dd-pop .28s cubic-bezier(.32, .72, 0, 1); }
+.datef__pop .link-button { align-self: center; }
 
 /* categories: serif words with counts; the chosen ones are circled by hand,
    hover turns a word into a little black lace ribbon */
@@ -87,14 +89,6 @@
 .cat-list span { font: 11px var(--mono); color: var(--ink-3); }
 .cat-list__hint { margin: 6px 0 0; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--ink-3); }
 
-/* follow a category: a small heart capsule, pink when followed */
-.follow { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--capsule); box-shadow: var(--g-rim), 0 2px 6px rgba(90, 40, 65, .07); color: var(--ink-3); font: 12px var(--sans); text-transform: none; letter-spacing: 0; cursor: pointer; transition: color .2s, background .2s, transform .15s; }
-.follow:hover { color: var(--pink-deep); background: #fff; }
-.follow:active { transform: scale(.9); }
-.follow.on { background: var(--pink); color: var(--ink); }
-.follow.on .px { color: var(--pink-deep); animation: follow-beat .4s cubic-bezier(.3, 1.6, .5, 1); }
-.follow--compact { width: 26px; height: 26px; padding: 0; justify-content: center; }
-@keyframes follow-beat { 0% { transform: scale(.5); } 60% { transform: scale(1.3); } 100% { transform: none; } }
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 46px; padding-top: 8px; }
@@ -103,7 +97,10 @@
   .cols { grid-template-columns: 1fr; }
   .tabs button { font-size: 28px; }
   .filters { margin-left: 0; }
-  .datef__pop { left: 0; right: auto; }
+  /* on a phone the capsule can land anywhere in the row, so the calendar hangs from the row's left edge */
+  .filters { position: relative; }
+  .datef { position: static; }
+  .datef__pop { left: 0; right: auto; transform-origin: top center; }
   .cats { flex-wrap: nowrap; margin: 0 -16px 26px; padding: 8px 28px 14px; overflow-x: auto; }
   .cats button { flex: none; font-size: 21px; white-space: nowrap; }
   .pager__end { margin-left: 0; }

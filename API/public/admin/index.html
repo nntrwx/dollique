@@ -580,7 +580,7 @@
 
       <div id="appealsTab" class="card" style="display: none;">
         <div class="card-header">
-          <div><h3 class="card-title">Appeals</h3><p class="card-desc">Approve to restore a hidden post, reject to restart its deletion timer</p></div>
+          <div><h3 class="card-title">Appeals</h3><p class="card-desc">Approve to restore a hidden post, reject to delete it</p></div>
           <div class="toolbar">
             <select id="appealStatusFilter" class="filter-select" onchange="loadAppeals()">
               <option value="pending">Pending</option>
@@ -668,6 +668,7 @@
 
   <script>
     let token = localStorage.getItem('dollique_admin_token') || '';
+    let appealsTimer = null;
     let activeTab = 'posts';
     let allPostsCache = [];
     let commentsMap = {};
@@ -869,7 +870,15 @@
       loadUsers();
       loadAppeals();
       loadDollParts();
+      // new appeals show up on their own: checked every 20 s and when the tab is opened again
+      if (!appealsTimer) appealsTimer = setInterval(refreshAppeals, 20000);
     }
+
+    function refreshAppeals() {
+      if (token && document.visibilityState === 'visible'
+        && document.getElementById('dashboardScreen').style.display !== 'none') loadAppeals();
+    }
+    document.addEventListener('visibilitychange', refreshAppeals);
 
     async function logout() {
       if (token) {
@@ -1138,7 +1147,7 @@
         title: isApprove ? `Approve appeal #${id}` : `Reject appeal #${id}`,
         message: isApprove
           ? 'The post becomes visible again. You can add an optional message for the author.'
-          : 'The deletion timer restarts and the author cannot appeal again. Explain the decision to the author.',
+          : 'The post is deleted right away. Explain the decision to the author.',
         icon: isApprove ? 'check' : 'ban',
         tone: isApprove ? 'success' : 'danger',
         input: true,

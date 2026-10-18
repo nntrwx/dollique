@@ -29,8 +29,12 @@ class CategoryModel {
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    // posts_count counts only published posts, as everyone sees them
     const [rows] = await pool.execute(`
-      SELECT ${CATEGORY_FIELDS}
+      SELECT ${CATEGORY_FIELDS},
+        (SELECT COUNT(*) FROM post_categories pc JOIN posts p ON p.id = pc.post_id
+          WHERE pc.category_id = c.id AND p.status = 'active') AS posts_count,
+        (SELECT COUNT(*) FROM category_subscriptions cs WHERE cs.category_id = c.id) AS followers_count
       FROM categories c
       LEFT JOIN users u ON c.created_by = u.id
       ${where}

@@ -1,6 +1,7 @@
 /* post preview: a glass card; on hover a pink sheet slips out from under it */
 .post { position: relative; isolation: isolate; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 24px; padding: 18px; border-radius: 22px; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
-.post::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 22px; background: var(--g-fill); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), var(--g-drop); transition: box-shadow .35s; }
+/* no backdrop blur here: under a card there is only paper, and blurring every card made scrolling the feed lag */
+.post::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 22px; background: var(--g-fill); box-shadow: var(--g-rim), var(--g-drop); transition: box-shadow .35s; }
 .post::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 22px; background: var(--pink); opacity: 0; transition: transform .4s cubic-bezier(.2, .8, .2, 1), opacity .25s; }
 .post:hover { transform: translateY(-2px); }
 .post:hover::after { background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .8), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .82); box-shadow: var(--g-rim), 0 18px 40px rgba(60, 30, 40, .08); }
@@ -55,3 +56,9 @@
   .post__pic, .post--compact .post__pic { height: 190px; }
   .post__title { font-size: 26px; }
 }
+
+/* little text actions in the meta row: the owner's Edit / Delete, an admin's Hide / Delete */
+.post .own { display: flex; gap: 12px; margin-left: 4px; }
+.post .own .link-button { font-size: 10px; color: var(--ink-3); }
+.post .own .link-button:hover { color: var(--ink); }
+.post .own .link-button--danger:hover, .post .own .confirm__yes { color: var(--danger); }

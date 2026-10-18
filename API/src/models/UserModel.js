@@ -8,6 +8,7 @@ class UserModel {
       const [rows] = await pool.execute(`
         SELECT id, login, full_name, email, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role,
                banned_until, ban_reason, created_at,
+               (SELECT COUNT(*) FROM posts p WHERE p.author_id = users.id AND p.status = 'active') AS posts_count,
                (SELECT COUNT(*) FROM violations v
                  WHERE v.user_id = users.id AND v.revoked = 0
                    AND (users.strikes_reset_at IS NULL OR v.created_at > users.strikes_reset_at)) AS active_strikes
@@ -18,7 +19,8 @@ class UserModel {
     }
 
     const [rows] = await pool.execute(`
-      SELECT id, login, full_name, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
+      SELECT id, login, full_name, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at,
+             (SELECT COUNT(*) FROM posts p WHERE p.author_id = users.id AND p.status = 'active') AS posts_count
       FROM users
       WHERE is_email_confirmed = 1
       ORDER BY id ASC
@@ -43,6 +45,11 @@ class UserModel {
   static async findDollConfigs() {
     const [rows] = await pool.execute('SELECT id, doll_config FROM users WHERE doll_config IS NOT NULL');
     return rows;
+  }
+
+  static async findAdminIds() {
+    const [rows] = await pool.execute("SELECT id FROM users WHERE role = 'admin'");
+    return rows.map((r) => r.id);
   }
 
   static async findByLogin(login) {

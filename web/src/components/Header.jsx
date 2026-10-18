@@ -6,7 +6,6 @@ import {
 
 import { logout, selectCurrentUser } from '../store/authSlice';
 import Avatar from './Avatar';
-import Icon from './Icon';
 import NotificationBell from './NotificationBell';
 import { HeaderLace } from './Lace';
 import Pixel from './Pixel';
@@ -73,6 +72,8 @@ function Header() {
           <NavLink to="/" end className={tabClass} onClick={closeMenu}>Feed</NavLink>
           <NavLink to="/categories" className={tabClass} onClick={closeMenu}>Categories</NavLink>
           <NavLink to="/users" end className={tabClass} onClick={closeMenu}>Users</NavLink>
+          {/* on phones the gear hides, so Settings lives in the menu */}
+          {user && <NavLink to="/settings" className={({ isActive }) => `${isActive ? 'on ' : ''}bar__nav-settings`} onClick={closeMenu}>Settings</NavLink>}
         </nav>
 
         <div className="bar__right">
@@ -91,6 +92,17 @@ function Header() {
           </form>
 
           {user && <NotificationBell />}
+          {user && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `gear${isActive ? ' gear--on' : ''}`}
+              title="Settings"
+              aria-label="Settings"
+              onClick={closeMenu}
+            >
+              <Pixel name="gear" size={16} />
+            </NavLink>
+          )}
 
           <Link
             to={user ? `/users/${user.id}` : '/login'}
@@ -125,13 +137,18 @@ function Header() {
           )}
 
           <button
-            className="bar__burger"
+            className={`bar__burger${menuOpen ? ' bar__burger--open' : ''}`}
             type="button"
-            aria-label="Menu"
+            aria-label={menuOpen ? 'Close the menu' : 'Menu'}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
           >
-            <Icon name={menuOpen ? 'close' : 'menu'} />
+            {/* three lines that fold into a cross */}
+            <span className="burger" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
           </button>
         </div>
       </div>

@@ -1,0 +1,14 @@
+/* confirmation window: dark veil + a glass card that pops in like on iOS */
+.cdialog { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgba(33, 28, 31, .45); animation: cdialog-fade .25s ease-out both; }
+.cdialog .cdialog__card { width: min(420px, 100%); padding: 30px 28px 24px; text-align: center; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .98); animation: cdialog-pop .42s cubic-bezier(.32, .72, 0, 1) both; }
+.cdialog__icon { display: inline-grid; place-items: center; width: 52px; height: 52px; margin-bottom: 12px; border-radius: 50%; background: var(--pink-wash); color: var(--pink-deep); }
+.cdialog__card--danger .cdialog__icon { background: rgba(181, 83, 108, .12); color: var(--danger); }
+.cdialog h2 { margin: 0 0 10px; font: 400 32px/1.05 var(--serif); }
+.cdialog__text { margin: 0 0 22px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.cdialog__text p { margin: 0 0 8px; }
+.cdialog__actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+@keyframes cdialog-fade { from { opacity: 0; } }
+@keyframes cdialog-pop { from { opacity: 0; transform: scale(.9); } }
+@media (prefers-reduced-motion: reduce) {
+  .cdialog, .cdialog__card { animation: none; }
+}

@@ -45,7 +45,27 @@
 /* admins get a white "Admin" sticker that opens the admin panel */
 .sticker--admin { gap: 8px; background: var(--card); transform: rotate(-2deg); }
 
-.bar__burger { display: none; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #2f282c; color: var(--pink); cursor: pointer; }
+.bar__burger { display: none; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #2f282c; color: var(--pink); cursor: pointer; transition: background .2s, transform .15s; }
+.bar__burger:active { transform: scale(.9); }
+.bar__burger--open { background: var(--pink); color: var(--ink); }
+.burger { position: relative; display: block; width: 16px; height: 12px; }
+.burger i { position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px; background: currentColor; transition: transform .35s cubic-bezier(.32, .72, 0, 1), opacity .2s, top .35s cubic-bezier(.32, .72, 0, 1); }
+.burger i:nth-child(1) { top: 0; }
+.burger i:nth-child(2) { top: 5px; }
+.burger i:nth-child(3) { top: 10px; }
+.bar__burger--open .burger i:nth-child(1) { top: 5px; transform: rotate(45deg); }
+.bar__burger--open .burger i:nth-child(2) { opacity: 0; transform: scaleX(.2); }
+.bar__burger--open .burger i:nth-child(3) { top: 5px; transform: rotate(-45deg); }
+
+/* settings: a round pixel gear next to the bell, it turns a little on hover */
+.gear { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: #2f282c; color: var(--pink); transition: background .2s, transform .15s; }
+.gear .px { transition: transform .4s cubic-bezier(.3, 1.6, .5, 1); }
+.gear:hover { background: #3d3439; }
+.gear:hover .px { transform: rotate(60deg); }
+.gear:active { transform: scale(.9); }
+.gear--on { background: var(--pink); color: var(--ink); }
+.gear--on:hover { background: var(--pink); }
+.bar__nav-settings { display: none; }
 
 @media (max-width: 1020px) {
   .search { width: 180px; }
@@ -63,9 +83,25 @@
   .bar__burger { display: grid; }
   .bar__right { gap: 10px; }
 
-  /* the menu and the search drop down under the ribbon */
-  .bar__nav, .search { display: none; }
-  .bar__nav--open { position: absolute; left: 16px; right: 16px; top: 74px; display: flex; flex-direction: column; padding: 8px; border-radius: 20px; transform: none; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
-  .bar__nav--open a { padding: 11px 16px; }
+  /* the menu and the search drop down under the ribbon: they fade in and slide down a little,
+     the links follow one after another */
+  .bar__nav, .search { position: absolute; left: 16px; right: 16px; display: flex; visibility: hidden; opacity: 0; transform: translateY(-14px) scale(.97); transform-origin: top center; pointer-events: none; transition: opacity .2s ease-in, transform .25s ease-in, visibility 0s .25s; }
+  .bar__nav { top: 74px; flex-direction: column; padding: 8px; border-radius: 20px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
+  .bar__nav a { padding: 11px 16px; opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .3s cubic-bezier(.32, .72, 0, 1), background .2s, color .2s; }
+  .search { top: 228px; width: auto; height: 44px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
+  .bar__nav--open, .search--open { visibility: visible; opacity: 1; transform: none; pointer-events: auto; transition: opacity .28s ease-out, transform .45s cubic-bezier(.32, .72, 0, 1), visibility 0s; }
+  .search--open { transition-delay: .06s; }
+  .bar__nav--open a { opacity: 1; transform: none; }
+  .bar__nav--open a:nth-child(2) { transition-delay: .04s; }
+  .bar__nav--open a:nth-child(3) { transition-delay: .08s; }
+  .bar__nav--open a:nth-child(4) { transition-delay: .12s; }
+  .gear { display: none; }
+  .bar__nav .bar__nav-settings { display: block; }
+  /* the menu is one link longer when signed in, the search goes lower */
+  .bar__in:has(.bar__nav-settings) .search { top: 273px; }
   .search--open { position: absolute; left: 16px; right: 16px; top: 228px; display: flex; width: auto; height: 44px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar__nav, .search, .bar__nav a, .burger i { transition-duration: .01s !important; transition-delay: 0s !important; }
 }

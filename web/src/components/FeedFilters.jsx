@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { formatDate } from '../utils/format';
+import Dropdown from './Dropdown';
+import Pixel from './Pixel';
+import RangeCalendar from './RangeCalendar';
 
 const ORDER_LABELS = {
   date: { desc: 'newest first ↓', asc: 'oldest first ↑' },
@@ -22,12 +25,10 @@ function dateLabel(from, to) {
   return from ? `from ${formatDate(from)}` : `until ${formatDate(to)}`;
 }
 
-// Date range in a small glass popover under its capsule.
+// Date range in a small glass popover with our own calendar under its capsule.
 function DateFilter({ dateFrom, dateTo, onChange }) {
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState('');
   const boxRef = useRef(null);
-  const today = new Date().toISOString().slice(0, 10);
 
   // A click anywhere else or Esc closes the popover.
   useEffect(() => {
@@ -43,35 +44,25 @@ function DateFilter({ dateFrom, dateTo, onChange }) {
     };
   }, [open]);
 
-  const change = (key, value) => {
-    const from = key === 'from' ? value : dateFrom;
-    const to = key === 'to' ? value : dateTo;
-    if (from && to && from > to) {
-      setError('"From" must be before "to".');
-      return;
-    }
-    setError('');
-    onChange({ [key]: value });
+  const change = (range) => {
+    onChange(range);
+    // the range is complete, so the popover can go
+    if (range.from && range.to) setOpen(false);
   };
 
   return (
-    <span className="datef" ref={boxRef}>
-      <button type="button" className="field" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <span className={`datef${open ? ' datef--open' : ''}`} ref={boxRef}>
+      <button type="button" className="field dd__btn" aria-expanded={open} onClick={() => setOpen(!open)}>
         Date
         {' '}
         <b>{dateLabel(dateFrom, dateTo)}</b>
+        <span className="dd__caret" aria-hidden="true">
+          <Pixel name="right" size={7} />
+        </span>
       </button>
       {open && (
         <div className="datef__pop glass">
-          <label>
-            <span className="mono">from</span>
-            <input type="date" max={dateTo || today} value={dateFrom} onChange={(event) => change('from', event.target.value)} />
-          </label>
-          <label>
-            <span className="mono">to</span>
-            <input type="date" min={dateFrom || undefined} max={today} value={dateTo} onChange={(event) => change('to', event.target.value)} />
-          </label>
-          {error && <p className="fl__error">{error}</p>}
+          <RangeCalendar from={dateFrom} to={dateTo} onChange={change} />
           {(dateFrom || dateTo) && (
             <button type="button" className="link-button" onClick={() => onChange({ from: '', to: '' })}>× any time</button>
           )}
@@ -90,27 +81,28 @@ function FeedFilters({
 
   return (
     <div className="filters">
-      <label className="field">
-        Order
-        {' '}
-        <b>{ORDER_LABELS[sort][order]}</b>
-        <select value={order} aria-label="Order" onChange={(event) => onChange({ order: event.target.value === 'desc' ? '' : 'asc' })}>
-          <option value="desc">{ORDER_LABELS[sort].desc}</option>
-          <option value="asc">{ORDER_LABELS[sort].asc}</option>
-        </select>
-      </label>
+      <Dropdown
+        label="Order"
+        ariaLabel="Order"
+        value={order}
+        options={[
+          { value: 'desc', label: ORDER_LABELS[sort].desc },
+          { value: 'asc', label: ORDER_LABELS[sort].asc },
+        ]}
+        onChange={(next) => onChange({ order: next === 'desc' ? '' : 'asc' })}
+      />
 
       <DateFilter dateFrom={dateFrom} dateTo={dateTo} onChange={onChange} />
 
       {showStatus && (
-        <label className="field">
-          Status
-          {' '}
-          <b>{statusOptions.find((option) => option.value === status)?.label}</b>
-          <select value={status} aria-label="Status" onChange={(event) => onChange({ status: event.target.value })}>
-            {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
+        <Dropdown
+          label="Status"
+          ariaLabel="Status"
+          className="dd--right"
+          value={status}
+          options={statusOptions}
+          onChange={(next) => onChange({ status: next })}
+        />
       )}
     </div>
   );

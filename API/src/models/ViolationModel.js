@@ -31,6 +31,14 @@ class ViolationModel {
     return result.affectedRows;
   }
 
+  static async hasActive(type, targetId) {
+    const [rows] = await pool.execute(
+      'SELECT 1 FROM violations WHERE type = ? AND target_id = ? AND revoked = 0 LIMIT 1',
+      [type, Number(targetId)]
+    );
+    return rows.length > 0;
+  }
+
   static async countActive(userId, since = null) {
     const [rows] = await pool.execute(
       `SELECT COUNT(*) AS cnt FROM violations

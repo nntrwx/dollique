@@ -78,6 +78,19 @@ class PostController {
         return res.status(404).json({ error: 'Post not found or is currently inactive.' });
       }
 
+      // the author and admins also see where the appeal against hiding stands
+      const canSeeAppeal = req.user && (req.user.role === 'admin' || req.user.id === post.authorId);
+      if (post.moderation && canSeeAppeal) {
+        const appeal = await ModerationService.currentAppeal(post);
+        post.moderation.appeal = appeal && {
+          id: appeal.id,
+          status: appeal.status,
+          message: appeal.message,
+          adminResponse: appeal.adminResponse,
+          createdAt: appeal.createdAt,
+        };
+      }
+
       return res.status(200).json(post);
     } catch (error) {
       console.error('Get post by ID error:', error);
@@ -171,7 +184,10 @@ class PostController {
       }
 
       const requester = req.user;
-      const { title, content, status, categories, reason } = req.body;
+      const {
+        title, content, status, categories, reason, keep_images,
+      } = req.body;
+      const newFiles = Array.isArray(req.files) ? req.files : [];
 
       const post = await PostModel.findById(postId);
       if (!post) {
@@ -199,7 +215,26 @@ class PostController {
           updateData.title = title;
         }
         if (content) updateData.content = content;
-      } else if (isAdmin && (title || content)) {
+
+        // Photos (multipart/form-data): keep_images is a JSON list of the current photos to keep,
+        // new files come in "images". Together there can be at most 5.
+        if (keep_images !== undefined || newFiles.length) {
+          let keep = [];
+          try {
+            keep = keep_images === undefined ? post.images : JSON.parse(keep_images);
+          } catch {
+            return res.status(400).json({ error: 'keep_images must be a JSON list of image URLs.' });
+          }
+          if (!Array.isArray(keep) || keep.some((url) => !post.images.includes(url))) {
+            return res.status(400).json({ error: 'keep_images can only list photos of this post.' });
+          }
+          const imageUrls = [...keep, ...newFiles.map((file) => `/uploads/posts/${file.filename}`)];
+          if (imageUrls.length > 5) {
+            return res.status(400).json({ error: 'A post can have at most 5 photos.' });
+          }
+          updateData.imageUrls = imageUrls;
+        }
+      } else if (isAdmin && (title || content || newFiles.length || keep_images !== undefined)) {
         return res.status(403).json({
           error: 'Forbidden: Admins cannot edit the original post content or title.',
         });
@@ -235,7 +270,7 @@ class PostController {
 
       if (isModeration) {
         updatedPost = status === 'inactive'
-          ? await ModerationService.hidePost(post, reason, req.user.id)
+          ? await ModerationService.hidePost(post, reason)
           : await ModerationService.restorePost(post);
       } else if (status === 'active' && post.moderation) {
         updatedPost = await PostModel.clearModeration(postId);

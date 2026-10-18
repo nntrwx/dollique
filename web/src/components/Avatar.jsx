@@ -53,6 +53,8 @@ function Avatar({
       <img
         src={src || DEFAULT_AVATAR}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         onError={(event) => {
           // A broken file on the server falls back to the default picture.
           if (!event.currentTarget.src.endsWith(DEFAULT_AVATAR)) {

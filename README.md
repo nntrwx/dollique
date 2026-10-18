@@ -36,7 +36,7 @@ Built as Part 1 (Backend API) of the **USOF Challenge**, Full Stack track.
 **Extra (creative part)**
 - **Profile doll.** Every user can assemble a pixel doll from a catalog of PNG layers (body, hair, outfit, shoes, up to 3 accessories) and, if they want, show it instead of their profile picture. Admins manage the catalog.
 - **Favorites.** Users save useful posts to a personal list.
-- **Moderation with appeals.** An admin hides a post with a reason, the author gets a notification and can appeal. If the appeal is not approved in time, the post is deleted automatically.
+- **Moderation with appeals.** An admin hides a post with a reason, the author gets a notification and can appeal. If the author does not appeal in time, the post is deleted automatically; a rejected appeal deletes it at once.
 - **Notifications** about moderation, appeals, category decisions, strikes and bans, and about other people's activity: comments on your posts, replies to your comments and likes (`services/activityService.js`; never about your own actions, and a repeated unread one is not added twice).
 - **User-suggested categories.** Users propose categories, admins approve or reject them.
 - **Strikes and auto-ban.** Moderated content gives the author a strike; 3 active strikes ban the account for 7 days. Admins can also ban, unban and reset parts of a profile.
@@ -206,7 +206,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 ### Users `/api/users`
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| GET | `/` | All users | Public |
+| GET | `/` | All users, each with `posts_count` (published posts) | Public |
 | GET | `/:user_id` | One user | Public |
 | GET | `/:user_id/doll` | The user's doll as ordered layers + `use_doll_as_avatar` | Public |
 | POST | `/` | Create a user or admin: `login, password, password_confirmation, email, role` | Admin |
@@ -224,7 +224,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 | GET | `/favorites` | My saved posts | User |
 | GET | `/:post_id` | One post | Public* |
 | POST | `/` | Create: `title, content, categories`, up to 5 files in `images` | User |
-| PATCH | `/:post_id` | Author edits `title, content, categories, status`; admin can hide or restore with a `reason` | Author / Admin |
+| PATCH | `/:post_id` | Author edits `title, content, categories, status`; photos as `multipart/form-data`: `keep_images` (JSON list of current photos to keep) + new files in `images`, 5 in total. Admin can hide or restore with a `reason` | Author / Admin |
 | DELETE | `/:post_id` | Delete | Author / Admin |
 | POST | `/:post_id/appeal` | Appeal a hidden post with a `message` | Author |
 | POST | `/:post_id/favorite` | Save / unsave | User |
@@ -245,7 +245,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 ### Categories `/api/categories`
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| GET | `/` | Approved categories (admins see all, authors also see their own suggestions) | Public |
+| GET | `/` | Approved categories (admins see all, authors also see their own suggestions), each with `posts_count` and `followers_count` | Public |
 | GET | `/subscriptions` | Ids of the categories I follow: `{ categoryIds }` | User |
 | GET | `/:category_id` | One category | Public |
 | GET | `/:category_id/posts` | Posts in the category | Public |
@@ -293,7 +293,7 @@ A doll is stored as part IDs, `{"base":3,"hair":27,"outfit":14,"shoes":28,"acces
 
 **Votes and rating.** The vote means a row in the `likes` table. A unique key allows users to place one vote per post and one per comment. Voting again switches the vote between like and dislike. After every vote, the `RatingService` updates the author’s rating which equals the difference between likes and dislikes of the author's posts and comments.
 
-**Moderation.** Whenever an admin hides a post, an explanation and a date of removal will be added to the post, the writer will get a notification, and a strike will be handed out. An appeal can be submitted by the writer, but only one appeal is allowed at any particular time, and no more appeal is possible following a rejected appeal. If an appeal is granted, then the post is restored, and the strike is wiped out, while if it is not, then the countdown proceeds. There is a scheduler in `server.js` that deletes the post once its lifespan ends.
+**Moderation.** Whenever an admin hides a post, an explanation and a date of removal will be added to the post, and the writer will get a notification. An appeal can be submitted by the writer, but only one appeal is allowed at any particular time; every admin is notified about a new appeal and can approve or reject it in the admin panel or right on the post page. If an appeal is granted, the post is restored; if it is rejected, the post is deleted at once. A hidden post gives a strike only when it is really deleted (appeal rejected or no appeal in time), so a hide alone can't ban someone before they had a chance to appeal. There is a scheduler in `server.js` that deletes the post once its lifespan ends.
 
 **The doll.** `DollService` checks whether a `doll_config` is valid or not. In particular, it checks that there is a body, each ID refers to an existing item and is from a certain category, the amount of accessories does not exceed three, and retired parts can be kept only by users who already wear them; nobody new can pick them. For requesting a doll, the service gets all the parts and sorts them according to `layer`. The drawing order (layer) is: base (10), hair and shoes (20), outfits (30), accessories (50); higher layers are drawn on top. Also, a part which is currently worn cannot be deleted, only retired.
 

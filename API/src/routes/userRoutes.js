@@ -14,7 +14,7 @@ router.get('/', optionalAuth, UserController.getAllUsers);
 router.patch('/avatar', authMiddleware, uploadAvatar.single('avatar'), UserController.uploadAvatar);
 
 // GET /api/users/:user_id
-router.get('/:user_id', UserController.getUserById);
+router.get('/:user_id', optionalAuth, UserController.getUserById);
 
 // GET /api/users/:user_id/doll
 router.get('/:user_id/doll', UserController.getUserDoll);

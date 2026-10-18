@@ -1,0 +1,28 @@
+/* our own select: a glass capsule + a small glass list that pops out of it */
+.dd { position: relative; display: inline-block; }
+/* an open list must float over the footer too */
+.layout__main:has(.dd--open) { z-index: 3; }
+.dd--open { z-index: 21; }
+.dd__btn { cursor: pointer; }
+.dd__caret { display: inline-grid; place-items: center; margin-left: 2px; color: var(--ink-3); transform: rotate(90deg); transition: transform .3s cubic-bezier(.32, .72, 0, 1); }
+.dd--open .dd__btn { background: #fff; }
+.dd--open .dd__caret { transform: rotate(-90deg); color: var(--pink-deep); }
+
+.dd__menu { position: absolute; left: 0; top: calc(100% + 8px); z-index: 20; min-width: max(100%, 160px); margin: 0; padding: 6px; list-style: none; border-radius: 18px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .94); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), 0 14px 36px rgba(90, 40, 65, .18); transform-origin: top left; animation: dd-pop .28s cubic-bezier(.32, .72, 0, 1); }
+.dd__menu--up { top: auto; bottom: calc(100% + 8px); transform-origin: bottom left; }
+/* pickers that sit at the right edge open to the left */
+.dd--right .dd__menu { left: auto; right: 0; transform-origin: top right; }
+.dd--right .dd__menu--up { transform-origin: bottom right; }
+
+.dd__item { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; height: 34px; padding: 0 12px; border: 0; border-radius: 12px; background: none; font-size: 13px; color: var(--ink-2); text-align: left; white-space: nowrap; cursor: pointer; transition: background .15s, color .15s; }
+.dd__item:hover, .dd__item:focus-visible { outline: 0; background: rgba(246, 227, 232, .8); color: var(--ink); }
+.dd__item.on { background: var(--ink); color: var(--pink); }
+.dd__item.on .px { color: var(--pink); }
+
+@keyframes dd-pop { from { opacity: 0; transform: translateY(-4px) scale(.94); } }
+.dd__menu--up { animation-name: dd-pop-up; }
+@keyframes dd-pop-up { from { opacity: 0; transform: translateY(4px) scale(.94); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dd__menu, .dd__caret { animation: none; transition: none; }
+}

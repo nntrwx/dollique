@@ -60,7 +60,7 @@ class AppealController {
       return res.status(200).json({
         message: status === 'approved'
           ? 'Appeal approved, the post is active again.'
-          : `Appeal rejected, the post will be deleted in ${ModerationService.graceDays} days.`,
+          : 'Appeal rejected, the post was deleted.',
         appeal: resolved,
       });
     } catch (error) {

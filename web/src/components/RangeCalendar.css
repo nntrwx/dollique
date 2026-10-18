@@ -1,0 +1,40 @@
+/* date range calendar: serif month, mono weekdays, round days on a pink ribbon */
+.cal { width: 252px; }
+.cal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal__title { font: 400 22px/1 var(--serif); }
+.cal__nav { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, transform .2s; }
+.cal__nav:hover:not(:disabled) { background: var(--ink); color: var(--pink); }
+.cal__nav:active:not(:disabled) { transform: scale(.92); }
+.cal__nav:disabled { opacity: .35; cursor: default; }
+
+.cal__grid { display: grid; grid-template-columns: repeat(7, 36px); row-gap: 2px; }
+.cal__wd { display: grid; place-items: center; height: 24px; font-size: 9.5px; color: var(--ink-3); text-transform: uppercase; }
+
+.cal__day { position: relative; display: grid; place-items: center; height: 34px; padding: 0; border: 0; background: none; font-size: 13px; color: var(--ink); cursor: pointer; }
+.cal__day span { position: relative; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; transition: background .15s, color .15s, transform .15s; }
+.cal__day:hover:not(:disabled) span { background: rgba(246, 227, 232, .95); }
+.cal__day:active:not(:disabled) span { transform: scale(.9); }
+.cal__day:focus-visible { outline: 0; }
+.cal__day:focus-visible span { box-shadow: 0 0 0 2px var(--pink-deep); }
+.cal__day--out { color: var(--ink-3); opacity: .55; }
+.cal__day:disabled { color: var(--ink-3); opacity: .3; cursor: default; }
+.cal__day--today span::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pink-deep); }
+
+/* the pink ribbon between the two picked days */
+.cal__day--in::before, .cal__day--edge::before { content: ''; position: absolute; inset: 2px 0; background: rgba(236, 195, 207, .55); }
+.cal__day--start.cal__day--edge::before { left: 50%; }
+.cal__day--end.cal__day--edge::before { right: 50%; }
+.cal__day--mon::before { left: 2px; border-radius: 16px 0 0 16px; }
+.cal__day--sun::before { right: 2px; border-radius: 0 16px 16px 0; }
+.cal__day--start.cal__day--sun::before, .cal__day--end.cal__day--mon::before { display: none; }
+.cal__day--start span, .cal__day--end span,
+.cal__day--start:hover:not(:disabled) span, .cal__day--end:hover:not(:disabled) span { background: var(--ink); color: var(--pink); animation: cal-pick .3s cubic-bezier(.32, .72, 0, 1); }
+.cal__day--start span::after, .cal__day--end span::after { background: var(--pink); }
+
+.cal__hint { margin: 8px 0 0; font-size: 9.5px; color: var(--ink-3); text-align: center; }
+
+@keyframes cal-pick { from { transform: scale(.7); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cal__day span, .cal__nav { animation: none; transition: none; }
+}

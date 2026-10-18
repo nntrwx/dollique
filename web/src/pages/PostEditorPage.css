@@ -1,0 +1,61 @@
+/* new / edit post: the writing sheet on the left, categories and the publish button on the right */
+.ed-page { padding-bottom: 40px; }
+.ed { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+.ed__main { padding: 30px 34px 28px; }
+.ed__skeleton { height: 520px; margin-top: 60px; }
+.ed-page > .empty { margin-top: 60px; }
+
+.ed__label { display: block; margin: 22px 0 8px; font: 500 13px var(--sans); color: var(--ink-2); }
+
+/* the title is written straight on the sheet, big and in serif */
+.ed__title { display: block; width: 100%; padding: 4px 0 10px; border: 0; border-bottom: 1px dashed var(--line); outline: 0; resize: none; overflow: hidden; background: none; font: 400 44px/1.05 var(--serif); letter-spacing: -.015em; color: var(--ink); transition: border-color .2s; }
+.ed__title::placeholder { color: var(--ink-3); opacity: .7; }
+.ed__title:focus { border-bottom-color: var(--pink-deep); }
+.ed__title--invalid { border-bottom-color: #c96a83; }
+.ed__meta { display: flex; justify-content: space-between; gap: 12px; min-height: 18px; margin-top: 6px; }
+.ed__meta .fl__error, .ed__meta .fl__hint { margin: 0; }
+.ed__text { min-height: 220px; font-size: 15.5px; line-height: 1.6; }
+
+/* photos: taped prints, the first one is the cover */
+.ed__photos-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 26px; }
+.ed__photos-head .ed__label { margin: 0; }
+.ed__photos { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+.ed__photo { position: relative; width: 128px; height: 128px; margin: 0; padding: 6px; border-radius: 6px; background: var(--card); box-shadow: 0 8px 20px rgba(40, 20, 30, .14); transform: rotate(-2deg); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+.ed__photo:nth-child(even) { transform: rotate(2deg); }
+.ed__photo:hover { transform: rotate(0) translateY(-3px); }
+.ed__photo img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
+.ed__photo--cover::before { content: ''; position: absolute; left: 50%; top: -10px; width: 64px; height: 20px; margin-left: -32px; background: rgba(236, 195, 207, .85); mix-blend-mode: multiply; transform: rotate(-4deg); }
+.ed__cover { position: absolute; left: 12px; bottom: 12px; padding: 2px 7px; border-radius: 999px; background: rgba(33, 28, 31, .72); color: var(--pink); font-size: 9px; }
+.ed__remove { position: absolute; right: -8px; top: -8px; display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--ink); color: var(--pink); cursor: pointer; box-shadow: 0 3px 8px rgba(33, 28, 31, .25); transition: transform .15s; }
+.ed__remove:hover { transform: scale(1.12); }
+.ed__add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 128px; height: 128px; border: 1.5px dashed rgba(201, 138, 156, .7); border-radius: 10px; background: rgba(246, 227, 232, .45); color: var(--pink-deep); font: 500 13px var(--sans); cursor: pointer; transition: background .2s, border-color .2s, transform .15s; }
+.ed__add small { font-size: 9px; text-transform: none; letter-spacing: 0; }
+.ed__add:hover, .ed__add--drag { background: rgba(246, 227, 232, .9); border-color: var(--pink-deep); }
+.ed__add--drag { transform: scale(1.04); }
+.ed__main > .fl__error, .ed__main > .fl__hint { margin-top: 10px; }
+
+/* side: categories as serif words, the chosen ones circled by hand (like in the feed) */
+.ed__side { position: sticky; top: 110px; display: flex; flex-direction: column; gap: 22px; }
+.ed__side-note { margin: 4px 0 14px; text-transform: none; letter-spacing: 0; }
+.ed__cats { display: flex; flex-wrap: wrap; gap: 10px 20px; padding-left: 8px; }
+.ed__cats button { position: relative; padding: 4px 2px; border: 0; background: none; font: 400 21px/1.1 var(--serif); color: var(--ink-3); text-align: left; cursor: pointer; transition: color .2s; }
+.ed__cats button:hover { color: var(--ink-2); }
+.ed__cats button.on { color: var(--ink); }
+.ed__cats .circ { position: absolute; left: -10px; top: -5px; width: calc(100% + 20px); height: calc(100% + 10px); overflow: visible; pointer-events: none; }
+.ed__suggest { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.ed__suggest-input { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border: 0; border-radius: 999px; outline: 0; background: rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; }
+.ed__suggest-input:focus { box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+.ed__publish { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.ed__publish .nbtn { width: 100%; justify-content: center; }
+.ed__publish .alert { width: 100%; margin: 0; text-align: left; }
+.ed__rules { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-3); text-align: left; }
+.ed__rules .px { flex: none; margin-top: 3px; }
+
+@media (max-width: 900px) {
+  .ed { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .ed__main { padding: 22px 18px; }
+  .ed__title { font-size: 34px; }
+  .ed__side { position: static; }
+  .ed__photo, .ed__add { width: calc(50% - 8px); height: auto; aspect-ratio: 1; }
+}
