@@ -11,6 +11,7 @@ export default defineConfig({
     proxy: {
       '/api': API_URL,
       '/uploads': API_URL,
+      '/admin': API_URL,
     },
   },
   build: {

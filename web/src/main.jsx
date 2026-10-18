@@ -3,9 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
+// Global styles go first, so the page styles can override them.
+import './styles/global.css';
 import App from './App';
 import store from './store';
-import './styles/global.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

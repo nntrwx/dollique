@@ -18,7 +18,7 @@ async function initDatabase() {
   try {
     const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
     await connection.query(schemaSql);
-    console.log('✅ Schema executed: database & all 13 tables verified.');
+    console.log('✅ Schema executed: database & all 14 tables verified.');
 
     await connection.changeUser({ database: process.env.DB_NAME || 'dollique_db' });
 
@@ -27,6 +27,7 @@ async function initDatabase() {
     await connection.query('TRUNCATE TABLE violations');
     await connection.query('TRUNCATE TABLE appeals');
     await connection.query('TRUNCATE TABLE notifications');
+    await connection.query('TRUNCATE TABLE category_subscriptions');
     await connection.query('TRUNCATE TABLE favorites');
     await connection.query('TRUNCATE TABLE likes');
     await connection.query('TRUNCATE TABLE comments');
@@ -212,6 +213,17 @@ async function initDatabase() {
     );
     console.log('✅ Favorites seeded: 5 entries.');
 
+    // category subscriptions ("For you" feed)
+    await connection.query(
+      `INSERT INTO category_subscriptions (user_id, category_id) VALUES
+      (2, 2),
+      (3, 1),
+      (3, 3),
+      (4, 4),
+      (5, 10)`
+    );
+    console.log('✅ Category subscriptions seeded: 5 entries.');
+
     // notifications
     await connection.query(
       `INSERT INTO notifications (id, user_id, post_id, type, message, is_read) VALUES
@@ -258,7 +270,7 @@ async function initDatabase() {
     `);
     console.log('✅ User ratings recalculated from likes.');
 
-    console.log('\nALL 13 TABLES SUCCESSFULLY INITIALIZED & SEEDED!');
+    console.log('\nALL 14 TABLES SUCCESSFULLY INITIALIZED & SEEDED!');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;

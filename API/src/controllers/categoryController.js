@@ -177,6 +177,46 @@ class CategoryController {
       return res.status(500).json({ error: 'Internal server error while deleting category.' });
     }
   }
+
+  // GET /api/categories/subscriptions
+  static async getMySubscriptions(req, res) {
+    try {
+      const categoryIds = await CategoryModel.findSubscribedIds(req.user.id);
+      return res.status(200).json({ categoryIds });
+    } catch (error) {
+      console.error('Get subscriptions error:', error);
+      return res.status(500).json({ error: 'Internal server error while fetching subscriptions.' });
+    }
+  }
+
+  // POST /api/categories/:category_id/subscribe
+  static async subscribe(req, res) {
+    try {
+      const category = await CategoryModel.findById(req.params.category_id);
+      if (!category || category.status !== 'approved') {
+        return res.status(404).json({ error: 'Category not found.' });
+      }
+
+      await CategoryModel.subscribe(req.user.id, category.id);
+      const categoryIds = await CategoryModel.findSubscribedIds(req.user.id);
+      return res.status(200).json({ message: 'Subscribed to the category.', categoryIds });
+    } catch (error) {
+      console.error('Subscribe error:', error);
+      return res.status(500).json({ error: 'Internal server error while subscribing.' });
+    }
+  }
+
+  // DELETE /api/categories/:category_id/subscribe
+  static async unsubscribe(req, res) {
+    try {
+      await CategoryModel.unsubscribe(req.user.id, req.params.category_id);
+      const categoryIds = await CategoryModel.findSubscribedIds(req.user.id);
+      return res.status(200).json({ message: 'Unsubscribed from the category.', categoryIds });
+    } catch (error) {
+      console.error('Unsubscribe error:', error);
+      return res.status(500).json({ error: 'Internal server error while unsubscribing.' });
+    }
+  }
 }
 
 module.exports = CategoryController;

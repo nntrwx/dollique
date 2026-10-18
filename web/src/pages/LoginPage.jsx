@@ -1,11 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 
+import { getDollParts } from '../api/dolls';
 import AuthLayout from '../components/AuthLayout';
 import FormField from '../components/FormField';
+import Pixel from '../components/Pixel';
 import { login } from '../store/authSlice';
 import { isValid } from '../utils/validators';
+
+// The angel who greets you: parts are found by name in the catalog.
+// The silver harness outfit is used once an admin uploads it (any outfit named "...harness..." or "...cyber...").
+const ANGEL = [
+  { category: 'base', match: /ivory, sleepy/i },
+  { category: 'hair', match: /pink waves/i },
+  { category: 'shoes', match: /black shoes/i },
+  { category: 'outfit', match: /harness|cyber/i, fallback: /lace nightgown/i },
+  { category: 'accessory', match: /angel wing/i },
+];
+
+function angelLayers(parts) {
+  return ANGEL.map(({ category, match, fallback }) => {
+    const ofCategory = parts.filter((part) => part.category === category);
+    return ofCategory.find((part) => match.test(part.name))
+      || (fallback && ofCategory.find((part) => fallback.test(part.name)));
+  }).filter(Boolean);
+}
 
 function validate(values) {
   return {
@@ -21,6 +41,11 @@ function LoginPage() {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [sending, setSending] = useState(false);
+  const [angel, setAngel] = useState([]);
+
+  useEffect(() => {
+    getDollParts().then((parts) => setAngel(angelLayers(parts))).catch(() => setAngel([]));
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -52,13 +77,45 @@ function LoginPage() {
   };
 
   return (
-    <AuthLayout path="sign-in" title="Welcome back" subtitle="sign in to ask & answer">
+    <AuthLayout
+      path="sign in"
+      heading={(
+        <>
+          Your dolls
+          <br />
+          <em>missed you</em>
+        </>
+      )}
+      text="Sign in to ask, answer and keep an eye on your favourite threads."
+      doll={angel}
+      bubble={(
+        <>
+          hi again
+          {' '}
+          <em>♡</em>
+        </>
+      )}
+      title={(
+        <>
+          Sign
+          {' '}
+          <em>in</em>
+        </>
+      )}
+      subtitle="Use your login or the email you registered with."
+    >
       {location.state?.message && <p className="alert alert--success">{location.state.message}</p>}
-      {serverError && <p className="alert alert--error" role="alert">{serverError}</p>}
+      {serverError && (
+        <p className="alert alert--error" role="alert">
+          <Pixel name="mail" color="#b5536c" size={11} />
+          {serverError}
+        </p>
+      )}
 
       <form className="form" onSubmit={handleSubmit} noValidate>
         <FormField
           label="Login or email"
+          icon="user"
           name="identifier"
           autoComplete="username"
           value={values.identifier}
@@ -67,6 +124,7 @@ function LoginPage() {
         />
         <FormField
           label="Password"
+          icon="lock"
           name="password"
           type="password"
           autoComplete="current-password"
@@ -77,15 +135,17 @@ function LoginPage() {
         <div className="auth__row">
           <Link to="/password-reset">Forgot password?</Link>
         </div>
-        <button className="button button--primary button--wide" type="submit" disabled={sending}>
+        <button className="nbtn nbtn--ink nbtn--wide" type="submit" disabled={sending}>
           {sending ? 'Signing in…' : 'Sign in'}
+          {' '}
+          <span className="spark">✦</span>
         </button>
       </form>
 
       <p className="auth__footer">
         New here?
         {' '}
-        <Link to="/register">Create an account</Link>
+        <Link to="/register" state={location.state}>Make a doll and join</Link>
       </p>
     </AuthLayout>
   );

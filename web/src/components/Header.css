@@ -1,217 +1,71 @@
-/* Floating glass bar, like the title bar of the admin window. */
-.header {
+/* header: dark glass ribbon that stays on top, stickers on it, pink lace hanging below */
+.bar {
   position: sticky;
   top: 0;
-  z-index: 10;
-  padding: 12px var(--gutter) 0;
+  z-index: 20;
+  margin-bottom: 22px;
+  background: rgba(33, 28, 31, .84);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+.bar__in { display: flex; align-items: center; gap: 24px; max-width: 1200px; height: 72px; margin: 0 auto; padding: 0 28px; }
+.bar .lace-h { position: absolute; left: 0; top: calc(100% - 1px); display: block; width: 100%; height: 22px; }
+
+/* logo: a white sticker card, slightly crooked */
+.logo { flex: none; display: block; padding: 8px 16px; background: var(--card); border-radius: 12px; transform: rotate(-2.5deg); box-shadow: 0 5px 0 var(--pink); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
+.logo:hover { transform: rotate(1deg); }
+.logo img { display: block; height: 34px; }
+
+/* menu in a pink capsule */
+.bar__nav { display: flex; gap: 2px; padding: 4px; background: var(--pink); border-radius: 999px; transform: rotate(1deg); }
+.bar__nav a { padding: 7px 15px; border-radius: 999px; color: var(--ink-2); font-size: 14px; text-decoration: none; transition: background .2s, color .2s; }
+.bar__nav a:hover { color: var(--ink); background: #f3d6de; }
+.bar__nav a.on { background: var(--card); color: var(--ink); box-shadow: 0 2px 0 var(--pink-deep); }
+
+.bar__right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+
+.search { display: flex; align-items: center; gap: 10px; width: 240px; height: 38px; padding: 0 14px; border-radius: 999px; background: #2f282c; color: #e9dde2; transition: box-shadow .2s; }
+.search:focus-within { box-shadow: 0 0 0 2px var(--pink-deep); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: #f4eef0; font-size: 14px; }
+.search input::placeholder { color: #8c7f84; }
+.search input::-webkit-search-cancel-button { filter: invert(.6); }
+.search kbd { padding: 1px 5px; border: 1px solid #4a4146; border-radius: 4px; font: 10px var(--mono); color: #8c7f84; }
+.search:focus-within kbd { display: none; }
+
+/* the user: a sticker with the avatar, login and role */
+.me { display: flex; align-items: center; gap: 9px; padding: 4px 14px 4px 4px; background: var(--card); border-radius: 999px; color: var(--ink); text-decoration: none; transform: rotate(-1.5deg); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
+.me:hover { transform: rotate(1deg); }
+.me__who { display: flex; flex-direction: column; gap: 3px; max-width: 140px; font-size: 13px; font-weight: 500; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me__role { font: 9px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--pink-deep); }
+
+/* Sign in / Log out: a pink sticker that presses in */
+.sticker { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pink); color: var(--ink); font: 500 13px var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer; transform: rotate(2deg); box-shadow: 0 3px 0 var(--pink-deep); transition: transform .2s, box-shadow .2s; }
+.sticker:hover { transform: rotate(-1deg) translateY(-1px); box-shadow: 0 5px 0 var(--pink-deep); }
+.sticker:active { transform: translateY(3px); box-shadow: 0 0 0 var(--pink-deep); }
+/* admins get a white "Admin" sticker that opens the admin panel */
+.sticker--admin { gap: 8px; background: var(--card); transform: rotate(-2deg); }
+
+.bar__burger { display: none; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #2f282c; color: var(--pink); cursor: pointer; }
+
+@media (max-width: 1020px) {
+  .search { width: 180px; }
+  .bar__in { gap: 16px; }
 }
 
-.header__bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: 8px 10px 8px 16px;
-  border-radius: 22px;
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-}
+@media (max-width: 900px) {
+  .bar__in { gap: 10px; height: 62px; padding: 0 16px; }
+  .logo { padding: 6px 12px; }
+  .logo img { height: 28px; }
+  .me { padding: 3px; }
+  .me__who { display: none; }
+  .sticker--admin { width: 36px; padding: 0; justify-content: center; }
+  .sticker--admin span { display: none; }
+  .bar__burger { display: grid; }
+  .bar__right { gap: 10px; }
 
-.header__logo {
-  display: flex;
-  align-items: center;
-  color: var(--ink-950);
-  font-family: var(--font-script);
-  font-size: 34px;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.header__logo:hover {
-  color: var(--ink-950);
-}
-
-.header__bow {
-  width: 30px;
-  height: 18px;
-  margin-right: -4px;
-  transform: rotate(-12deg) translateY(-8px);
-}
-
-/* Tabs: mono pills, the active one is dark like in the admin panel. */
-.header__nav {
-  display: flex;
-  gap: 6px;
-}
-
-.header__tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.45);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.header__tab .icon {
-  width: 12px;
-  height: 12px;
-}
-
-.header__tab:hover {
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--ink-950);
-}
-
-.header__tab--active,
-.header__tab--active:hover {
-  border-color: transparent;
-  background: var(--dark-pill);
-  color: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 8px rgba(31, 28, 29, 0.25);
-}
-
-.header__search {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-  max-width: 300px;
-  margin-left: auto;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.65);
-  color: var(--text-subtle);
-}
-
-.header__search:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.header__search-input {
-  width: 100%;
-  padding: 7px 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink-950);
-  font: inherit;
-  font-size: 12.5px;
-}
-
-.header__user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header__profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 2px 2px 10px;
-  border-radius: 999px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.header__profile:hover {
-  background: rgba(255, 255, 255, 0.6);
-  color: inherit;
-}
-
-.header__who {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  line-height: 1.1;
-}
-
-.header__login {
-  max-width: 140px;
-  overflow: hidden;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Doubled class: wins over .icon-button from global.css, which loads later. */
-.header__user .header__burger {
-  display: none;
-  color: var(--ink-950);
-}
-
-.header__user .header__burger:hover {
-  color: var(--accent);
-}
-
-/* Tablet: the tabs fold under the burger. */
-@media (max-width: 960px) {
-  .header__bar {
-    flex-wrap: wrap;
-  }
-
-  .header__user .header__burger {
-    display: inline-flex;
-  }
-
-  .header__nav {
-    display: none;
-    flex-basis: 100%;
-    flex-wrap: wrap;
-    order: 5;
-    padding-top: 8px;
-    border-top: 1px dashed var(--dash);
-  }
-
-  .header__nav--open {
-    display: flex;
-  }
-}
-
-/* Phone: search gets its own row. */
-@media (max-width: 600px) {
-  .header {
-    padding-top: 8px;
-  }
-
-  .header__bar {
-    gap: 8px;
-  }
-
-  .header__logo {
-    font-size: 28px;
-  }
-
-  .header__user {
-    margin-left: auto;
-  }
-
-  .header__search {
-    flex-basis: 100%;
-    max-width: none;
-    order: 4;
-  }
-
-  .header__login {
-    max-width: 90px;
-  }
-
-  /* The avatar already leads to sign in, so the extra button can go. */
-  .header__user .header__guest-link {
-    display: none;
-  }
+  /* the menu and the search drop down under the ribbon */
+  .bar__nav, .search { display: none; }
+  .bar__nav--open { position: absolute; left: 16px; right: 16px; top: 74px; display: flex; flex-direction: column; padding: 8px; border-radius: 20px; transform: none; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
+  .bar__nav--open a { padding: 11px 16px; }
+  .search--open { position: absolute; left: 16px; right: 16px; top: 228px; display: flex; width: auto; height: 44px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
 }

@@ -17,6 +17,8 @@ class PostModel {
     dateFrom,
     dateTo,
     status,
+    author,
+    subscribedBy = null,
     currentUser = null,
   }) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -57,6 +59,23 @@ class PostModel {
         conditions.push(`p.id IN (SELECT post_id FROM post_categories WHERE category_id IN (${placeholders}))`);
         params.push(...catIds);
       }
+    }
+
+    // ?author=id: posts of one user (their profile page)
+    const authorId = parseInt(author, 10);
+    if (!isNaN(authorId)) {
+      conditions.push('p.author_id = ?');
+      params.push(authorId);
+    }
+
+    // the "For you" feed: posts in any category the user follows
+    if (subscribedBy) {
+      conditions.push(`p.id IN (
+        SELECT pc.post_id FROM post_categories pc
+        JOIN category_subscriptions cs ON cs.category_id = pc.category_id
+        WHERE cs.user_id = ?
+      )`);
+      params.push(subscribedBy);
     }
 
     const query = typeof search === 'string' ? search.trim() : '';

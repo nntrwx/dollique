@@ -1,0 +1,57 @@
+/* post preview: a glass card; on hover a pink sheet slips out from under it */
+.post { position: relative; isolation: isolate; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 24px; padding: 18px; border-radius: 22px; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+.post::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 22px; background: var(--g-fill); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), var(--g-drop); transition: box-shadow .35s; }
+.post::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 22px; background: var(--pink); opacity: 0; transition: transform .4s cubic-bezier(.2, .8, .2, 1), opacity .25s; }
+.post:hover { transform: translateY(-2px); }
+.post:hover::after { background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .8), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .82); box-shadow: var(--g-rim), 0 18px 40px rgba(60, 30, 40, .08); }
+.post:hover::before { opacity: 1; transform: rotate(-1.6deg) translate(-6px, 6px); }
+
+.post .sparkle { position: absolute; right: -10px; top: -12px; opacity: 0; transform: scale(.6) rotate(-20deg); transition: .35s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none; }
+.post:hover .sparkle { opacity: 1; transform: none; }
+
+/* photos stay in their real colours */
+.post__pic { position: relative; display: block; height: 180px; overflow: hidden; border-radius: 14px; background: var(--pink-wash); }
+.post__pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.post__nopic { display: grid; place-items: center; height: 100%; }
+.post__more { position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(33, 28, 31, .7); color: var(--pink); font: 10px var(--mono); }
+
+.post__body { min-width: 0; }
+.post__meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.post__author { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.post__author b { font-weight: 500; }
+.post__author:hover b { color: var(--pink-deep); }
+.post__rate { font: 11px var(--mono); color: var(--pink-deep); }
+.post__meta time { margin-left: auto; }
+
+.post__title { margin: 12px 0 8px; font: 400 29px/1.08 var(--serif); letter-spacing: -.015em; overflow-wrap: anywhere; }
+.post__title a { color: inherit; text-decoration: none; background: linear-gradient(var(--pink), var(--pink)) 0 92% / 0 35% no-repeat; transition: background-size .4s; }
+.post:hover .post__title a { background-size: 100% 35%; }
+.post__text { display: -webkit-box; margin: 0; overflow: hidden; color: var(--ink-2); -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+
+.post__foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.post__stats { display: flex; gap: 14px; margin-left: auto; font: 12px var(--mono); color: var(--ink-2); }
+.post__stats > * { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.post__stats a:hover { color: var(--pink-deep); }
+
+/* a post without photos: text only */
+.post--text { grid-template-columns: minmax(0, 1fr); }
+
+/* hidden (inactive) post, seen only by its author and admins: faded grey stripes and a dashed edge */
+.post--hidden::after { background: repeating-linear-gradient(-45deg, rgba(149, 140, 144, .09) 0 10px, transparent 10px 20px), rgba(251, 250, 247, .5); box-shadow: inset 0 0 0 1.5px rgba(91, 83, 87, .35); }
+.post--hidden::before { content: none; }
+.post--hidden .post__pic { opacity: .55; }
+.post--hidden .post__title a, .post--hidden .post__text { color: var(--ink-3); }
+.post--hidden:hover::after { background: repeating-linear-gradient(-45deg, rgba(149, 140, 144, .09) 0 10px, transparent 10px 20px), rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1.5px rgba(91, 83, 87, .5); }
+.post--hidden .post__title a { color: var(--ink-2); }
+
+/* smaller card for the profile lists */
+.post--compact { grid-template-columns: 130px minmax(0, 1fr); gap: 18px; padding: 14px; }
+.post--compact .post__pic { height: 130px; }
+.post--compact .post__title { margin: 8px 0 6px; font-size: 24px; }
+.post--compact .post__foot { margin-top: 10px; }
+
+@media (max-width: 900px) {
+  .post, .post--compact { grid-template-columns: 1fr; gap: 14px; }
+  .post__pic, .post--compact .post__pic { height: 190px; }
+  .post__title { font-size: 26px; }
+}

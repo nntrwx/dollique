@@ -167,6 +167,29 @@ class CategoryModel {
     const [result] = await pool.execute('DELETE FROM categories WHERE id = ?', [categoryId]);
     return result.affectedRows > 0;
   }
+
+  // Category subscriptions: the "For you" feed shows posts from these categories.
+  static async findSubscribedIds(userId) {
+    const [rows] = await pool.execute(
+      'SELECT category_id FROM category_subscriptions WHERE user_id = ? ORDER BY created_at ASC',
+      [userId],
+    );
+    return rows.map((row) => row.category_id);
+  }
+
+  static async subscribe(userId, categoryId) {
+    await pool.execute(
+      'INSERT IGNORE INTO category_subscriptions (user_id, category_id) VALUES (?, ?)',
+      [userId, Number(categoryId)],
+    );
+  }
+
+  static async unsubscribe(userId, categoryId) {
+    await pool.execute(
+      'DELETE FROM category_subscriptions WHERE user_id = ? AND category_id = ?',
+      [userId, Number(categoryId)],
+    );
+  }
 }
 
 module.exports = CategoryModel;

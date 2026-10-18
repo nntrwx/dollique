@@ -1,167 +1,62 @@
-/* A glass "window" like the admin login: a bar with dots on top, the doll and the form below. */
-.auth {
-  max-width: 860px;
-  margin: 12px auto;
-  overflow: hidden;
-  border-radius: 22px;
-}
+/* sign in, password and email pages: one glass card, a doll on the left, the form on the right */
+.auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 980px; margin: 56px auto 30px; padding: 0; overflow: hidden; }
 
-.auth__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 16px;
-  border-bottom: 1px dashed var(--dash);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-}
+.hello { position: relative; display: flex; flex-direction: column; padding: 34px 32px 0; background: linear-gradient(180deg, rgba(246, 227, 232, .6), rgba(246, 227, 232, .15)); border-right: 1px solid rgba(255, 255, 255, .7); }
+.hello h2 { margin: 6px 0 10px; font: 400 54px/.95 var(--serif); letter-spacing: -.02em; }
+.hello h2 em { color: var(--pink-deep); }
+.hello p { max-width: 300px; margin: 0; color: var(--ink-2); }
 
-.auth__dots {
-  display: flex;
-  gap: 6px;
-}
+.hero-doll { position: relative; flex: 1; min-height: 350px; margin-top: 6px; }
+.hero-doll__wings { position: absolute; left: 50%; top: 52px; width: 380px; max-width: none; margin-left: -190px; opacity: .85; }
+.hero-doll > .doll { position: absolute; left: 50%; bottom: 18px; width: 330px; height: 330px; margin-left: -165px; }
+.hero-doll::after { content: ''; position: absolute; left: 50%; bottom: 22px; width: 200px; height: 18px; margin-left: -100px; border-radius: 50%; background: radial-gradient(rgba(201, 138, 156, .4), transparent 70%); }
+.hero-doll__shuffle { position: absolute; left: 0; bottom: 16px; z-index: 2; }
+.bubble { position: absolute; right: 4px; top: 18px; z-index: 2; padding: 9px 15px; border-radius: 18px 18px 18px 4px; font: italic 400 20px/1 var(--serif); background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, .6)); box-shadow: var(--g-rim), 0 6px 18px rgba(90, 40, 65, .1); transform: rotate(4deg); }
+.bubble em { font-style: normal; color: var(--pink-deep); }
 
-.auth__dots i {
-  width: 10px;
-  height: 10px;
-  border: 1px solid var(--dash);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-}
+.auth__form { padding: 34px 36px 32px; }
+.auth__title { margin: 0; font: 400 40px/1 var(--serif); letter-spacing: -.01em; }
+.auth__title em { color: var(--pink-deep); }
+.auth__lead { margin: 10px 0 22px; color: var(--ink-2); }
+.auth__row { display: flex; justify-content: flex-end; margin: -2px 4px 22px; font-size: 13px; }
+.auth__row a { color: var(--ink-2); text-decoration: none; }
+.auth__row a:hover { color: var(--pink-deep); }
+.auth__footer { margin: 18px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); }
+.auth__footer a, .auth__link { color: var(--ink); font-weight: 500; text-decoration: none; background: linear-gradient(var(--pink), var(--pink)) 0 90% / 100% 35% no-repeat; }
+.auth__note { display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; padding: 12px 14px; border-radius: 14px; background: rgba(246, 227, 232, .6); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+.auth__note .px { margin-top: 2px; }
+.form { margin: 0; }
+.form > .nbtn, .form > .button { margin-top: 4px; }
 
-.auth__body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
+/* sign up: make the doll on the left, the account on the right */
+.join { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); margin: 46px 0 40px; padding: 0; overflow: hidden; }
+.join__dress { position: relative; padding: 28px 30px 26px; border-right: 1px solid rgba(255, 255, 255, .7); background: linear-gradient(180deg, rgba(246, 227, 232, .55), rgba(246, 227, 232, .15)); }
+.join__form { padding: 28px 34px 30px; }
+.join h2 { margin: 0; font: 400 40px/1 var(--serif); letter-spacing: -.01em; }
+.join h2 em { color: var(--pink-deep); }
+.step { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.step b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--pink); font: 11px var(--mono); }
+.dtools { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+.dtools .mono { max-width: 220px; margin-left: auto; text-align: right; text-transform: none; letter-spacing: 0; font-size: 11px; line-height: 1.35; }
 
-/* Left side: halftone dots and grain, like the admin banner. */
-.auth__showcase {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 32px 24px;
-  border-right: 1px dashed var(--dash);
-  background:
-    radial-gradient(ellipse at 50% 45%, rgba(255, 255, 255, 0.85), rgba(225, 221, 219, 0.6) 70%),
-    linear-gradient(180deg, #ece9e7, #d9d5d3);
-}
+/* both passwords sit together on a pink sheet */
+.pwbox { margin: 0 0 14px; padding: 14px 14px 4px; border-radius: 20px; background: rgba(246, 227, 232, .45); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8); }
+.meter { display: flex; align-items: center; gap: 4px; margin: 8px 4px 0; }
+.meter i { flex: 1; height: 4px; border-radius: 4px; background: rgba(201, 138, 156, .25); }
+.meter i.on { background: var(--pink-deep); }
+.meter b { margin-left: 8px; font: 400 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--pink-deep); }
+.join .check { margin: 4px 0 20px 4px; }
 
-.auth__showcase::before {
-  position: absolute;
-  inset: 0;
-  content: '';
-  background-image: radial-gradient(rgba(31, 28, 29, 0.3) 1px, transparent 1.4px), var(--grain);
-  background-size: 4px 4px, 160px 160px;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 35%, transparent 65%, #000 100%);
-  mask-image: linear-gradient(180deg, #000 0%, transparent 35%, transparent 65%, #000 100%);
-}
-
-.auth__showcase > * {
-  position: relative;
-}
-
-.auth__tagline {
-  margin: 0;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.4em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.auth__showcase .doll {
-  max-width: 250px;
-}
-
-.auth__shuffle {
-  padding: 5px 13px;
-  border: 1px dashed var(--dash);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--ink-800);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.auth__shuffle:hover {
-  background: #ffffff;
-}
-
-.auth__card {
-  padding: 30px 34px 34px;
-  text-align: center;
-}
-
-.auth__card .form {
-  text-align: left;
-}
-
-.auth__bow {
-  display: block;
-  margin: 0 auto 2px;
-}
-
-.auth__title {
-  font-family: var(--font-script);
-  font-size: 46px;
-  font-weight: 400;
-  line-height: 1.05;
-}
-
-.auth__subtitle {
-  margin: 8px 0 22px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-}
-
-.auth__footer {
-  margin: 18px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.auth__row {
-  display: flex;
-  justify-content: flex-end;
-  margin: -4px 6px 6px 0;
-  font-size: 12px;
-}
-
-/* Tablet and phone: the doll goes above the form and gets smaller. */
-@media (max-width: 760px) {
-  .auth {
-    margin: 0 auto;
-  }
-
-  .auth__body {
-    grid-template-columns: 1fr;
-  }
-
-  .auth__showcase {
-    padding: 18px 16px;
-    border-right: 0;
-    border-bottom: 1px dashed var(--dash);
-  }
-
-  .auth__showcase .doll {
-    max-width: 150px;
-  }
-
-  .auth__card {
-    padding: 22px 18px 28px;
-  }
-
-  .auth__title {
-    font-size: 40px;
-  }
+@media (max-width: 900px) {
+  .auth, .join { grid-template-columns: minmax(0, 1fr); margin-top: 24px; }
+  .hello { padding: 24px 20px 0; border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, .7); }
+  .hello h2 { font-size: 42px; }
+  .hero-doll { min-height: 270px; }
+  .hero-doll > .doll { width: 260px; height: 260px; margin-left: -130px; }
+  .hero-doll__wings { width: 300px; margin-left: -150px; top: 40px; }
+  .auth__form { padding: 24px 20px 26px; }
+  .join__dress { padding: 22px 18px; border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, .7); }
+  .join__form { padding: 22px 18px 26px; }
+  .dtools { flex-wrap: wrap; }
+  .dtools .mono { margin-left: 0; text-align: left; max-width: none; }
 }

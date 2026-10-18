@@ -4,6 +4,7 @@ const LikeModel = require('../models/LikeModel');
 const RatingService = require('../services/ratingService');
 const ViolationService = require('../services/violationService');
 const NotificationModel = require('../models/NotificationModel');
+const ActivityService = require('../services/activityService');
 
 const DEFAULT_REASON = 'The comment breaks the community rules.';
 
@@ -68,8 +69,9 @@ class CommentController {
         return res.status(403).json({ error: 'Forbidden: Cannot comment on inactive or closed posts.' });
       }
 
+      let parentComment = null;
       if (parent_id) {
-        const parentComment = await CommentModel.findById(parent_id);
+        parentComment = await CommentModel.findById(parent_id);
         if (!parentComment || parentComment.postId !== postId) {
           return res.status(400).json({ error: 'Invalid parent_id: parent comment does not belong to this post.' });
         }
@@ -81,6 +83,11 @@ class CommentController {
         content: content.trim(),
         parentId: parent_id || null,
       });
+
+      // a failed notification must not fail the comment itself
+      await ActivityService.commentCreated({
+        actor: req.user, post, comment: newComment, parentComment,
+      }).catch((err) => console.error('Comment notification error:', err));
 
       return res.status(201).json({
         message: 'Comment created successfully.',
@@ -279,6 +286,12 @@ class CommentController {
 
       const vote = await LikeModel.voteOnComment(authorId, commentId, type);
       await RatingService.recalculateUserRating(comment.authorId);
+
+      if (type === 'like') {
+        const post = await PostModel.findById(comment.postId);
+        await ActivityService.commentLiked({ actor: req.user, comment, post })
+          .catch((err) => console.error('Like notification error:', err));
+      }
 
       return res.status(200).json({
         message: `Comment ${type}d successfully.`,

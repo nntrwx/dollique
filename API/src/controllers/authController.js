@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const UserModel = require('../models/UserModel');
+const DollService = require('../services/dollService');
 const EmailService = require('../services/emailService');
 const TokenService = require('../services/tokenService');
 const LoginLimiter = require('../services/loginLimiter');
@@ -10,7 +11,9 @@ class AuthController {
   // POST /api/auth/register
   static async register(req, res) {
     try {
-      const { login, password, password_confirmation, email, full_name } = req.body;
+      const {
+        login, password, password_confirmation, email, full_name, doll_config, use_doll_as_avatar,
+      } = req.body;
 
       if (!login || !password || !password_confirmation || !email) {
         return res.status(400).json({
@@ -25,6 +28,17 @@ class AuthController {
 
       if (password !== password_confirmation) {
         return res.status(400).json({ error: 'Password and password confirmation do not match.' });
+      }
+
+      // Optional: the doll made on the sign-up page (same format as PATCH /api/users/:id)
+      let dollConfig = null;
+      if (doll_config !== undefined && doll_config !== null) {
+        const { config, error } = await DollService.validateConfig(doll_config, null);
+        if (error) return res.status(400).json({ error });
+        dollConfig = config;
+      }
+      if (use_doll_as_avatar !== undefined && typeof use_doll_as_avatar !== 'boolean') {
+        return res.status(400).json({ error: 'use_doll_as_avatar must be true or false.' });
       }
 
       const existingLogin = await UserModel.findByLogin(login);
@@ -47,6 +61,13 @@ class AuthController {
         role: 'user',
         isEmailConfirmed: false,
       });
+
+      if (dollConfig) {
+        await UserModel.updateProfile(newUser.id, {
+          dollConfig,
+          useDollAsAvatar: Boolean(use_doll_as_avatar),
+        });
+      }
 
       const confirmationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);

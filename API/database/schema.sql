@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS doll_parts;
 DROP TABLE IF EXISTS violations;
 DROP TABLE IF EXISTS appeals;
 DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS category_subscriptions;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS likes;
 DROP TABLE IF EXISTS comments;
@@ -143,6 +144,16 @@ CREATE TABLE favorites (
     PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 9a. Category subscriptions (the "For you" feed)
+CREATE TABLE category_subscriptions (
+    user_id INT NOT NULL,
+    category_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, category_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- 10. Notifications

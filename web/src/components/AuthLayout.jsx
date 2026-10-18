@@ -1,82 +1,68 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { api } from '../api/client';
-import Bow from './Bow';
+import { getDollParts } from '../api/dolls';
+import { layersOf, randomConfig } from '../utils/doll';
 import DollFigure from './DollFigure';
 import './AuthLayout.css';
 
-function pickRandom(items) {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-// Builds a random doll from the public parts catalog: a base, hair, outfit, shoes
-// and sometimes one accessory.
-function randomDoll(parts) {
-  const byCategory = (category) => parts.filter((part) => part.category === category);
-  const doll = [];
-  ['base', 'hair', 'outfit', 'shoes'].forEach((category) => {
-    const options = byCategory(category);
-    if (options.length) doll.push(pickRandom(options));
-  });
-  const accessories = byCategory('accessory');
-  if (accessories.length && Math.random() < 0.6) doll.push(pickRandom(accessories));
-  return doll;
-}
-
-// Glass window for sign in / sign up / password pages (same look as the admin login):
-// a dress-up doll on the left, the form on the right.
+// One glass card for sign in and the password / email pages:
+// a doll on pink glass on the left, the form on the right.
+// Without `doll` the left side shows a randomly dressed doll.
 function AuthLayout({
-  title, subtitle = '', path = 'welcome', children,
+  title,
+  subtitle = '',
+  path = 'welcome',
+  heading = (
+    <>
+      Every doll
+      <br />
+      <em>has a story</em>
+    </>
+  ),
+  text = 'Questions and answers about faceups, reroots, legit checks and shelf tours.',
+  doll = null,
+  bubble = null,
+  children,
 }) {
   const [parts, setParts] = useState([]);
-  const [doll, setDoll] = useState([]);
+  const [randomDoll, setRandomDoll] = useState(null);
 
   useEffect(() => {
-    api.get('/doll-parts')
+    if (doll) return;
+    getDollParts()
       .then((data) => {
         setParts(data);
-        setDoll(randomDoll(data));
+        setRandomDoll(randomConfig(data));
       })
       .catch(() => setParts([]));
-  }, []);
+  }, [doll]);
 
-  const shuffle = useCallback(() => setDoll(randomDoll(parts)), [parts]);
+  const layers = doll || layersOf(randomDoll, parts);
 
   return (
-    <div className="auth glass">
-      <div className="auth__bar">
-        <span>
-          dollique /
-          {' '}
-          {path}
-        </span>
-        <span className="auth__dots" aria-hidden="true">
-          <i />
-          <i />
-        </span>
-      </div>
-
-      <div className="auth__body">
-        <aside className="auth__showcase">
-          <p className="auth__tagline">† every doll has a story †</p>
-          {doll.length > 0 && (
-            <>
-              <DollFigure layers={doll} label="A randomly dressed doll" />
-              <button className="auth__shuffle" type="button" onClick={shuffle}>
-                ✦ dress up again
-              </button>
-            </>
+    <section className="auth glass">
+      <div className="hello">
+        <div className="mono">{`dollique / ${path}`}</div>
+        <h2>{heading}</h2>
+        <p>{text}</p>
+        <div className="hero-doll">
+          <img className="hero-doll__wings" src="/decor/dot-wings.svg" alt="" />
+          {bubble && <span className="bubble">{bubble}</span>}
+          {layers.length > 0 && <DollFigure layers={layers} label="A dressed-up doll" />}
+          {!doll && parts.length > 0 && (
+            <button type="button" className="hero-doll__shuffle link-button" onClick={() => setRandomDoll(randomConfig(parts))}>
+              ✦ dress up again
+            </button>
           )}
-        </aside>
-
-        <section className="auth__card">
-          <Bow className="bow auth__bow" />
-          <h1 className="auth__title">{title}</h1>
-          {subtitle ? <p className="auth__subtitle">{subtitle}</p> : <div className="auth__subtitle" />}
-          {children}
-        </section>
+        </div>
       </div>
-    </div>
+
+      <div className="auth__form">
+        <h1 className="auth__title">{title}</h1>
+        {subtitle && <p className="auth__lead">{subtitle}</p>}
+        {children}
+      </div>
+    </section>
   );
 }
 

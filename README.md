@@ -37,7 +37,7 @@ Built as Part 1 (Backend API) of the **USOF Challenge**, Full Stack track.
 - **Profile doll.** Every user can assemble a pixel doll from a catalog of PNG layers (body, hair, outfit, shoes, up to 3 accessories) and, if they want, show it instead of their profile picture. Admins manage the catalog.
 - **Favorites.** Users save useful posts to a personal list.
 - **Moderation with appeals.** An admin hides a post with a reason, the author gets a notification and can appeal. If the appeal is not approved in time, the post is deleted automatically.
-- **Notifications** about moderation, appeals, category decisions, strikes and bans.
+- **Notifications** about moderation, appeals, category decisions, strikes and bans, and about other people's activity: comments on your posts, replies to your comments and likes (`services/activityService.js`; never about your own actions, and a repeated unread one is not added twice).
 - **User-suggested categories.** Users propose categories, admins approve or reject them.
 - **Strikes and auto-ban.** Moderated content gives the author a strike; 3 active strikes ban the account for 7 days. Admins can also ban, unban and reset parts of a profile.
 - **Security.** bcrypt passwords, JWT that is revoked on logout and password change, a login attempt limiter, and validation of every input.
@@ -103,7 +103,7 @@ Without `SMTP_USER` / `SMTP_PASS` the server still works: letters go to a free [
 ```bash
 npm run db:init
 ```
-This drops and recreates `dollique_db` from `database/schema.sql` and fills every table with sample data (13 tables, at least 5 rows each).
+This drops and recreates `dollique_db` from `database/schema.sql` and fills every table with sample data (14 tables, at least 5 rows each).
 
 Sample accounts, all with the password `password123`:
 
@@ -196,7 +196,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 ### Auth `/api/auth`
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| POST | `/register` | Register: `login, password, password_confirmation, email`, optional `full_name` | Public |
+| POST | `/register` | Register: `login, password, password_confirmation, email`, optional `full_name`, `doll_config`, `use_doll_as_avatar` | Public |
 | GET / POST | `/confirm-email/:confirm_token` | Confirm the email from the letter | Public |
 | POST | `/login` | Log in with `login` or `email` + `password` (email must be confirmed) | Public |
 | POST | `/logout` | Log out: all tokens of the user stop working | User |
@@ -220,7 +220,7 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 ### Posts `/api/posts`
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| GET | `/` | Posts. Query: `page`, `limit`, `sort=likes\|date`, `order=desc\|asc`, `search`, `categories=1,2`, `date_from`, `date_to`, `status=active\|inactive` | Public |
+| GET | `/` | Posts. Query: `page`, `limit`, `sort=likes\|date`, `order=desc\|asc`, `search`, `categories=1,2`, `date_from`, `date_to`, `status=active\|inactive`, `author=userId`, `feed=subscriptions` ("For you": posts from the categories the user follows, needs sign-in) | Public |
 | GET | `/favorites` | My saved posts | User |
 | GET | `/:post_id` | One post | Public* |
 | POST | `/` | Create: `title, content, categories`, up to 5 files in `images` | User |
@@ -246,11 +246,14 @@ All bodies are JSON unless the endpoint uploads a file (`multipart/form-data`). 
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
 | GET | `/` | Approved categories (admins see all, authors also see their own suggestions) | Public |
+| GET | `/subscriptions` | Ids of the categories I follow: `{ categoryIds }` | User |
 | GET | `/:category_id` | One category | Public |
 | GET | `/:category_id/posts` | Posts in the category | Public |
 | POST | `/` | Create: `title, description`. From an admin it is approved at once, from a user it becomes a `pending` suggestion | User / Admin |
 | PATCH | `/:category_id` | Edit, or approve / reject with `status` and `reason` | Admin |
 | DELETE | `/:category_id` | Delete | Admin |
+| POST | `/:category_id/subscribe` | Follow an approved category (its posts appear in the "For you" feed) | User |
+| DELETE | `/:category_id/subscribe` | Unfollow | User |
 
 ### Doll parts `/api/doll-parts`
 | Method | Endpoint | Description | Access |

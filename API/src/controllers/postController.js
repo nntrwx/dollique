@@ -5,6 +5,7 @@ const RatingService = require('../services/ratingService');
 const ModerationService = require('../services/moderationService');
 const ViolationService = require('../services/violationService');
 const NotificationModel = require('../models/NotificationModel');
+const ActivityService = require('../services/activityService');
 
 class PostController {
   static async validateCategories(categoryIds) {
@@ -30,7 +31,17 @@ class PostController {
         date_from,
         date_to,
         status,
+        author,
+        feed,
       } = req.query;
+
+      // ?feed=subscriptions: the "For you" feed, posts from the categories the user follows
+      if (feed && feed !== 'subscriptions') {
+        return res.status(400).json({ error: 'Feed must be "subscriptions".' });
+      }
+      if (feed && !req.user) {
+        return res.status(401).json({ error: 'Sign in to see your feed.' });
+      }
 
       const result = await PostModel.findAll({
         page,
@@ -42,6 +53,8 @@ class PostController {
         dateFrom: date_from,
         dateTo: date_to,
         status,
+        author,
+        subscribedBy: feed ? req.user.id : null,
         currentUser: req.user,
       });
 
@@ -327,6 +340,11 @@ class PostController {
 
       const vote = await LikeModel.voteOnPost(authorId, postId, type);
       await RatingService.recalculateUserRating(post.authorId);
+
+      if (type === 'like') {
+        await ActivityService.postLiked({ actor: req.user, post })
+          .catch((err) => console.error('Like notification error:', err));
+      }
 
       return res.status(200).json({
         message: `Post ${type}d successfully.`,

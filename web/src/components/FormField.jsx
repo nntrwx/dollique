@@ -1,40 +1,52 @@
 import { useId, useState } from 'react';
 
-// Labelled input with an error message under it.
-// type="password" gets a show/hide toggle.
+import Pixel from './Pixel';
+
+// Labelled glass input with a little pixel icon on the left and an error or hint under it.
+// type="password" gets an eye that shows or hides the text.
 function FormField({
-  label, type = 'text', error = '', hint = '', ...inputProps
+  label, optional = false, icon = null, type = 'text', error = '', hint = '', ok = '', children = null, ...inputProps
 }) {
   const id = useId();
   const [visible, setVisible] = useState(false);
   const isPassword = type === 'password';
-  const describedBy = error ? `${id}-error` : undefined;
+  const describedBy = error || hint ? `${id}-note` : undefined;
 
   return (
-    <div className={`field${error ? ' field--invalid' : ''}`}>
-      <label className="field__label" htmlFor={id}>{label}</label>
-      <div className="field__control">
+    <div className="fl">
+      <label className="fl__label" htmlFor={id}>
+        {label}
+        {optional && <i> (optional)</i>}
+      </label>
+      <div className={`inp${error ? ' inp--invalid' : ''}`}>
+        {icon && (
+          <span className="inp__icon">
+            <Pixel name={icon} size={14} />
+          </span>
+        )}
         <input
           id={id}
-          className="field__input"
           type={isPassword && visible ? 'text' : type}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           {...inputProps}
         />
+        {ok && !error && <span className="inp__ok">{`✓ ${ok}`}</span>}
         {isPassword && (
           <button
-            className="field__toggle"
+            className="inp__eye"
             type="button"
             onClick={() => setVisible((value) => !value)}
             aria-label={visible ? 'Hide password' : 'Show password'}
+            title={visible ? 'Hide password' : 'Show password'}
           >
-            {visible ? 'Hide' : 'Show'}
+            <Pixel name={visible ? 'eye' : 'eyeOff'} color="#5b5357" size={13} />
           </button>
         )}
       </div>
-      {error && <p className="field__error" id={describedBy}>{error}</p>}
-      {!error && hint && <p className="field__hint">{hint}</p>}
+      {children}
+      {error && <p className="fl__error" id={describedBy}>{error}</p>}
+      {!error && hint && <p className="fl__hint" id={describedBy}>{hint}</p>}
     </div>
   );
 }
