@@ -205,7 +205,17 @@ class UserController {
         updateData.email = email;
       }
 
-      if (full_name) updateData.fullName = full_name;
+      // the name is optional: an empty one is stored as the login, which the site reads as "no name"
+      const newLogin = updateData.login || targetUser.login;
+      if (full_name !== undefined) {
+        const cleanName = full_name === null ? '' : String(full_name).trim();
+        if (cleanName.length > 100) {
+          return res.status(400).json({ error: 'Display name cannot exceed 100 characters.' });
+        }
+        updateData.fullName = cleanName || newLogin;
+      } else if (updateData.login && targetUser.full_name === targetUser.login) {
+        updateData.fullName = newLogin;
+      }
 
       if (bio !== undefined) {
         const cleanBio = bio === null ? '' : String(bio).trim();

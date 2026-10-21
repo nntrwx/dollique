@@ -231,7 +231,6 @@ function HomePage() {
       ) : (
         <section className="hero">
           <div>
-            <div className="mono">№ 01 — a forum for doll people</div>
             <h1>
               Ask about dolls,
               <br />

@@ -11,15 +11,19 @@ import ConfirmButton from '../components/ConfirmButton';
 import { DoodleCircle } from '../components/Doodle';
 import DollFigure from '../components/DollFigure';
 import DressUp from '../components/DressUp';
+import FeedFilters from '../components/FeedFilters';
 import Pagination from '../components/Pagination';
 import Pixel from '../components/Pixel';
 import PostCard from '../components/PostCard';
 import { selectCurrentUser, userUpdated } from '../store/authSlice';
 import { describeDoll, layersOf, randomConfig } from '../utils/doll';
-import { formatDate } from '../utils/format';
+import { formatDate, realName } from '../utils/format';
 import './ProfilePage.css';
 
 const PAGE_SIZE = 10;
+const NO_FILTERS = {
+  sort: 'date', order: '', dateFrom: '', dateTo: '', status: '',
+};
 const BIO_MAX = 300;
 
 // The doll card on the left: just the doll, the dress-up controls open on "Re-dress".
@@ -114,6 +118,7 @@ function ProfilePage() {
   const [parts, setParts] = useState([]);
   const [tab, setTab] = useState('posts');
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(NO_FILTERS);
   const [posts, setPosts] = useState({ list: [], total: 0, totalPages: 1, loading: true });
   const [favorites, setFavorites] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -125,6 +130,7 @@ function ProfilePage() {
     setLoadError('');
     setTab('posts');
     setPage(1);
+    setFilters(NO_FILTERS);
     setEditing(false);
     api.get(`/users/${userId}`)
       .then(setProfile)
@@ -140,7 +146,15 @@ function ProfilePage() {
   const loadPosts = useCallback(() => {
     setPosts((current) => ({ ...current, loading: true }));
     return api.get('/posts', {
-      author: userId, page, limit: PAGE_SIZE, sort: 'date',
+      author: userId,
+      page,
+      limit: PAGE_SIZE,
+      sort: filters.sort,
+      order: filters.order,
+      date_from: filters.dateFrom,
+      // the "to" day is included up to its last second
+      date_to: filters.dateTo ? `${filters.dateTo}T23:59:59` : '',
+      status: filters.status,
     })
       .then((data) => setPosts({
         list: data.posts, total: data.pagination.total, totalPages: data.pagination.totalPages, loading: false,
@@ -148,11 +162,25 @@ function ProfilePage() {
       .catch(() => setPosts({
         list: [], total: 0, totalPages: 1, loading: false,
       }));
-  }, [userId, page, me?.id]);
+  }, [userId, page, filters, me?.id]);
 
   useEffect(() => {
     loadPosts();
   }, [loadPosts]);
+
+  // FeedFilters reports { order } / { from, to } / { status }; any change starts from page 1
+  const changeFilters = (patch) => {
+    setFilters((current) => ({
+      ...current,
+      ...('order' in patch && { order: patch.order }),
+      ...('from' in patch && { dateFrom: patch.from }),
+      ...('to' in patch && { dateTo: patch.to }),
+      ...('status' in patch && { status: patch.status }),
+      ...('sort' in patch && { sort: patch.sort, order: '' }),
+    }));
+    setPage(1);
+  };
+  const filtered = filters.order || filters.dateFrom || filters.dateTo || filters.status || filters.sort !== 'date';
 
   // Favorites are private: only the owner sees them.
   useEffect(() => {
@@ -221,7 +249,7 @@ function ProfilePage() {
   };
 
   const startEditing = () => {
-    setForm({ fullName: profile.full_name || '', bio: profile.bio || '' });
+    setForm({ fullName: realName(profile), bio: profile.bio || '' });
     setEditing(true);
     say('', '');
   };
@@ -234,7 +262,7 @@ function ProfilePage() {
       return;
     }
     try {
-      await api.patch(`/users/${profile.id}`, { full_name: fullName || profile.login, bio: form.bio.trim() });
+      await api.patch(`/users/${profile.id}`, { full_name: fullName, bio: form.bio.trim() });
       patchProfile({ full_name: fullName || profile.login, bio: form.bio.trim() });
       dispatch(userUpdated({ fullName: fullName || profile.login, bio: form.bio.trim() }));
       setEditing(false);
@@ -309,9 +337,14 @@ function ProfilePage() {
 
             <div className="idrow__name">
               <div className="mono">profile</div>
-              <h1>{profile.login}</h1>
+              <h1>{realName(profile) || profile.login}</h1>
               <div className="idrow__sub">
-                {profile.full_name && profile.full_name !== profile.login && <span>{profile.full_name}</span>}
+                {realName(profile) && (
+                  <span className="idrow__login">
+                    <i>@</i>
+                    {profile.login}
+                  </span>
+                )}
                 <span className="badge">{profile.role}</span>
                 <span className="mono">{`joined ${formatDate(profile.created_at).toLowerCase()}`}</span>
               </div>
@@ -431,13 +464,41 @@ function ProfilePage() {
           )}
         </div>
 
+        {tab === 'posts' && (
+          <div className="pfilters">
+            <span className="seg" role="group" aria-label="Sort posts">
+              {[['date', 'Newest'], ['likes', 'Most liked']].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={filters.sort === value ? 'on' : undefined}
+                  aria-pressed={filters.sort === value}
+                  onClick={() => changeFilters({ sort: value })}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+            <FeedFilters
+              sort={filters.sort}
+              order={filters.order}
+              dateFrom={filters.dateFrom}
+              dateTo={filters.dateTo}
+              status={filters.status}
+              showStatus={isMe || isAdmin}
+              isAdmin={isAdmin}
+              onChange={changeFilters}
+            />
+          </div>
+        )}
+
         {tab === 'posts' && posts.loading && posts.list.length === 0 && <div className="skeleton" style={{ height: 160 }} />}
 
         {list.length === 0 && !(tab === 'posts' && posts.loading) && (
           <div className="empty glass">
             <Pixel name="bunny" color="#c98a9c" size={36} />
             <p className="muted">
-              {tab === 'favorites' ? 'Nothing saved yet. Tap “Save” under a post you love.' : 'No posts yet.'}
+              {tab === 'favorites' ? 'Nothing saved yet. Tap “Save” under a post you love.' : (filtered ? 'No posts match these filters.' : 'No posts yet.')}
             </p>
           </div>
         )}

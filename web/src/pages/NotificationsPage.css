@@ -1,0 +1,43 @@
+/* inbox: one glass card per day, each letter with a round pixel stamp */
+.inbox__actions { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; }
+.inbox .tabs sup.inbox__count { margin-left: 3px; font: 11px var(--mono); color: var(--pink-deep); vertical-align: super; }
+
+.inbox__day { margin-bottom: 20px; padding: 18px 22px 10px; }
+.inbox__day--skeleton { min-height: 220px; opacity: .6; }
+.inbox__label { margin: 0 0 6px; font-size: 10px; font-weight: 400; letter-spacing: .08em; color: var(--ink-3); text-transform: uppercase; }
+.inbox__list { margin: 0; padding: 0; list-style: none; }
+
+.note { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 14px 10px; border-bottom: 1px dashed var(--line); border-radius: 14px; transition: background .2s; }
+.note:last-child { border-bottom: 0; }
+.note:hover { background: rgba(255, 255, 255, .55); }
+.note__icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .8); box-shadow: var(--g-rim), 0 2px 6px rgba(90, 40, 65, .08); color: var(--pink-deep); }
+.note--warn .note__icon { background: var(--ink); color: var(--pink); }
+.note__body { flex: 1; min-width: 0; }
+.note__text { display: block; padding: 0; border: 0; background: none; font: 15px/1.45 var(--sans); color: var(--ink-2); text-align: left; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; }
+.note__text:hover { color: var(--pink-deep); }
+.note__meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 5px; font-size: 10px; color: var(--ink-3); }
+.note__meta a { color: var(--pink-deep); text-decoration: none; }
+.note__meta a:hover { text-decoration: underline; }
+.note__meta .link-button { font-size: 10px; }
+.note__del { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; opacity: 0; transition: opacity .2s, background .2s; }
+.note:hover .note__del, .note__del:focus-visible { opacity: .7; }
+.note__del:hover { background: #fff; color: var(--danger); opacity: 1; }
+
+/* unread: a pink wash and a dot before the stamp */
+.note--new { background: rgba(246, 227, 232, .55); }
+.note--new .note__text { color: var(--ink); font-weight: 500; }
+.note--new::before { content: ''; position: absolute; left: -6px; top: 29px; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-deep); }
+
+.inbox__empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 46px 20px; text-align: center; color: var(--ink-3); }
+.inbox__empty p { margin: 0; font: 400 22px/1.2 var(--serif); color: var(--ink-2); }
+.inbox__more { display: flex; justify-content: center; margin-top: 8px; }
+
+@media (max-width: 900px) {
+  .inbox .tabs { gap: 18px; }
+  .inbox .tabs button { font-size: 24px; }
+  .note__text { font-size: 14px; }
+  .inbox__day { padding: 14px 12px 6px; }
+  .note { gap: 10px; padding: 12px 6px; }
+  /* no hover on phones: the cross is always there */
+  .note__del { opacity: .6; }
+}

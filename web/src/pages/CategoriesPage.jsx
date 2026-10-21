@@ -300,7 +300,6 @@ function CategoriesPage() {
     <div className="listpage">
       <section className="listpage__head">
         <div>
-          <div className="mono">№ 02 — categories</div>
           <h1 className="page__title">
             Find your
             {' '}

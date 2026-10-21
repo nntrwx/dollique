@@ -58,3 +58,9 @@ export function excerpt(text, maxLength = 220) {
 export function plural(count, word, pluralWord = `${word}s`) {
   return `${count} ${count === 1 ? word : pluralWord}`;
 }
+
+// The full name is optional; without one the API keeps the login there. '' means "no name".
+export function realName(user) {
+  const name = (user?.full_name ?? user?.fullName ?? '').trim();
+  return name && name !== user.login ? name : '';
+}

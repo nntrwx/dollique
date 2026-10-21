@@ -16,7 +16,7 @@ const ConfirmEmailPage = lazy(() => import('./pages/ConfirmEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const PostEditorPage = lazy(() => import('./pages/PostEditorPage'));
 const PostPage = lazy(() => import('./pages/PostPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -49,12 +49,12 @@ function App() {
           <Route path="posts/new" element={<PostEditorPage />} />
           <Route path="posts/:id/edit" element={<PostEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="categories/:id" element={<CategoryRedirect />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<ProfilePage />} />
-        <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
         <Route element={<GuestRoute />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

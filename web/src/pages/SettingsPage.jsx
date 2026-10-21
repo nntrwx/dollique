@@ -9,6 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
 import Pixel from '../components/Pixel';
 import { logout, selectCurrentUser, userUpdated } from '../store/authSlice';
+import { realName } from '../utils/format';
 import {
   isValid, validateEmail, validateFullName, validateLogin,
 } from '../utils/validators';
@@ -34,7 +35,7 @@ function Note({ note }) {
 function ProfileSection({ user, profile, onSaved }) {
   const dispatch = useDispatch();
   const fileRef = useRef(null);
-  const [fullName, setFullName] = useState(user.fullName || '');
+  const [fullName, setFullName] = useState(realName(user));
   const [bio, setBio] = useState(user.bio || '');
   const [errors, setErrors] = useState({});
   const [note, setNote] = useState({ type: '', text: '' });
@@ -48,8 +49,8 @@ function ProfileSection({ user, profile, onSaved }) {
     if (!isValid(next)) return;
     setSaving(true);
     try {
-      await api.patch(`/users/${user.id}`, { full_name: fullName.trim() || undefined, bio: bio.trim() });
-      dispatch(userUpdated({ fullName: fullName.trim() || user.fullName, bio: bio.trim() }));
+      await api.patch(`/users/${user.id}`, { full_name: fullName.trim(), bio: bio.trim() });
+      dispatch(userUpdated({ fullName: fullName.trim() || user.login, bio: bio.trim() }));
       setNote({ type: 'success', text: 'Saved.' });
     } catch (err) {
       setNote({ type: 'error', text: err.message });
@@ -373,7 +374,6 @@ function SettingsPage() {
   return (
     <div className="settings">
       <section className="settings__head">
-        <div className="mono">№ 04 — settings</div>
         <h1 className="page__title">
           Your little
           {' '}

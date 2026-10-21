@@ -8,7 +8,7 @@ import { DoodleUnderline, ShelfLine } from '../components/Doodle';
 import DollFigure from '../components/DollFigure';
 import Pagination from '../components/Pagination';
 import Pixel from '../components/Pixel';
-import { formatDate, plural } from '../utils/format';
+import { formatDate, plural, realName } from '../utils/format';
 import './ListPages.css';
 
 const SORTS = [
@@ -51,7 +51,7 @@ function MemberCard({ member, place }) {
       </div>
       <ShelfLine />
       <h2 className="mcard__login">{member.login}</h2>
-      {member.full_name && <div className="mcard__name">{member.full_name}</div>}
+      {realName(member) && <div className="mcard__name">{realName(member)}</div>}
       <p className="mcard__bio">{member.bio || 'No bio yet.'}</p>
       <div className="mcard__stats mono">
         <span>
@@ -110,7 +110,6 @@ function UsersPage() {
     <div className="listpage">
       <section className="listpage__head">
         <div>
-          <div className="mono">№ 03 — members</div>
           <h1 className="page__title">
             Every member
             {' '}

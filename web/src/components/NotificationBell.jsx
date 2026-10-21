@@ -19,11 +19,15 @@ function NotificationBell() {
 
   const load = () => api.get('/notifications').then((data) => setItems(data || [])).catch(() => {});
 
-  // Checked on every page change and once a minute.
+  // Checked on every page change, once a minute and when the notifications page changes something.
   useEffect(() => {
     load();
     const timer = setInterval(load, REFRESH_MS);
-    return () => clearInterval(timer);
+    window.addEventListener('notifications:changed', load);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('notifications:changed', load);
+    };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -81,34 +85,44 @@ function NotificationBell() {
           <div className="bell__head">
             <h3>Notifications</h3>
             {unread > 0 && (
-              <button type="button" className="link-button" onClick={markAllRead}>Mark all as read</button>
+              <button type="button" className="pill" onClick={markAllRead}>
+                <Pixel name="tick" size={8} />
+                Mark all as read
+              </button>
             )}
           </div>
 
-          {items.length === 0 ? (
-            <p className="bell__empty">
-              <Pixel name="bell" color="#ecc3cf" size={22} />
-              Nothing here yet. Replies, likes and moderator messages will show up here.
-            </p>
-          ) : (
-            <ul className="bell__list">
-              {items.map((item) => (
-                <li key={item.id} className={item.isRead ? undefined : 'new'}>
-                  <div className="bell__text">
-                    {item.postId ? (
-                      <Link to={`/posts/${item.postId}`} onClick={() => markRead(item)}>{item.message}</Link>
-                    ) : (
-                      <button type="button" onClick={() => markRead(item)}>{item.message}</button>
-                    )}
-                    <time className="mono" dateTime={item.createdAt}>{formatRelativeDate(item.createdAt)}</time>
-                  </div>
-                  <button type="button" className="bell__del" aria-label="Delete the notification" onClick={() => remove(item)}>
-                    <Pixel name="cross" size={8} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="bell__scroll">
+            {items.length === 0 ? (
+              <p className="bell__empty">
+                <Pixel name="bell" color="#ecc3cf" size={22} />
+                Nothing here yet. Replies, likes and moderator messages will show up here.
+              </p>
+            ) : (
+              <ul className="bell__list">
+                {items.map((item) => (
+                  <li key={item.id} className={item.isRead ? undefined : 'new'}>
+                    <div className="bell__text">
+                      {item.postId ? (
+                        <Link to={`/posts/${item.postId}`} onClick={() => markRead(item)}>{item.message}</Link>
+                      ) : (
+                        <button type="button" onClick={() => markRead(item)}>{item.message}</button>
+                      )}
+                      <time className="mono" dateTime={item.createdAt}>{formatRelativeDate(item.createdAt)}</time>
+                    </div>
+                    <button type="button" className="bell__del" aria-label="Delete the notification" onClick={() => remove(item)}>
+                      <Pixel name="cross" size={8} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <Link to="/notifications" className="bell__all">
+            See all notifications
+            <Pixel name="right" size={8} />
+          </Link>
         </div>
       )}
     </div>
