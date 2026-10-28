@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 
 import { api } from '../api/client';
 import { selectCurrentUser } from '../store/authSlice';
+import useLiveVersion from '../hooks/useLiveVersion';
 import { HeaderLace } from './Lace';
 import Pixel from './Pixel';
 
 // Live numbers for the footer: members, posts and categories.
 function useSiteStats() {
   const [stats, setStats] = useState(null);
+  const version = useLiveVersion('users', 'posts', 'categories');
 
   useEffect(() => {
     Promise.all([
@@ -23,7 +25,7 @@ function useSiteStats() {
         categories: categories.length,
       }))
       .catch(() => setStats(null));
-  }, []);
+  }, [version]);
 
   return stats;
 }

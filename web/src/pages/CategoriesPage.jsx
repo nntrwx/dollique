@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import { DoodleCircle, DoodleUnderline } from '../components/Doodle';
 import FollowButton from '../components/FollowButton';
 import Pixel from '../components/Pixel';
+import useLiveVersion from '../hooks/useLiveVersion';
 import { selectCurrentUser } from '../store/authSlice';
 import { plural } from '../utils/format';
 import './ListPages.css';
@@ -26,7 +27,9 @@ const TITLE_MAX = 100;
 
 // "Suggest a category": a dashed tile that opens into a small form.
 // Only a moderator makes a suggestion public, so the user sees it marked as waiting.
+// An admin's category is published at once, so for them it is simply "Add a category".
 function SuggestTile({ user, onCreated }) {
+  const isAdmin = user?.role === 'admin';
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -47,8 +50,8 @@ function SuggestTile({ user, onCreated }) {
     return (
       <button type="button" className="ccard ccard--suggest" onClick={() => setOpen(true)}>
         <Pixel name="plus" size={14} />
-        <span className="ccard__title">Suggest a category</span>
-        <span className="muted">A moderator looks at it first</span>
+        <span className="ccard__title">{isAdmin ? 'Add a category' : 'Suggest a category'}</span>
+        <span className="muted">{isAdmin ? 'It is published right away' : 'A moderator looks at it first'}</span>
       </button>
     );
   }
@@ -102,7 +105,7 @@ function SuggestTile({ user, onCreated }) {
       {error && <p className="fl__error">{error}</p>}
       <div className="ccard__actions">
         <button type="submit" className="nbtn nbtn--ink nbtn--sm" disabled={sending}>
-          {sending ? 'Sending…' : 'Suggest'}
+          {sending ? 'Saving…' : (isAdmin ? 'Add' : 'Suggest')}
         </button>
         <button type="button" className="link-button" onClick={() => setOpen(false)}>Cancel</button>
       </div>
@@ -233,10 +236,11 @@ function CategoriesPage() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('popular');
   const [onlyFollowing, setOnlyFollowing] = useState(false);
+  // goes up when someone adds, approves or follows a category, so the list reloads at once
+  const liveVersion = useLiveVersion('categories', 'posts');
 
   useEffect(() => {
     let ignore = false;
-    setLoading(true);
     api.get('/categories')
       .then((data) => !ignore && setCategories(data || []))
       .catch((err) => !ignore && setError(err.message))
@@ -244,7 +248,7 @@ function CategoriesPage() {
     return () => {
       ignore = true;
     };
-  }, [user?.id]);
+  }, [user?.id, liveVersion]);
 
   useEffect(() => {
     if (!user) {

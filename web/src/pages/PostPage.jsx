@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback, useEffect, useRef, useState,
+} from 'react';
 import { useSelector } from 'react-redux';
 import {
   Link, useLocation, useNavigate, useParams,
@@ -16,14 +18,18 @@ import ImageGallery from '../components/ImageGallery';
 import ModerationNotice from '../components/ModerationNotice';
 import Pixel from '../components/Pixel';
 import VoteButtons from '../components/VoteButtons';
+import usePolling from '../hooks/usePolling';
 import { selectCurrentUser } from '../store/authSlice';
-import { formatDate, formatDateTime, plural } from '../utils/format';
+import { formatDate, formatDateTime, plural, realName } from '../utils/format';
 import {
   findMyVote, nextVote, sendVote,
 } from '../utils/votes';
 import './PostPage.css';
 
 // The task asks for comments sorted by likes, ascending, by default.
+// how often the post and its comments are checked for what other people changed
+const LIVE_MS = 8000;
+
 const COMMENT_SORTS = {
   'likes-asc': { label: 'Likes', dir: 'ascending ↑', compare: (a, b) => a.netLikes - b.netLikes },
   'likes-desc': { label: 'Likes', dir: 'descending ↓', compare: (a, b) => b.netLikes - a.netLikes },
@@ -63,6 +69,7 @@ function AuthorCard({ post }) {
   }, [post.authorId]);
 
   const name = post.author?.login || 'deleted user';
+  const fullName = post.author ? realName(post.author) : '';
 
   return (
     <div className="panel author">
@@ -74,7 +81,13 @@ function AuthorCard({ post }) {
         )}
       </div>
       <div className="mono">asked by</div>
-      <h3>{name}</h3>
+      <h3>{fullName || name}</h3>
+      {fullName && (
+        <div className="handle">
+          <i>@</i>
+          {name}
+        </div>
+      )}
       <div className="author__nums mono">
         <span>
           <b>{post.author?.rating ?? 0}</b>
@@ -97,12 +110,13 @@ function AuthorCard({ post }) {
 // More posts from the first category of this one.
 function RelatedPosts({ post }) {
   const [related, setRelated] = useState([]);
-  const category = post.categories[0];
+  // only the id: the post is refreshed every few seconds and the list should not reload with it
+  const categoryId = post.categories[0]?.id;
 
   useEffect(() => {
-    if (!category) return undefined;
+    if (!categoryId) return undefined;
     let ignore = false;
-    api.get('/posts', { categories: category.id, limit: 4, sort: 'likes' })
+    api.get('/posts', { categories: categoryId, limit: 4, sort: 'likes' })
       .then((data) => {
         if (!ignore) setRelated(data.posts.filter((item) => item.id !== post.id).slice(0, 3));
       })
@@ -110,13 +124,13 @@ function RelatedPosts({ post }) {
     return () => {
       ignore = true;
     };
-  }, [category, post.id]);
+  }, [categoryId, post.id]);
 
   if (!related.length) return null;
 
   return (
     <div className="panel related">
-      <div className="mono">{`also in ${category.title}`}</div>
+      <div className="mono">{`also in ${post.categories[0].title}`}</div>
       <h3>Related</h3>
       {related.map((item) => (
         <Link key={item.id} to={`/posts/${item.id}`}>
@@ -136,6 +150,7 @@ function PostPage() {
   const location = useLocation();
 
   const [post, setPost] = useState(null);
+  const postId = post?.id;
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [myVote, setMyVote] = useState(null);
@@ -153,6 +168,12 @@ function PostPage() {
     setPost(data);
     setMyVote(findMyVote(data.likes, userId));
   }, [id, userId]);
+
+  // the votes of the comments already on the page, so a refresh only asks about new ones
+  const votesRef = useRef({});
+  useEffect(() => {
+    votesRef.current = myCommentVotes;
+  }, [myCommentVotes]);
 
   const loadComments = useCallback(async () => {
     const tree = await api.get(`/posts/${id}/comments`);
@@ -177,6 +198,27 @@ function PostPage() {
       .catch((err) => setLoadError(err.status === 404 ? 'This post does not exist or is hidden.' : err.message));
   }, [loadPost, loadComments]);
 
+  // New comments, replies, likes and edits from other people show up on their own.
+  const refreshLive = useCallback(async () => {
+    try {
+      const [data, tree] = await Promise.all([api.get(`/posts/${id}`), api.get(`/posts/${id}/comments`)]);
+      setPost(data);
+      setMyVote(findMyVote(data.likes, userId));
+      setComments(tree);
+      if (!userId) return;
+      const fresh = flatten(tree).filter((comment) => !(comment.id in votesRef.current));
+      if (fresh.length === 0) return;
+      const entries = await Promise.all(fresh.map(async (comment) => {
+        const likes = await api.get(`/comments/${comment.id}/like`).catch(() => []);
+        return [comment.id, findMyVote(likes, userId)];
+      }));
+      setMyCommentVotes((votes) => ({ ...votes, ...Object.fromEntries(entries) }));
+    } catch {
+      // a failed refresh changes nothing; the next one tries again
+    }
+  }, [id, userId]);
+  usePolling(post ? refreshLive : null, LIVE_MS);
+
   useEffect(() => {
     if (!userId) {
       setIsFavorite(false);
@@ -189,10 +231,10 @@ function PostPage() {
 
   // Opening /posts/1#comments scrolls to the comments once they are on the page.
   useEffect(() => {
-    if (post && location.hash) {
+    if (postId && location.hash) {
       document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [post, location.hash]);
+  }, [postId, location.hash]);
 
   // Runs an API action and shows its error above the post instead of failing silently.
   const run = async (action) => {
@@ -360,7 +402,13 @@ function PostPage() {
             <Link to={`/users/${post.authorId}`} className="pmeta__author">
               <Avatar src={post.author?.profilePicture} alt={authorName} size={38} userId={post.authorId} />
               <span>
-                <b>{authorName}</b>
+                <b>{(post.author && realName(post.author)) || authorName}</b>
+                {post.author && realName(post.author) && (
+                  <span className="handle">
+                    <i>@</i>
+                    {authorName}
+                  </span>
+                )}
                 <br />
                 <span className="pmeta__rate">{`✦ ${post.author?.rating ?? 0} rating`}</span>
               </span>

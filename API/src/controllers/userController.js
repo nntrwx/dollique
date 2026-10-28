@@ -195,6 +195,9 @@ class UserController {
         updateData.login = login;
       }
 
+      // An admin changes the email at once. A user's new email waits in pending_email
+      // until they open the link sent to it, and the old one keeps working meanwhile.
+      let pendingEmail;
       if (email && email !== targetUser.email) {
         const emailError = validateEmail(email);
         if (emailError) return res.status(400).json({ error: emailError });
@@ -202,7 +205,11 @@ class UserController {
         if (existingEmail && existingEmail.id !== targetUserId) {
           return res.status(409).json({ error: 'Email is already taken.' });
         }
-        updateData.email = email;
+        if (requester.role === 'admin') updateData.email = email;
+        else pendingEmail = email;
+      } else if (email && email === targetUser.email && targetUser.pending_email) {
+        // the user typed their current email again: cancel the change
+        pendingEmail = null;
       }
 
       // the name is optional: an empty one is stored as the login, which the site reads as "no name"
@@ -243,28 +250,33 @@ class UserController {
       }
       if (updateData.dollConfig === null) updateData.useDollAsAvatar = false;
 
-      const needsConfirmation = Boolean(updateData.email) && requester.role !== 'admin';
-      if (updateData.email && !needsConfirmation) updateData.keepEmailConfirmed = true;
+      if (updateData.email) updateData.keepEmailConfirmed = true;
 
-      const updatedUser = await UserModel.updateProfile(targetUserId, updateData);
+      let updatedUser = await UserModel.updateProfile(targetUserId, updateData);
 
-      if (needsConfirmation) {
-        const confirmationToken = crypto.randomBytes(32).toString('hex');
-        await UserModel.saveToken({
-          userId: targetUserId,
-          token: confirmationToken,
-          type: 'email_confirm',
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        });
-        await EmailService.sendConfirmationEmail(updateData.email, confirmationToken);
+      if (pendingEmail !== undefined) {
+        // only the last requested change can be confirmed
+        await UserModel.deleteUserTokens(targetUserId, 'email_change');
+        await UserModel.setPendingEmail(targetUserId, pendingEmail);
+        if (pendingEmail) {
+          const confirmationToken = crypto.randomBytes(32).toString('hex');
+          await UserModel.saveToken({
+            userId: targetUserId,
+            token: confirmationToken,
+            type: 'email_change',
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          });
+          await EmailService.sendEmailChangeEmail(pendingEmail, confirmationToken);
+        }
+        updatedUser = await UserModel.findById(targetUserId, true);
       }
 
-      return res.status(200).json({
-        message: needsConfirmation
-          ? 'Profile updated. Please confirm your new email: a link was sent to it.'
-          : 'Profile updated successfully.',
-        user: updatedUser,
-      });
+      let message = 'Profile updated successfully.';
+      if (pendingEmail) message = `Profile updated. Open the link we sent to ${pendingEmail} to switch to the new email.`;
+      if (pendingEmail === null) message = 'The email change was cancelled.';
+
+      const { token_version: tokenVersion, ...publicUser } = updatedUser || {};
+      return res.status(200).json({ message, user: publicUser });
     } catch (error) {
       console.error('Update user error:', error);
       return res.status(500).json({ error: 'Internal server error while updating user.' });

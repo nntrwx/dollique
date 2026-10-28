@@ -15,6 +15,7 @@ import FeedFilters from '../components/FeedFilters';
 import Pagination from '../components/Pagination';
 import Pixel from '../components/Pixel';
 import PostCard from '../components/PostCard';
+import usePolling from '../hooks/usePolling';
 import { selectCurrentUser, userUpdated } from '../store/authSlice';
 import { describeDoll, layersOf, randomConfig } from '../utils/doll';
 import { formatDate, realName } from '../utils/format';
@@ -143,8 +144,9 @@ function ProfilePage() {
   }, []);
 
   // Posts of this user (GET /api/posts?author=id). Others see only the active ones.
-  const loadPosts = useCallback(() => {
-    setPosts((current) => ({ ...current, loading: true }));
+  // quiet: a refresh in the background, without the loading state
+  const loadPosts = useCallback((quiet = false) => {
+    if (!quiet) setPosts((current) => ({ ...current, loading: true }));
     return api.get('/posts', {
       author: userId,
       page,
@@ -159,14 +161,24 @@ function ProfilePage() {
       .then((data) => setPosts({
         list: data.posts, total: data.pagination.total, totalPages: data.pagination.totalPages, loading: false,
       }))
-      .catch(() => setPosts({
-        list: [], total: 0, totalPages: 1, loading: false,
-      }));
+      .catch(() => {
+        if (!quiet) {
+          setPosts({
+            list: [], total: 0, totalPages: 1, loading: false,
+          });
+        }
+      });
   }, [userId, page, filters, me?.id]);
 
   useEffect(() => {
     loadPosts();
   }, [loadPosts]);
+
+  // Changes made from another account (new posts, an admin editing the profile) show up on their own.
+  usePolling(profile && !editing ? () => {
+    loadPosts(true);
+    api.get(`/users/${userId}`).then(setProfile).catch(() => {});
+  } : null, 15000);
 
   // FeedFilters reports { order } / { from, to } / { status }; any change starts from page 1
   const changeFilters = (patch) => {

@@ -258,6 +258,34 @@ async function initDatabase() {
     );
     console.log('✅ Violations seeded: 5 entries (1 revoked after an approved appeal).');
 
+    // sample dates: spread over the last weeks instead of all being "now",
+    // so the date filter, the "Newest" sort and "member since" have something to show
+    await connection.query(`
+      UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL CASE id
+        WHEN 1 THEN 60 WHEN 2 THEN 45 WHEN 3 THEN 38 WHEN 4 THEN 30 ELSE 27 END DAY)
+    `);
+    await connection.query(`
+      UPDATE categories SET created_at = DATE_SUB(NOW(), INTERVAL CASE id
+        WHEN 9 THEN 4 WHEN 10 THEN 20 ELSE 60 END DAY)
+    `);
+    await connection.query(`
+      UPDATE posts SET created_at = DATE_SUB(NOW(), INTERVAL CASE id
+        WHEN 1 THEN 14 * 24 WHEN 2 THEN 4 * 24 WHEN 3 THEN 26 * 24 WHEN 4 THEN 9 * 24
+        WHEN 5 THEN 20 WHEN 6 THEN 2 * 24 ELSE 6 * 24 END HOUR),
+        updated_at = created_at
+    `);
+    await connection.query(`
+      UPDATE posts SET moderated_at = DATE_ADD(created_at, INTERVAL 5 HOUR), updated_at = updated_at
+      WHERE moderated_at IS NOT NULL
+    `);
+    await connection.query(`
+      UPDATE comments SET created_at = DATE_SUB(NOW(), INTERVAL CASE id
+        WHEN 1 THEN 13 * 24 WHEN 2 THEN 12 * 24 WHEN 3 THEN 3 * 24 WHEN 4 THEN 24 * 24
+        WHEN 5 THEN 8 * 24 ELSE 10 END HOUR),
+        updated_at = created_at
+    `);
+    console.log('✅ Sample dates spread over the last 60 days.');
+
     // recalculate user ratings from likes
     await connection.query(`
       UPDATE users u SET rating = (

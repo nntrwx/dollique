@@ -669,7 +669,27 @@
     let editingItem = null;
     let expandedPostId = null;
 
-    window.onload = () => { if (token) showDashboard(); else showLogin(); };
+    // A saved token can be dead already: it lasts 24 h, and logging out anywhere (the site too) ends it.
+    // The API then answers like to a guest (no emails, no strikes), so check it before opening the dashboard.
+    async function sessionIsAlive() {
+      try {
+        const res = await fetch('/api/appeals?status=pending', { headers: { 'Authorization': 'Bearer ' + token } });
+        return res.ok;
+      } catch (e) { return false; }
+    }
+
+    function endSession(message) {
+      stopLive();
+      localStorage.removeItem('dollique_admin_token');
+      token = '';
+      showLogin();
+      if (message) showLoginError(message);
+    }
+
+    window.onload = async () => {
+      if (token && await sessionIsAlive()) showDashboard();
+      else endSession(token ? 'Session expired, please log in again.' : '');
+    };
 
     // Pixel icons, the same text maps as web/src/components/Pixel.jsx: "1" is a pixel, "w" a white one.
     const PIXELS = {
@@ -888,6 +908,38 @@
       loadDollParts();
       // new appeals show up on their own: checked every 20 s and when the tab is opened again
       if (!appealsTimer) appealsTimer = setInterval(refreshAppeals, 20000);
+      startLive();
+    }
+
+    // Live updates: the server sends a message after every change on the site (GET /api/events),
+    // and the panel reloads the numbers and the open tab at once.
+    let liveSource = null;
+    let liveTimer = null;
+    function startLive() {
+      if (liveSource || typeof EventSource === 'undefined') return;
+      liveSource = new EventSource('/api/events');
+      liveSource.onmessage = (message) => {
+        let event;
+        try { event = JSON.parse(message.data); } catch (e) { return; }
+        clearTimeout(liveTimer);
+        liveTimer = setTimeout(() => applyLiveChange(event), 400);
+      };
+    }
+
+    function stopLive() {
+      if (liveSource) liveSource.close();
+      liveSource = null;
+      clearTimeout(liveTimer);
+    }
+
+    function applyLiveChange(event) {
+      if (!token || document.getElementById('dashboardScreen').style.display === 'none') return;
+      loadStats();
+      // appeals and categories also keep the badges on their tabs up to date
+      if (event.kind === 'appeals' || event.kind === 'posts') loadAppeals();
+      if (event.kind === 'categories') loadCategories();
+      if (activeTab === 'posts' && (event.kind === 'posts' || event.kind === 'comments')) loadPosts().then(filterPosts);
+      else if (activeTab === 'users' && event.kind !== 'categories') loadUsers();
     }
 
     function refreshAppeals() {
@@ -901,6 +953,7 @@
         await fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
       }
       localStorage.removeItem('dollique_admin_token');
+      stopLive();
       token = ''; showLogin(); showToast('Logged out successfully.');
     }
 
@@ -1111,6 +1164,7 @@
         const res = await fetch('/api/appeals' + (status ? `?status=${status}` : ''), {
           headers: { 'Authorization': 'Bearer ' + token }
         });
+        if (res.status === 401 || res.status === 403) { endSession('Session expired, please log in again.'); return; }
         const appeals = res.ok ? await res.json() : [];
         const pendingCount = status === 'pending'
           ? appeals.length

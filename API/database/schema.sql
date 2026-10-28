@@ -25,6 +25,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
+    -- a new email waits here until the user opens the link sent to it
+    pending_email VARCHAR(100) DEFAULT NULL,
     is_email_confirmed BOOLEAN DEFAULT FALSE,
     profile_picture VARCHAR(255) DEFAULT '/uploads/avatars/default.png',
     doll_config JSON DEFAULT NULL,
@@ -47,7 +49,7 @@ CREATE TABLE tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
-    type ENUM('email_confirm', 'password_reset') NOT NULL,
+    type ENUM('email_confirm', 'email_change', 'password_reset') NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

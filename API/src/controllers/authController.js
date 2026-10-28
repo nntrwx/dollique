@@ -96,6 +96,29 @@ class AuthController {
     try {
       const { confirm_token } = req.params;
 
+      // A link from the settings page: switch the account to the new email.
+      const changeRecord = await UserModel.findToken(confirm_token, 'email_change');
+      if (changeRecord) {
+        const user = await UserModel.findById(changeRecord.userId, true);
+        if (!user || !user.pending_email) {
+          await UserModel.deleteToken(changeRecord.id);
+          return res.status(400).json({ error: 'This email change was cancelled.' });
+        }
+        const owner = await UserModel.findByEmail(user.pending_email);
+        if (owner && owner.id !== user.id) {
+          return res.status(409).json({ error: 'This email is already used by another account.' });
+        }
+
+        await UserModel.applyPendingEmail(user.id);
+        await UserModel.deleteUserTokens(user.id, 'email_change');
+
+        return res.status(200).json({
+          message: 'Your new email is confirmed. Use it to sign in from now on.',
+          emailChanged: true,
+          email: user.pending_email,
+        });
+      }
+
       const tokenRecord = await UserModel.findToken(confirm_token, 'email_confirm');
       if (!tokenRecord) {
         return res.status(400).json({ error: 'Invalid or expired confirmation token.' });

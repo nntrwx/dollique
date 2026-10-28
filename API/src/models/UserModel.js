@@ -32,7 +32,7 @@ class UserModel {
     const userId = Number(id);
     if (isNaN(userId)) return null;
 
-    const privateFields = isSelfOrAdmin ? ', email, banned_until, ban_reason, token_version' : '';
+    const privateFields = isSelfOrAdmin ? ', email, pending_email, banned_until, ban_reason, token_version' : '';
     const [rows] = await pool.execute(`
       SELECT id, login, full_name${privateFields}, is_email_confirmed, profile_picture, doll_config, use_doll_as_avatar, bio, rating, role, created_at
       FROM users
@@ -249,6 +249,22 @@ class UserModel {
 
   static async deleteToken(tokenId) {
     await pool.execute('DELETE FROM tokens WHERE id = ?', [Number(tokenId)]);
+  }
+
+  static async deleteUserTokens(userId, type) {
+    await pool.execute('DELETE FROM tokens WHERE user_id = ? AND type = ?', [Number(userId), type]);
+  }
+
+  // A new email is kept aside until it is confirmed; null cancels the change.
+  static async setPendingEmail(userId, email) {
+    await pool.execute('UPDATE users SET pending_email = ? WHERE id = ?', [email || null, Number(userId)]);
+  }
+
+  static async applyPendingEmail(userId) {
+    await pool.execute(`
+      UPDATE users SET email = pending_email, pending_email = NULL, is_email_confirmed = 1
+      WHERE id = ? AND pending_email IS NOT NULL
+    `, [Number(userId)]);
   }
 }
 

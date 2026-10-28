@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { DoodleCircle } from '../components/Doodle';
 import Pixel from '../components/Pixel';
+import useLiveVersion from '../hooks/useLiveVersion';
 import { selectCurrentUser } from '../store/authSlice';
 import { shrinkPhoto } from '../utils/shrinkPhoto';
 import './PostEditorPage.css';
@@ -60,13 +61,16 @@ function PostEditorPage() {
   const [dragging, setDragging] = useState(false);
   const [post, setPost] = useState(null);
 
+  // a category approved or added while the form is open shows up in the list at once
+  const categoriesVersion = useLiveVersion('categories');
+
   useEffect(() => {
     api.get('/categories')
       .then((data) => {
         setCategories((data || []).filter((category) => category.status === 'approved'));
       })
       .catch(() => setCategories([]));
-  }, [user?.id]);
+  }, [user?.id, categoriesVersion]);
 
   // Editing: load the post into the form.
   useEffect(() => {

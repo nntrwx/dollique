@@ -97,6 +97,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------- small type ---------- */
 .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .muted { color: var(--ink-3); }
+/* @login next to a full name: the @ is pink so it doesn't melt into the login */
+.handle { font: 12px var(--mono); color: var(--ink-3); }
+.handle i { margin-right: 1px; font-style: normal; font-weight: 700; color: var(--pink-deep); }
 .error-text { color: var(--danger); }
 .px { flex: none; image-rendering: pixelated; shape-rendering: crispEdges; }
 .doodle { fill: none; stroke-linecap: round; stroke-linejoin: round; filter: url(#wobble); }

@@ -170,6 +170,37 @@ class EmailService {
     }
   }
 
+  static async sendEmailChangeEmail(email, token) {
+    try {
+      const transporter = await this.getTransporter();
+      const confirmationUrl = `${FRONTEND_URL}/confirm-email/${token}`;
+      const senderEmail = process.env.SMTP_USER || 'no-reply@dollique.com';
+
+      const info = await transporter.sendMail({
+        from: `"Dollique" <${senderEmail}>`,
+        to: email,
+        subject: 'Dollique: confirm your new email',
+        html: renderLetter({
+          label: 'new email',
+          title: 'Is this',
+          accent: 'you?',
+          paragraphs: [
+            'Someone asked to move a Dollique account to this email address.',
+            'If it was you, confirm it: the account switches to this email, and the old one stops working for sign in.',
+          ],
+          buttonText: 'Confirm new email',
+          url: confirmationUrl,
+          note: 'The link works for 24 hours. If you did not ask for this, just ignore this letter: nothing changes.',
+        }),
+      });
+
+      console.log(`📧 [EMAIL SENT] Email change link delivered to: ${email}`);
+      this.logPreview(info);
+    } catch (error) {
+      console.error('Failed to send email change letter via Nodemailer:', error);
+    }
+  }
+
   static async sendPasswordResetEmail(email, token) {
     try {
       const transporter = await this.getTransporter();

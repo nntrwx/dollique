@@ -13,6 +13,8 @@ import Pagination from '../components/Pagination';
 import Pixel from '../components/Pixel';
 import PostCard from '../components/PostCard';
 import TopDolls from '../components/TopDolls';
+import useLiveVersion from '../hooks/useLiveVersion';
+import usePolling from '../hooks/usePolling';
 import { selectCurrentUser } from '../store/authSlice';
 import { plural } from '../utils/format';
 import './HomePage.css';
@@ -85,6 +87,8 @@ function HomePage() {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // goes up when categories or posts change, so the category list and its counts reload at once
+  const categoriesVersion = useLiveVersion('categories', 'posts');
 
   // Only approved categories can be picked as a filter. The API has no post counts for
   // categories, so each one is asked for the total of its posts (limit=1 keeps it light).
@@ -106,7 +110,7 @@ function HomePage() {
     return () => {
       ignore = true;
     };
-  }, [user?.id]);
+  }, [user?.id, categoriesVersion]);
 
   useEffect(() => {
     if (!user) {
@@ -123,24 +127,26 @@ function HomePage() {
   }, []);
 
   const paramsKey = searchParams.toString();
+  const feedQuery = () => ({
+    page: params.page,
+    limit: params.limit,
+    sort: params.sort,
+    order: params.order,
+    search: params.query,
+    categories: params.categories.join(','),
+    date_from: params.dateFrom,
+    // The "to" day is included up to its last second.
+    date_to: params.dateTo ? `${params.dateTo}T23:59:59` : '',
+    status: params.status,
+    feed: params.forYou && user ? 'subscriptions' : '',
+  });
+
   useEffect(() => {
     let ignore = false;
     setLoading(true);
     setError('');
 
-    api.get('/posts', {
-      page: params.page,
-      limit: params.limit,
-      sort: params.sort,
-      order: params.order,
-      search: params.query,
-      categories: params.categories.join(','),
-      date_from: params.dateFrom,
-      // The "to" day is included up to its last second.
-      date_to: params.dateTo ? `${params.dateTo}T23:59:59` : '',
-      status: params.status,
-      feed: params.forYou && user ? 'subscriptions' : '',
-    })
+    api.get('/posts', feedQuery())
       .then((data) => {
         if (ignore) return;
         setPosts(data.posts || []);
@@ -158,6 +164,14 @@ function HomePage() {
     };
     // paramsKey holds every value read above; user and following change what the API returns.
   }, [paramsKey, user?.id, params.forYou ? following.join(',') : '']);
+
+  // New posts from other people appear without reloading; the list is swapped quietly, with no skeleton.
+  usePolling(loading ? null : () => api.get('/posts', feedQuery())
+    .then((data) => {
+      setPosts(data.posts || []);
+      setPagination(data.pagination || { total: 0, totalPages: 1 });
+    })
+    .catch(() => {}), 15000);
 
   // Writes changes to the URL. Any change except the page number starts from page 1.
   const updateParams = (patch) => {

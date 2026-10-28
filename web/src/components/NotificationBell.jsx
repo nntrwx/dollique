@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { api } from '../api/client';
+import usePolling from '../hooks/usePolling';
 import { formatRelativeDate } from '../utils/format';
 import Pixel from './Pixel';
 import './NotificationBell.css';
 
-const REFRESH_MS = 60000;
+const REFRESH_MS = 15000;
 
 // Bell in the header: comments, replies and likes from other people, and moderation news
 // (hidden or deleted posts, strikes, bans, category suggestions). The pink dot counts the unread ones.
@@ -19,16 +20,15 @@ function NotificationBell() {
 
   const load = () => api.get('/notifications').then((data) => setItems(data || [])).catch(() => {});
 
-  // Checked on every page change, once a minute and when the notifications page changes something.
+  // Checked on every page change, right after any change on the site (someone may have
+  // commented or liked), every 15 seconds and when the notifications page changes something.
   useEffect(() => {
     load();
-    const timer = setInterval(load, REFRESH_MS);
     window.addEventListener('notifications:changed', load);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('notifications:changed', load);
-    };
+    return () => window.removeEventListener('notifications:changed', load);
   }, [location.pathname]);
+
+  usePolling(load, REFRESH_MS);
 
   useEffect(() => {
     setOpen(false);

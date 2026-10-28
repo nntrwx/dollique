@@ -11,6 +11,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const appealRoutes = require('./routes/appealRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const dollPartRoutes = require('./routes/dollPartRoutes');
+const { subscribe, announceChanges } = require('./services/liveService');
 
 const app = express();
 
@@ -44,12 +45,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Dollique API', timestamp: new Date() });
 });
 
+// live updates for the site and the admin panel, see services/liveService.js
+app.get('/api/events', subscribe);
+
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/appeals', appealRoutes);
+app.use('/api/users', announceChanges('users'), userRoutes);
+app.use('/api/categories', announceChanges('categories'), categoryRoutes);
+app.use('/api/posts', announceChanges('posts'), postRoutes);
+app.use('/api/comments', announceChanges('comments'), commentRoutes);
+app.use('/api/appeals', announceChanges('appeals'), appealRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/doll-parts', dollPartRoutes);
 

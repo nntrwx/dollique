@@ -67,9 +67,21 @@
 .gear--on:hover { background: var(--pink); }
 .bar__nav-settings { display: none; }
 
-@media (max-width: 1020px) {
-  .search { width: 180px; }
+/* narrow windows and zoomed-in pages: the stickers shrink to icons before anything can be pushed off the ribbon */
+@media (max-width: 1220px) {
   .bar__in { gap: 16px; }
+  .search { width: 190px; }
+  .me { padding: 3px; }
+  .me__who { display: none; }
+  .sticker--admin { width: 36px; padding: 0; justify-content: center; }
+  .sticker--admin span { display: none; }
+}
+@media (max-width: 1060px) {
+  .bar__in { gap: 12px; }
+  .bar__right { gap: 10px; }
+  .search { width: 150px; }
+  .search kbd { display: none; }
+  .bar__nav a { padding: 7px 12px; }
 }
 
 @media (max-width: 900px) {

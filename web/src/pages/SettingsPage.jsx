@@ -184,8 +184,14 @@ function AccountSection({ user, profile, onSaved }) {
     setSaving(true);
     try {
       const data = await api.patch(`/users/${user.id}`, { login: login.trim(), email: email.trim() });
-      dispatch(userUpdated({ login: login.trim(), email: email.trim() }));
-      if (emailChanged && user.role !== 'admin') onSaved({ is_email_confirmed: 0 });
+      if (emailChanged && user.role !== 'admin') {
+        // the new email waits for confirmation, the current one stays in use
+        dispatch(userUpdated({ login: login.trim() }));
+        onSaved({ pending_email: email.trim() });
+        setEmail(user.email || '');
+      } else {
+        dispatch(userUpdated({ login: login.trim(), email: email.trim() }));
+      }
       setNote({ type: 'success', text: data.message });
     } catch (err) {
       setNote({ type: 'error', text: err.message });
@@ -195,6 +201,20 @@ function AccountSection({ user, profile, onSaved }) {
   };
 
   const confirmed = profile ? Boolean(profile.is_email_confirmed) : true;
+  const pendingEmail = profile?.pending_email || '';
+
+  const cancelChange = async () => {
+    setSaving(true);
+    try {
+      const data = await api.patch(`/users/${user.id}`, { email: user.email });
+      onSaved({ pending_email: null });
+      setNote({ type: 'success', text: data.message });
+    } catch (err) {
+      setNote({ type: 'error', text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <section id="account" className="set glass">
@@ -220,10 +240,17 @@ function AccountSection({ user, profile, onSaved }) {
           error={errors.email}
           ok={!emailChanged && confirmed ? 'confirmed' : ''}
           hint={emailChanged && user.role !== 'admin'
-            ? 'We will send a confirmation link to the new email. Until you open it, you will not be able to sign in again.'
+            ? 'We will send a confirmation link to the new email. Until you open it, your current email keeps working.'
             : ''}
           onChange={(event) => setEmail(event.target.value)}
         />
+        {pendingEmail && (
+          <p className="alert alert--success">
+            Waiting for confirmation: <b>{pendingEmail}</b>. Open the link we sent there; until then you sign in with {user.email}.
+            {' '}
+            <button type="button" className="link-button" onClick={cancelChange} disabled={saving}>Cancel the change</button>
+          </p>
+        )}
         {!confirmed && !emailChanged && (
           <p className="alert alert--error">Your email is not confirmed yet: open the link we sent to it.</p>
         )}
