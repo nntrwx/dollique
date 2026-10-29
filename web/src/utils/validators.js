@@ -13,7 +13,7 @@ export function validateLogin(login) {
 
 export function validateEmail(email) {
   if (!email) return 'Enter an email.';
-  if (email.length > 255 || !EMAIL_PATTERN.test(email)) return 'This does not look like an email.';
+  if (email.length > 100 || !EMAIL_PATTERN.test(email)) return 'This does not look like an email.';
   return '';
 }
 

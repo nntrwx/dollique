@@ -236,7 +236,7 @@ function RegisterPage() {
             name="email"
             type="email"
             autoComplete="email"
-            maxLength={255}
+            maxLength={100}
             value={values.email}
             error={errors.email}
             onChange={handleChange}

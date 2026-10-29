@@ -235,6 +235,7 @@ function AccountSection({ user, profile, onSaved }) {
           label="Email"
           icon="mail"
           type="email"
+          maxLength={100}
           value={email}
           autoComplete="email"
           error={errors.email}

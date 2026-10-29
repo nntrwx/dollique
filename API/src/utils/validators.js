@@ -9,7 +9,7 @@ function validateLogin(login) {
 }
 
 function validateEmail(email) {
-  if (typeof email !== 'string' || email.length > 255 || !EMAIL_PATTERN.test(email)) {
+  if (typeof email !== 'string' || email.length > 100 || !EMAIL_PATTERN.test(email)) {
     return 'Invalid email address format.';
   }
   return null;
