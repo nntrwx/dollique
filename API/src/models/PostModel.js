@@ -61,14 +61,12 @@ class PostModel {
       }
     }
 
-    // ?author=id: posts of one user (their profile page)
     const authorId = parseInt(author, 10);
     if (!isNaN(authorId)) {
       conditions.push('p.author_id = ?');
       params.push(authorId);
     }
 
-    // the "For you" feed: posts in any category the user follows
     if (subscribedBy) {
       conditions.push(`p.id IN (
         SELECT pc.post_id FROM post_categories pc
@@ -96,34 +94,53 @@ class PostModel {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const direction = String(order).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    let orderClause = `ORDER BY net_likes ${direction}, p.created_at DESC`;
-    if (sort === 'date') {
-      orderClause = `ORDER BY p.created_at ${direction}, p.id ${direction}`;
-    }
+        const direction = String(order).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     const countQuery = `SELECT COUNT(*) AS total FROM posts p ${whereClause}`;
     const [countRows] = await pool.execute(countQuery, params);
     const totalCount = countRows[0] ? countRows[0].total : 0;
 
-    const postsQuery = `
-      SELECT 
-        p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
-        p.moderation_reason, p.moderated_at, p.delete_after,
-        u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
-        u.profile_picture AS author_avatar, u.rating AS author_rating,
-        -- Subqueries instead of JOINs: joining likes and comments together multiplied the vote sum
-        (SELECT COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 ELSE -1 END), 0)
-           FROM likes l WHERE l.post_id = p.id) AS net_likes,
-        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count
-      FROM posts p
-      JOIN users u ON p.author_id = u.id
+    let idsQuery = `
+      SELECT p.id FROM posts p
+      LEFT JOIN (
+        SELECT post_id, SUM(CASE WHEN type = 'like' THEN 1 ELSE -1 END) AS net
+        FROM likes WHERE post_id IS NOT NULL GROUP BY post_id
+      ) lk ON lk.post_id = p.id
       ${whereClause}
-      ${orderClause}
+      ORDER BY COALESCE(lk.net, 0) ${direction}, p.created_at DESC
       LIMIT ${limitNum} OFFSET ${offset}
     `;
+    if (sort === 'date') {
+      idsQuery = `
+        SELECT p.id FROM posts p
+        ${whereClause}
+        ORDER BY p.created_at ${direction}, p.id ${direction}
+        LIMIT ${limitNum} OFFSET ${offset}
+      `;
+    }
+    const [idRows] = await pool.execute(idsQuery, params);
+    const pageIds = idRows.map((r) => r.id);
 
-    const [rows] = await pool.execute(postsQuery, params);
+    let rows = [];
+    if (pageIds.length > 0) {
+      const postsQuery = `
+        SELECT 
+          p.id, p.author_id, p.title, p.content, p.status, p.created_at, p.updated_at,
+          p.moderation_reason, p.moderated_at, p.delete_after,
+          u.id AS author_user_id, u.login AS author_login, u.full_name AS author_name,
+          u.profile_picture AS author_avatar, u.rating AS author_rating,
+          -- Subqueries instead of JOINs: joining likes and comments together multiplied the vote sum
+          (SELECT COALESCE(SUM(CASE WHEN l.type = 'like' THEN 1 ELSE -1 END), 0)
+             FROM likes l WHERE l.post_id = p.id) AS net_likes,
+          (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count
+        FROM posts p
+        JOIN users u ON p.author_id = u.id
+        WHERE p.id IN (${pageIds.map(() => '?').join(',')})
+      `;
+      const [detailRows] = await pool.execute(postsQuery, pageIds);
+      const byId = new Map(detailRows.map((r) => [r.id, r]));
+      rows = pageIds.map((id) => byId.get(id)).filter(Boolean);
+    }
 
     const postIds = rows.map((r) => r.id);
     let categoriesMap = {};

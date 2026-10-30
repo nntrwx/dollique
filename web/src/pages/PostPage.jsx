@@ -26,8 +26,6 @@ import {
 } from '../utils/votes';
 import './PostPage.css';
 
-// The task asks for comments sorted by likes, ascending, by default.
-// how often the post and its comments are checked for what other people changed
 const LIVE_MS = 8000;
 
 const COMMENT_SORTS = {
@@ -37,12 +35,10 @@ const COMMENT_SORTS = {
   newest: { label: 'Date', dir: 'newest first', compare: (a, b) => new Date(b.createdAt) - new Date(a.createdAt) },
 };
 
-// Every comment of the tree in one flat list.
 function flatten(comments) {
   return comments.flatMap((comment) => [comment, ...flatten(comment.replies || [])]);
 }
 
-// Returns a copy of the tree where fn(comment) replaced the comment with this id.
 function updateInTree(comments, id, fn) {
   return comments.map((comment) => {
     if (comment.id === id) return fn(comment);
@@ -50,7 +46,6 @@ function updateInTree(comments, id, fn) {
   });
 }
 
-// Who asked: the author's whole doll, rating, posts and when they joined.
 function AuthorCard({ post }) {
   const [info, setInfo] = useState(null);
 
@@ -107,10 +102,8 @@ function AuthorCard({ post }) {
   );
 }
 
-// More posts from the first category of this one.
 function RelatedPosts({ post }) {
   const [related, setRelated] = useState([]);
-  // only the id: the post is refreshed every few seconds and the list should not reload with it
   const categoryId = post.categories[0]?.id;
 
   useEffect(() => {
@@ -155,7 +148,6 @@ function PostPage() {
   const [actionError, setActionError] = useState('');
   const [myVote, setMyVote] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  // plays the little bounce only right after a click, not when the page opens
   const [savePop, setSavePop] = useState(false);
   const [comments, setComments] = useState([]);
   const [myCommentVotes, setMyCommentVotes] = useState({});
@@ -169,7 +161,6 @@ function PostPage() {
     setMyVote(findMyVote(data.likes, userId));
   }, [id, userId]);
 
-  // the votes of the comments already on the page, so a refresh only asks about new ones
   const votesRef = useRef({});
   useEffect(() => {
     votesRef.current = myCommentVotes;
@@ -232,7 +223,8 @@ function PostPage() {
   // Opening /posts/1#comments scrolls to the comments once they are on the page.
   useEffect(() => {
     if (postId && location.hash) {
-      document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' });
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.querySelector(location.hash)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
     }
   }, [postId, location.hash]);
 

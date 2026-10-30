@@ -165,11 +165,11 @@ async function initDatabase() {
     // post images seeding
     await connection.query(
       `INSERT INTO post_images (id, post_id, image_url) VALUES
-      (1, 1, '/uploads/posts/sample-monster-high-face.png'),
-      (2, 2, '/uploads/posts/sample-hirono-harry-potter.png'),
-      (3, 3, '/uploads/posts/sample-figure-cabinet.png'),
-      (4, 4, '/uploads/posts/sample-nendoroid-joint.png'),
-      (5, 5, '/uploads/posts/sample-msc-spray.png')`
+      (1, 1, '/uploads/posts/sample-monster-high-face.jpg'),
+      (2, 2, '/uploads/posts/sample-hirono-harry-potter.jpg'),
+      (3, 3, '/uploads/posts/sample-figure-cabinet.jpg'),
+      (4, 4, '/uploads/posts/sample-nendoroid-joint.jpg'),
+      (5, 5, '/uploads/posts/sample-msc-spray.jpg')`
     );
     console.log('✅ PostImages seeded: 5 entries.');
 
@@ -239,7 +239,7 @@ async function initDatabase() {
     // appeals
     await connection.query(
       `INSERT INTO appeals (id, post_id, author_id, message, status, admin_response, resolved_at) VALUES
-      (1, 6, 4, 'Not bootlegs. I import them myself, that is why they are cheaper.', 'rejected', 'Selling copies is still advertising bootlegs.', NOW()),
+      (1, 6, 4, 'Not bootlegs. I import them myself, that is why they are cheaper.', 'pending', NULL, NULL),
       (2, 7, 5, 'I am sorry, I was very upset. I removed her address and name from the text, only the shop name is left. Could you restore the warning?', 'pending', NULL, NULL),
       (3, 5, 2, 'i just asked about two sealants, its not an ad 🥺', 'approved', 'Brand names here are a fair comparison, not an ad.', NOW()),
       (4, 3, 5, 'My post was hidden after a false spam report. Could you please check it again?', 'approved', 'Checked: the report was wrong.', NOW()),
@@ -258,8 +258,6 @@ async function initDatabase() {
     );
     console.log('✅ Violations seeded: 5 entries (1 revoked after an approved appeal).');
 
-    // sample dates: spread over the last weeks instead of all being "now",
-    // so the date filter, the "Newest" sort and "member since" have something to show
     await connection.query(`
       UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL CASE id
         WHEN 1 THEN 60 WHEN 2 THEN 45 WHEN 3 THEN 38 WHEN 4 THEN 30 ELSE 27 END DAY)

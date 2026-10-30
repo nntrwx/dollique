@@ -13,7 +13,7 @@
 .appeal__actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
 .pcols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 56px; align-items: start; }
-.pcols--loading { margin-top: 40px; }
+.pcols--loading { margin-top: 40px; min-height: 100vh; }
 
 .ptop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
 .ptitle { margin: 0 0 22px; font: 400 64px/.98 var(--serif); letter-spacing: -.025em; overflow-wrap: anywhere; }
@@ -26,9 +26,9 @@
 .pmeta time { margin-left: auto; text-align: right; line-height: 1.4; }
 .pmeta time small { display: block; font-size: 10px; color: var(--ink-3); }
 
-/* the first picture is taped onto the page */
 .photo { position: relative; margin: 40px 18px 40px 0; transform: rotate(-1deg); box-shadow: 0 26px 50px rgba(40, 20, 30, .18); }
-.photo__img { display: block; width: 100%; padding: 0; border: 0; border-radius: 14px; overflow: hidden; background: var(--pink-wash); cursor: zoom-in; }
+.photo__img img { display: block; width: 100%; max-height: 640px; object-fit: cover; }
+.photo__img img.is-loading { aspect-ratio: 1 / 1; }
 .photo__img img { display: block; width: 100%; max-height: 640px; object-fit: cover; }
 .photo .tape--1 { left: -30px; top: 14px; transform: rotate(-38deg); }
 .photo .tape--2 { right: -30px; bottom: 20px; transform: rotate(-34deg); }

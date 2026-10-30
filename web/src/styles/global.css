@@ -1,5 +1,3 @@
-/* Dollique: paper, ink and pink; serif headings, frosted glass cards, naive hand-drawn buttons. */
-
 :root {
   --paper: #f4f1ec;
   --card: #fbfaf7;
@@ -17,7 +15,6 @@
   --sans: 'Inter', system-ui, sans-serif;
   --mono: 'Space Mono', ui-monospace, monospace;
 
-  /* frosted glass, iOS-like: thick blur, bright rim, a soft highlight on top */
   --g-fill: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0) 55%), linear-gradient(160deg, rgba(255, 255, 255, .58), rgba(255, 250, 252, .3));
   --g-blur: blur(30px) saturate(190%);
   --g-rim: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .45);
@@ -59,12 +56,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--pink-deep); outline-offset: 2px; }
 
 /* ---------- layout ---------- */
-/* overflow clip: decorations peeking past the edge must not make phones scroll sideways */
 .layout { position: relative; display: flex; flex-direction: column; min-height: 100vh; overflow-x: clip; }
 .page-loading { min-height: 70vh; }
 .layout__main { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 28px 90px; }
 
-/* dotted pixel drawings behind the glass, like a dot-matrix print */
 .glow { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .glow i { position: absolute; display: block; background: center / contain no-repeat; opacity: .85; }
 .glow .g-flourish { width: 420px; height: 420px; background-image: url(/decor/dot-flourish.svg); transform: scaleX(-1); }
@@ -97,7 +92,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------- small type ---------- */
 .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .muted { color: var(--ink-3); }
-/* @login next to a full name: the @ is pink so it doesn't melt into the login */
 .handle { font: 12px var(--mono); color: var(--ink-3); }
 .handle i { margin-right: 1px; font-style: normal; font-weight: 700; color: var(--pink-deep); }
 .error-text { color: var(--danger); }
@@ -111,10 +105,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .page { max-width: 760px; margin: 40px auto 0; padding: 34px 36px; }
 .page--center { text-align: center; }
 
-/* ---------- glass ----------
-   cards in the page flow skip the backdrop blur: behind them is only paper, and blurring
-   every card made scrolling lag. A thin paper layer under the fill hides the dotted drawings
-   the way the blur did. Floating things (popovers, the header) still blur. */
+/* ---------- glass ---------- */
 .glass, .panel {
   background: var(--g-fill), rgba(250, 248, 245, .35);
   border: 0;
@@ -148,7 +139,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field b { font-weight: 500; color: var(--ink); }
 button.field { cursor: pointer; }
 button.field:hover, .field:has(select):hover { background: #fff; }
-/* a native select laid over the capsule: the capsule shows the value, the browser opens the list */
 .field select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 
 .chip {
@@ -229,7 +219,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
   color: var(--pink);
 }
 .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #9be3a8; box-shadow: 0 0 0 2px rgba(155, 227, 168, .25); }
-/* hidden: a dashed grey label with a crossed-out eye */
 .status--inactive { background: repeating-linear-gradient(-45deg, rgba(149, 140, 144, .16) 0 4px, rgba(149, 140, 144, .05) 4px 8px); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(91, 83, 87, .45); }
 .status--inactive::before { content: none; }
 
@@ -314,7 +303,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .icon-button:hover { background: #fff; }
 .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-/* inline "Sure?" of ConfirmButton */
 .confirm { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .link-button.confirm__yes { color: var(--danger); }
 .nbtn.confirm__yes, .button.confirm__yes { color: #fff; }
@@ -345,7 +333,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 
 .ava { position: relative; display: block; flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: var(--pink-wash); }
 .ava > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* the circle shows the doll from the top of the head to the shoulders (head ≈ the upper half of a 1024px layer) */
 .ava .doll { position: absolute; width: 175%; height: 175%; left: -37.5%; top: -6%; }
 .ava--guest { display: grid; place-items: center; }
 
@@ -400,7 +387,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .fl__error { margin: 7px 0 0 4px; font-size: 12px; color: var(--danger); }
 .fl__hint { margin: 7px 0 0 4px; font-size: 12px; color: var(--ink-3); }
 
-/* plain text area (comments, bio, appeals) */
 .textarea {
   display: block;
   width: 100%;
@@ -419,7 +405,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .textarea::placeholder { color: var(--ink-3); }
 .textarea--invalid { box-shadow: inset 0 0 0 1.5px #c96a83; }
 
-/* checkbox: a little ink box with a pixel tick */
 .check { position: relative; display: inline-flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
 .check input { position: absolute; opacity: 0; pointer-events: none; }
 .check__box { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1.5px var(--ink-3); transition: background .2s; }
@@ -436,10 +421,8 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 }
 @keyframes shimmer { to { background-position: -150% 0; } }
 
-/* pink washi tape holding photos to the page */
 .tape { position: absolute; width: 110px; height: 28px; background: rgba(236, 195, 207, .82); mix-blend-mode: multiply; pointer-events: none; }
 
-/* follow a category: a small heart capsule, pink when followed */
 .follow { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--capsule); box-shadow: var(--g-rim), 0 2px 6px rgba(90, 40, 65, .07); color: var(--ink-3); font: 12px var(--sans); text-transform: none; letter-spacing: 0; cursor: pointer; transition: color .2s, background .2s, transform .15s; }
 .follow:hover { color: var(--pink-deep); background: #fff; }
 .follow:active { transform: scale(.9); }
@@ -492,8 +475,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
   .footer__about { grid-column: 1 / -1; }
 }
 
-/* ---------- bits shared by several pages ----------
-   pages load their own CSS only when opened, so anything two pages use lives here */
 .crumbs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 34px 0 26px; }
 .crumbs a { color: var(--ink-2); text-decoration: none; }
 .crumbs a:hover { color: var(--pink-deep); }
@@ -502,3 +483,12 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .seg button.on { background: var(--ink); color: var(--pink); }
 .seg button:disabled { opacity: .45; cursor: not-allowed; }
 .auth__link { color: var(--ink); font-weight: 500; text-decoration: none; background: linear-gradient(var(--pink), var(--pink)) 0 90% / 100% 35% no-repeat; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

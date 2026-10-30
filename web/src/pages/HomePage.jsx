@@ -26,8 +26,6 @@ const SORTS = [
 const PAGE_SIZES = [5, 10, 20];
 const DEFAULT_LIMIT = 10;
 
-// Reads the feed settings from the URL, so a filtered page can be reloaded or shared.
-// The newest posts come first by default.
 function readParams(searchParams) {
   const limit = Number(searchParams.get('limit'));
   return {
@@ -47,7 +45,6 @@ function readParams(searchParams) {
   };
 }
 
-// The artwork is taped onto the page and its doodles spill onto the paper.
 function HeroArt() {
   return (
     <div className="hero__art">
@@ -61,7 +58,7 @@ function HeroArt() {
         <path className="doodle" d="M688 120 c-6 -10 4 -18 10 -10 c6 -8 16 0 10 10 l-10 12z" stroke="#c98a9c" strokeWidth="1.5" />
       </svg>
       <div className="hero__print">
-        <img src="/decor/hero.jpg" alt="A doll drawn over with lace and little bunnies" />
+        <img src="/decor/hero.jpg" width="1200" height="896" alt="A doll drawn over with lace and little bunnies" />
         <span className="tape tape--1" />
         <span className="tape tape--2" />
       </div>
@@ -189,7 +186,8 @@ function HomePage() {
 
   const changePage = (page) => {
     updateParams({ page: page > 1 ? page : '' });
-    toolbarRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    toolbarRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   };
 
   const resetFilters = () => {

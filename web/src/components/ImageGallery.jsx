@@ -3,15 +3,12 @@ import { createPortal } from 'react-dom';
 
 import Icon from './Icon';
 
-// how long the closing fade takes; matches .lightbox--closing in global.css
 const CLOSE_MS = 220;
 
-// Post pictures: the first one taped onto the page, the rest as small prints under it.
-// A click opens the picture full size with a soft iOS-like pop (fade + slight scale);
-// Esc, a click or the arrows move around.
 function ImageGallery({ images, title }) {
   const [openIndex, setOpenIndex] = useState(null);
   const [closing, setClosing] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState(null);
   const closeTimer = useRef(null);
 
   const close = () => {
@@ -43,7 +40,12 @@ function ImageGallery({ images, title }) {
     <>
       <figure className="photo">
         <button type="button" className="photo__img" onClick={() => setOpenIndex(0)} aria-label="Open the picture">
-          <img src={first} alt={`${title}, picture 1`} />
+          <img
+            src={first}
+            alt={`${title}, picture 1`}
+            className={loadedSrc === first ? undefined : 'is-loading'}
+            onLoad={() => setLoadedSrc(first)}
+          />
         </button>
         <span className="tape tape--1" />
         <span className="tape tape--2" />
@@ -60,7 +62,6 @@ function ImageGallery({ images, title }) {
         </div>
       )}
 
-      {/* rendered into <body>, so it covers the sticky header too */}
       {openIndex !== null && createPortal(
         <div className={`lightbox${closing ? ' lightbox--closing' : ''}`} role="dialog" aria-label="Picture" onClick={close}>
           <img

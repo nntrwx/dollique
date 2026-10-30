@@ -1,4 +1,3 @@
-/* hero: the artwork is taped onto the page and its doodles spill onto the paper */
 .hero { position: relative; display: grid; grid-template-columns: .9fr 1.1fr; gap: 56px; align-items: center; padding: 40px 0 56px; }
 .hero h1 { margin: 18px 0; font: 400 76px/.95 var(--serif); letter-spacing: -.025em; }
 .hero h1 em { position: relative; color: var(--pink-deep); }
@@ -9,7 +8,7 @@
 .hero__facts b { display: block; margin-bottom: 4px; font: 400 34px/1 var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink); }
 .hero__art { position: relative; }
 .hero__print { position: relative; transform: rotate(1.6deg); box-shadow: 0 30px 60px rgba(40, 20, 30, .22); }
-.hero__print img { display: block; width: 100%; border-radius: 4px; }
+.hero__print img { display: block; width: 100%; height: auto; border-radius: 4px; }
 .hero__spill { position: absolute; inset: -60px -40px -50px -70px; width: calc(100% + 110px); height: calc(100% + 110px); overflow: visible; pointer-events: none; }
 .hero__bunny { position: absolute; right: -14px; top: -26px; padding: 6px; background: var(--card); border-radius: 8px; transform: rotate(8deg); filter: drop-shadow(0 4px 0 rgba(33, 28, 31, .15)); }
 .hero__bunny svg { display: block; }
@@ -18,10 +17,8 @@
 
 .search-head { padding: 34px 0 10px; }
 
-/* doodle lace divider */
 .lace { display: block; width: 100%; height: 26px; margin: 20px 0 26px; overflow: visible; }
 
-/* toolbar: sorting tabs + filters */
 .toolbar { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; scroll-margin-top: 110px; }
 .tabs { display: flex; gap: 26px; }
 .tabs button { position: relative; padding: 0; border: 0; background: none; font: 400 34px/1 var(--serif); color: var(--ink-3); cursor: pointer; transition: color .2s; }
@@ -30,7 +27,6 @@
 .tabs .underline { position: absolute; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 18px); overflow: visible; pointer-events: none; }
 .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
 .datef { position: relative; }
-/* an open calendar must float over the feed and the footer */
 .layout__main:has(.datef--open) { z-index: 3; }
 .datef--open { z-index: 21; }
 .datef--open .dd__btn { background: #fff; }
@@ -38,8 +34,6 @@
 .datef__pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; display: flex; flex-direction: column; gap: 6px; padding: 16px 16px 14px; border-radius: 22px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .94); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), 0 14px 36px rgba(90, 40, 65, .18); transform-origin: top right; animation: dd-pop .28s cubic-bezier(.32, .72, 0, 1); }
 .datef__pop .link-button { align-self: center; }
 
-/* categories: serif words with counts; the chosen ones are circled by hand,
-   hover turns a word into a little black lace ribbon */
 .cats { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 26px; margin-bottom: 38px; padding-left: 14px; }
 .cats button { position: relative; padding: 6px 2px; border: 0; border-radius: 3px; background: none; font: 400 24px/1 var(--serif); color: var(--ink-3); cursor: pointer; transition: color .2s; }
 .cats sup { margin-left: 3px; font: 10px var(--mono); color: var(--pink-deep); }
@@ -50,7 +44,6 @@
 .cats button:not(.on):hover sup { color: var(--card); }
 .cats button:not(.on):hover .lc { opacity: 1; }
 
-/* feed + sidebar */
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; }
 .feed-info { display: flex; align-items: center; gap: 14px; margin: 0 0 12px 4px; }
 .feed { display: flex; flex-direction: column; gap: 22px; }
@@ -97,7 +90,6 @@
   .cols { grid-template-columns: 1fr; }
   .tabs button { font-size: 28px; }
   .filters { margin-left: 0; }
-  /* on a phone the capsule can land anywhere in the row, so the calendar hangs from the row's left edge */
   .filters { position: relative; }
   .datef { position: static; }
   .datef__pop { left: 0; right: auto; transform-origin: top center; }
