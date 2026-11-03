@@ -9,8 +9,6 @@ import Pixel from '../components/Pixel';
 import { login } from '../store/authSlice';
 import { isValid } from '../utils/validators';
 
-// The angel who greets you: parts are found by name in the catalog.
-// The silver harness outfit is used once an admin uploads it (any outfit named "...harness..." or "...cyber...").
 const ANGEL = [
   { category: 'base', match: /ivory, sleepy/i },
   { category: 'hair', match: /pink waves/i },
@@ -60,7 +58,7 @@ function LoginPage() {
     setServerError('');
     if (!isValid(nextErrors)) return;
 
-    // The API accepts either a login or an email.
+    // login or email
     const identifier = values.identifier.trim();
     const credentials = identifier.includes('@')
       ? { email: identifier, password: values.password }
@@ -68,7 +66,6 @@ function LoginPage() {
 
     setSending(true);
     try {
-      // On success GuestRoute sees the user and redirects away from this page.
       await dispatch(login(credentials)).unwrap();
     } catch (error) {
       setServerError(error.message);

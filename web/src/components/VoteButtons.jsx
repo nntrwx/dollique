@@ -1,8 +1,5 @@
 import Pixel from './Pixel';
 
-// Like / dislike with pixel hearts. Big: one pill with the score in the middle (posts).
-// Small: two glass pills, the score sits on the heart (comments).
-// Without onVote (guests, hidden posts) the buttons are shown but disabled.
 function VoteButtons({
   score, myVote = null, onVote = null, disabledReason = '', small = false,
 }) {

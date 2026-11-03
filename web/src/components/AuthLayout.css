@@ -1,6 +1,4 @@
-/* sign in, password and email pages: one glass card, a doll on the left, the form on the right */
 .auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 980px; margin: 56px auto 30px; padding: 0; overflow: hidden; }
-/* the sign-in card sits right over the dotted drawings, so it keeps the real blur */
 .auth { -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); }
 
 .hello { position: relative; display: flex; flex-direction: column; padding: 34px 32px 0; background: linear-gradient(180deg, rgba(246, 227, 232, .6), rgba(246, 227, 232, .15)); border-right: 1px solid rgba(255, 255, 255, .7); }
@@ -30,7 +28,6 @@
 .form { margin: 0; }
 .form > .nbtn, .form > .button { margin-top: 4px; }
 
-/* sign up: make the doll on the left, the account on the right */
 .join { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); margin: 46px 0 40px; padding: 0; overflow: hidden; }
 .join__dress { position: relative; padding: 28px 30px 26px; border-right: 1px solid rgba(255, 255, 255, .7); background: linear-gradient(180deg, rgba(246, 227, 232, .55), rgba(246, 227, 232, .15)); }
 .join__form { padding: 28px 34px 30px; }
@@ -41,7 +38,6 @@
 .dtools { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
 .dtools .mono { max-width: 220px; margin-left: auto; text-align: right; text-transform: none; letter-spacing: 0; font-size: 11px; line-height: 1.35; }
 
-/* both passwords sit together on a pink sheet */
 .pwbox { margin: 0 0 14px; padding: 14px 14px 4px; border-radius: 20px; background: rgba(246, 227, 232, .45); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8); }
 .meter { display: flex; align-items: center; gap: 4px; margin: 8px 4px 0; }
 .meter i { flex: 1; height: 4px; border-radius: 4px; background: rgba(201, 138, 156, .25); }

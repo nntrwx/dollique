@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// A button that asks "Sure?" in place before doing something that cannot be undone.
 function ConfirmButton({
   children, question = 'Sure?', confirmLabel = 'Yes', onConfirm, className = 'nbtn nbtn--sm',
 }) {

@@ -2,8 +2,6 @@ import { useId, useState } from 'react';
 
 import Pixel from './Pixel';
 
-// Labelled glass input with a little pixel icon on the left and an error or hint under it.
-// type="password" gets an eye that shows or hides the text.
 function FormField({
   label, optional = false, icon = null, type = 'text', error = '', hint = '', ok = '', children = null, ...inputProps
 }) {

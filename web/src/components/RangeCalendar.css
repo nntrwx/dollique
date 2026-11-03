@@ -1,4 +1,3 @@
-/* date range calendar: serif month, mono weekdays, round days on a pink ribbon */
 .cal { width: 252px; }
 .cal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .cal__title { font: 400 22px/1 var(--serif); }
@@ -20,7 +19,6 @@
 .cal__day:disabled { color: var(--ink-3); opacity: .3; cursor: default; }
 .cal__day--today span::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pink-deep); }
 
-/* the pink ribbon between the two picked days */
 .cal__day--in::before, .cal__day--edge::before { content: ''; position: absolute; inset: 2px 0; background: rgba(236, 195, 207, .55); }
 .cal__day--start.cal__day--edge::before { left: 50%; }
 .cal__day--end.cal__day--edge::before { right: 50%; }

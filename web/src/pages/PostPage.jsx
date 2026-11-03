@@ -15,6 +15,7 @@ import ConfirmButton from '../components/ConfirmButton';
 import Dropdown from '../components/Dropdown';
 import DollFigure from '../components/DollFigure';
 import ImageGallery from '../components/ImageGallery';
+import CategoryEditor from '../components/CategoryEditor';
 import ModerationNotice from '../components/ModerationNotice';
 import Pixel from '../components/Pixel';
 import VoteButtons from '../components/VoteButtons';
@@ -153,6 +154,7 @@ function PostPage() {
   const [myCommentVotes, setMyCommentVotes] = useState({});
   const [commentSort, setCommentSort] = useState('likes-asc');
   const [hideReason, setHideReason] = useState(null); // null = form closed
+  const [editingCategories, setEditingCategories] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const loadPost = useCallback(async () => {
@@ -173,7 +175,7 @@ function PostPage() {
       setMyCommentVotes({});
       return;
     }
-    // The API has no "my vote" field for comments, so we read the likes of each one.
+    // api has no "my vote" for comments, so read the likes of each
     const entries = await Promise.all(flatten(tree).map(async (comment) => {
       const likes = await api.get(`/comments/${comment.id}/like`).catch(() => []);
       return [comment.id, findMyVote(likes, userId)];
@@ -189,7 +191,6 @@ function PostPage() {
       .catch((err) => setLoadError(err.status === 404 ? 'This post does not exist or is hidden.' : err.message));
   }, [loadPost, loadComments]);
 
-  // New comments, replies, likes and edits from other people show up on their own.
   const refreshLive = useCallback(async () => {
     try {
       const [data, tree] = await Promise.all([api.get(`/posts/${id}`), api.get(`/posts/${id}/comments`)]);
@@ -205,7 +206,6 @@ function PostPage() {
       }));
       setMyCommentVotes((votes) => ({ ...votes, ...Object.fromEntries(entries) }));
     } catch {
-      // a failed refresh changes nothing; the next one tries again
     }
   }, [id, userId]);
   usePolling(post ? refreshLive : null, LIVE_MS);
@@ -220,7 +220,6 @@ function PostPage() {
       .catch(() => setIsFavorite(false));
   }, [id, userId]);
 
-  // Opening /posts/1#comments scrolls to the comments once they are on the page.
   useEffect(() => {
     if (postId && location.hash) {
       const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -228,7 +227,6 @@ function PostPage() {
     }
   }, [postId, location.hash]);
 
-  // Runs an API action and shows its error above the post instead of failing silently.
   const run = async (action) => {
     setActionError('');
     try {
@@ -295,12 +293,17 @@ function PostPage() {
     await loadPost();
   });
 
+  const saveCategories = (categories) => run(async () => {
+    await api.patch(`/posts/${post.id}`, { categories });
+    setEditingCategories(false);
+    await loadPost();
+  });
+
   const deletePost = () => run(async () => {
     await api.delete(`/posts/${post.id}`);
     navigate('/', { replace: true });
   });
 
-  // Everything comments need, passed down the tree in one object.
   const thread = {
     user,
     postAuthorId: post.authorId,
@@ -424,7 +427,6 @@ function PostPage() {
               onVote={user && isActive ? votePost : null}
               disabledReason={voteHint}
             />
-            {/* round icon buttons: the label slides out on hover */}
             {user && (
               <button
                 type="button"
@@ -452,6 +454,9 @@ function PostPage() {
               {isAuthor && isActive && (
                 <button type="button" className="link-button" onClick={() => setStatus('inactive')}>Make inactive</button>
               )}
+              {isAdmin && !isAuthor && !editingCategories && (
+                <button type="button" className="link-button" onClick={() => setEditingCategories(true)}>Categories</button>
+              )}
               {isAdmin && !isAuthor && isActive && hideReason === null && (
                 <button type="button" className="link-button" onClick={() => setHideReason('')}>Hide</button>
               )}
@@ -465,6 +470,10 @@ function PostPage() {
               )}
             </span>
           </div>
+
+          {editingCategories && (
+            <CategoryEditor post={post} onSave={saveCategories} onCancel={() => setEditingCategories(false)} />
+          )}
 
           {hideReason !== null && (
             <form

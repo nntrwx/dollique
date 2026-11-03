@@ -4,8 +4,7 @@ import {
   api, getToken, getTokenUserId, saveToken,
 } from '../api/client';
 
-// The API returns users in snake_case (GET /users/:id) or camelCase (login response).
-// Keep one shape in the store.
+// api returns snake_case or camelCase, keep one shape
 export function normalizeUser(raw) {
   if (!raw) return null;
   return {
@@ -28,7 +27,6 @@ export const fetchCurrentUser = createAsyncThunk('auth/fetchCurrentUser', async 
     const user = await api.get(`/users/${userId}`);
     return normalizeUser(user);
   } catch (error) {
-    // The saved token points to a user that no longer exists: forget it.
     saveToken(null);
     throw error;
   }
@@ -37,7 +35,6 @@ export const fetchCurrentUser = createAsyncThunk('auth/fetchCurrentUser', async 
 export const login = createAsyncThunk('auth/login', async (credentials) => {
   const data = await api.post('/auth/login', credentials);
   saveToken(data.token);
-  // The login answer has no bio and doll flag, so load the full profile too.
   const profile = await api.get(`/users/${data.user.id}`).catch(() => ({}));
   return normalizeUser({ ...data.user, ...profile });
 });
@@ -46,7 +43,6 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   try {
     await api.post('/auth/logout');
   } finally {
-    // Even if the API call fails, the user is logged out on this device.
     saveToken(null);
   }
 });
@@ -55,7 +51,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     user: null,
-    // 'loading' until we know whether the saved token is valid
+    // 'loading' until the saved token is checked
     status: getToken() ? 'loading' : 'ready',
   },
   reducers: {

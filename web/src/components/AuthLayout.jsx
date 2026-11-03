@@ -5,9 +5,6 @@ import { layersOf, randomConfig } from '../utils/doll';
 import DollFigure from './DollFigure';
 import './AuthLayout.css';
 
-// One glass card for sign in and the password / email pages:
-// a doll on pink glass on the left, the form on the right.
-// Without `doll` the left side shows a randomly dressed doll.
 function AuthLayout({
   title,
   subtitle = '',

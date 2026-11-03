@@ -6,9 +6,6 @@ import { Sparkle } from './Doodle';
 import Pixel from './Pixel';
 import './PostCard.css';
 
-// Post preview: picture, author with rating, date, status, title, short text, categories,
-// likes and comments (the task asks to show every field of a post in the preview).
-// `actions` adds owner links (profile page), `compact` makes the card smaller.
 function PostCard({
   post, onCategoryClick = null, actions = null, compact = false, showAuthor = true,
 }) {
@@ -19,7 +16,6 @@ function PostCard({
   return (
     <article className={`post${compact ? ' post--compact' : ''}${cover ? '' : ' post--text'}${hidden ? ' post--hidden' : ''}`}>
       <Sparkle />
-      {/* a post without photos is just text, without an empty picture box */}
       {cover && (
         <Link to={`/posts/${post.id}`} className="post__pic" tabIndex={-1} aria-hidden="true">
           <img src={cover} alt="" loading="lazy" decoding="async" />

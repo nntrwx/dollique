@@ -2,9 +2,6 @@ import { useEffect, useRef } from 'react';
 
 import { onLiveChange } from '../api/live';
 
-// Calls `refresh` as soon as the server says something changed (see api/live.js), and also
-// every `ms` and when the user comes back to the tab, in case a live message was missed.
-// Works only while the tab is open in front. Pass null to pause (for example while the page is still loading).
 export default function usePolling(refresh, ms = 10000) {
   const saved = useRef(refresh);
 
@@ -17,7 +14,7 @@ export default function usePolling(refresh, ms = 10000) {
     const tick = () => {
       if (document.visibilityState === 'visible' && saved.current) saved.current();
     };
-    // one change often comes as a few requests (a post, then its photos), so wait a moment and reload once
+    // one change can be several requests, so reload once after a short pause
     const soon = () => {
       clearTimeout(pending);
       pending = setTimeout(tick, 300);

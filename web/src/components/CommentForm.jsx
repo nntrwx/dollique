@@ -2,8 +2,6 @@ import { useState } from 'react';
 
 const MAX_LENGTH = 5000;
 
-// Text box for a new comment, a reply or an edit.
-// onSubmit(text) must return a promise; its error message is shown under the field.
 function CommentForm({
   initialText = '', submitLabel = 'Send', placeholder = 'Add a comment…', onSubmit, onCancel = null, autoFocus = false,
 }) {

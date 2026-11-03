@@ -3,7 +3,6 @@ import DollFigure from './DollFigure';
 import Pixel from './Pixel';
 import './DressUp.css';
 
-// Arrows sit at the height of what they change.
 const ROWS = [
   { slot: 'hair', label: 'hair' },
   { slot: 'outfit', label: 'outfit' },
@@ -22,11 +21,7 @@ function Arrow({ direction, label, onClick }) {
   );
 }
 
-// Dress-up doll: arrows change hair, outfit and shoes right where they are,
-// arrows under the doll change the body, the shelf below holds up to 3 accessories.
-// config is a doll_config; onChange gets the next one.
 function DressUp({ parts, config, onChange }) {
-  // Hair, outfit and shoes can be "none"; a body is required.
   const step = (slot, direction) => {
     const ids = partsOf(parts, slot, config).map((part) => part.id);
     const options = slot === 'base' ? ids : [...ids, null];

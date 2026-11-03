@@ -8,14 +8,10 @@ import ConfirmButton from './ConfirmButton';
 import Pixel from './Pixel';
 import VoteButtons from './VoteButtons';
 
-// Deeper replies stop shifting right, so long threads still fit on a phone.
 const MAX_INDENT = 4;
 
-// One comment with its replies (the component renders itself for every reply).
-// Replies hang on thin grey branches. thread holds what every comment needs:
-// the user, permissions and the actions.
 function CommentItem({ comment, depth = 0, thread }) {
-  const [mode, setMode] = useState(null); // null, 'reply' or 'edit'
+  const [mode, setMode] = useState(null); // null | 'reply' | 'edit'
   const [collapsed, setCollapsed] = useState(false);
 
   const { user, postAuthorId, canWrite } = thread;

@@ -82,7 +82,6 @@
 .cat-list span { font: 11px var(--mono); color: var(--ink-3); }
 .cat-list__hint { margin: 6px 0 0; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--ink-3); }
 
-
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 46px; padding-top: 8px; }
   .hero h1 { font-size: 54px; }

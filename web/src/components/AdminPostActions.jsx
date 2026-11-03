@@ -3,8 +3,6 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import ConfirmButton from './ConfirmButton';
 
-// What an admin can do with someone's post right in the feed: hide it from everyone,
-// bring it back, or delete it. A reason for hiding can be given on the post page.
 function AdminPostActions({ post, onChange, onDelete }) {
   const [busy, setBusy] = useState(false);
   const hidden = post.status === 'inactive';

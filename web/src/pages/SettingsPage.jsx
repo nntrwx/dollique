@@ -25,13 +25,11 @@ const SECTIONS = [
   { id: 'delete', label: 'Delete account', icon: 'cross' },
 ];
 
-// A small message under a form: green when saved, pink when something went wrong.
 function Note({ note }) {
   if (!note.text) return null;
   return <p className={`alert alert--${note.type}`} role="status">{note.text}</p>;
 }
 
-// Name, bio, the avatar photo and whether the doll is shown instead of it.
 function ProfileSection({ user, profile, onSaved }) {
   const dispatch = useDispatch();
   const fileRef = useRef(null);
@@ -88,7 +86,6 @@ function ProfileSection({ user, profile, onSaved }) {
       const data = await api.patch('/users/avatar', body);
       const picture = data.user?.profile_picture || data.user?.profilePicture;
       dispatch(userUpdated({ profilePicture: picture }));
-      // a new photo is meant to be seen
       if (user.useDollAsAvatar) await setAvatarMode(false);
       setNote({ type: 'success', text: 'New photo saved.' });
     } catch (err) {
@@ -102,7 +99,6 @@ function ProfileSection({ user, profile, onSaved }) {
       <p className="set__lead">How others see you next to your posts and comments.</p>
 
       <div className="set__ava">
-        {/* key: the circle redraws when the doll switch changes */}
         <Avatar key={String(user.useDollAsAvatar)} src={user.profilePicture} alt={user.login} size={84} userId={user.id} />
         <div className="set__ava-side">
           <span className="seg" role="group" aria-label="Avatar">
@@ -165,7 +161,6 @@ function ProfileSection({ user, profile, onSaved }) {
   );
 }
 
-// Login and email. A new email has to be confirmed from a letter before the next sign in.
 function AccountSection({ user, profile, onSaved }) {
   const dispatch = useDispatch();
   const [login, setLogin] = useState(user.login);
@@ -185,7 +180,6 @@ function AccountSection({ user, profile, onSaved }) {
     try {
       const data = await api.patch(`/users/${user.id}`, { login: login.trim(), email: email.trim() });
       if (emailChanged && user.role !== 'admin') {
-        // the new email waits for confirmation, the current one stays in use
         dispatch(userUpdated({ login: login.trim() }));
         onSaved({ pending_email: email.trim() });
         setEmail(user.email || '');
@@ -264,7 +258,6 @@ function AccountSection({ user, profile, onSaved }) {
   );
 }
 
-// The password is changed through a letter, the same way as "Forgot password".
 function PasswordSection({ user }) {
   const [note, setNote] = useState({ type: '', text: '' });
   const [sending, setSending] = useState(false);
@@ -298,7 +291,6 @@ function PasswordSection({ user }) {
   );
 }
 
-// Deleting is forever, so the user types their login to unlock the button.
 function DeleteSection({ user }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -307,7 +299,6 @@ function DeleteSection({ user }) {
   const [deleting, setDeleting] = useState(false);
   const [asking, setAsking] = useState(false);
 
-  // typing the login unlocks the button, the button asks once more in a window
   const ask = (event) => {
     event.preventDefault();
     if (typed === user.login) setAsking(true);
@@ -364,10 +355,8 @@ function DeleteSection({ user }) {
   );
 }
 
-// Account settings: a sticky menu on the left, one glass card per section on the right.
 function SettingsPage() {
   const user = useSelector(selectCurrentUser);
-  // the full profile has the doll and whether the email is confirmed
   const [profile, setProfile] = useState(null);
   const [active, setActive] = useState('profile');
 
@@ -375,7 +364,6 @@ function SettingsPage() {
     api.get(`/users/${user.id}`).then(setProfile).catch(() => setProfile(null));
   }, [user.id]);
 
-  // highlights the section that is on the screen now
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting);
@@ -388,7 +376,6 @@ function SettingsPage() {
     return () => observer.disconnect();
   }, []);
 
-  // the menu scrolls smoothly to its section instead of jumping there
   const goTo = (event, id) => {
     event.preventDefault();
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;

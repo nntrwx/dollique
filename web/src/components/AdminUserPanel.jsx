@@ -6,8 +6,6 @@ import Pixel from './Pixel';
 
 const BAN_DAYS = [1, 3, 7, 30];
 
-// Admin tools on someone's profile: see whether they are banned, ban for a few days
-// with a reason (they get it in a notification) or lift the ban.
 function AdminUserPanel({ profile, onChange }) {
   const [open, setOpen] = useState(false);
   const [days, setDays] = useState(7);

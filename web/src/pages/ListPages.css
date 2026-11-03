@@ -1,4 +1,3 @@
-/* categories and members: a serif head, sorting tabs, then a grid of glass cards */
 .listpage__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; flex-wrap: wrap; padding: 40px 0 26px; }
 .listpage__head .page__title { margin-top: 14px; font-size: 64px; }
 .listpage__head .page__lead { max-width: 520px; margin-bottom: 0; }
@@ -9,7 +8,7 @@
 .listpage__mine { margin-bottom: 34px; }
 .listpage__mine .section-title { margin-bottom: 14px; }
 
-/* ---------- categories ---------- */
+/* categories */
 .cgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .ccard { position: relative; display: flex; flex-direction: column; gap: 10px; min-height: 210px; padding: 24px 24px 20px; border-radius: 22px; color: inherit; text-decoration: none; transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s; }
 .ccard[role='link'] { cursor: pointer; }
@@ -22,12 +21,10 @@
 .ccard__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px dashed rgba(91, 83, 87, .22); }
 .ccard__reason { margin: 0; font-size: 13px; color: var(--ink-2); }
 .ccard .badge { align-self: flex-start; }
-/* not public yet: striped and faded, like hidden posts */
 .ccard--pending, .ccard--rejected { background: repeating-linear-gradient(-45deg, rgba(149, 140, 144, .1) 0 6px, rgba(255, 255, 255, .35) 6px 12px); box-shadow: inset 0 0 0 1px rgba(91, 83, 87, .3); }
 .ccard--pending .ccard__title, .ccard--rejected .ccard__title { color: var(--ink-2); }
 .ccard--skeleton { min-height: 210px; opacity: .6; }
 
-/* the suggest tile: dashed, opens into a form */
 .ccard--suggest { align-items: center; justify-content: center; text-align: center; border: 2px dashed rgba(201, 138, 156, .55); background: rgba(255, 255, 255, .25); font: inherit; color: var(--pink-deep); cursor: pointer; }
 .ccard--suggest .ccard__title { font-size: 28px; color: var(--ink); }
 .ccard--suggest:hover { background: rgba(255, 255, 255, .55); transform: rotate(-1deg); }
@@ -38,12 +35,11 @@
 .ccard__textarea { resize: vertical; font-size: 14px; }
 .ccard__actions { display: flex; align-items: center; gap: 14px; margin-top: auto; }
 .ccard .fl__error { margin: 0; }
-/* admin review of a suggestion */
 .ccard__review { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
 .ccard__input--small { font: 14px var(--sans); }
 .listpage__count { margin-left: 4px; font: 11px var(--mono); color: var(--pink-deep); }
 
-/* ---------- members ---------- */
+/* members */
 .mgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
 .mcard { position: relative; display: flex; flex-direction: column; align-items: center; padding: 18px 18px 18px; border-radius: 22px; text-align: center; color: inherit; text-decoration: none; transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s; }
 .mcard:hover { transform: translateY(-4px); box-shadow: var(--g-rim), 0 18px 44px rgba(90, 40, 65, .16); }

@@ -1,4 +1,3 @@
-// Page numbers to show: first, last, and two around the current one, with "…" gaps.
 function getPages(page, totalPages) {
   const pages = [];
   for (let number = 1; number <= totalPages; number += 1) {
@@ -11,7 +10,6 @@ function getPages(page, totalPages) {
   return pages;
 }
 
-// Hand-drawn square buttons. `children` goes to the right end (the page size picker).
 function Pagination({
   page, totalPages, onChange, children = null,
 }) {

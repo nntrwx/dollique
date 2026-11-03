@@ -1,12 +1,9 @@
-// Lace trims drawn as repeating SVG shapes. The shapes are built once, when the module loads.
-
 function repeat(width, step, draw) {
   const items = [];
   for (let x = 0; x < width; x += step) items.push(draw(x));
   return items;
 }
 
-// Pink scalloped lace hanging under the black header, with ink holes.
 const HEADER_LACE = repeat(2000, 26, (x) => (
   <g key={x}>
     <path d={`M${x} 5 a13 13 0 0 0 26 0Z`} fill="#ecc3cf" />
@@ -25,7 +22,6 @@ export function HeaderLace() {
   );
 }
 
-// Thin hand-drawn lace line between page sections.
 const DIVIDER = repeat(1200, 30, (x) => (
   <g key={x}>
     <path d={`M${x} 4 q15 22 30 0`} />
@@ -45,7 +41,6 @@ export function LaceDivider() {
   );
 }
 
-// Tiny black lace under a category word on hover.
 const RIBBON = repeat(600, 10, (x) => (
   <g key={x}>
     <path d={`M${x} 0 a5 5 0 0 0 10 0Z`} fill="#211c1f" />

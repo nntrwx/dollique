@@ -1,6 +1,4 @@
-/* our own select: a glass capsule + a small glass list that pops out of it */
 .dd { position: relative; display: inline-block; }
-/* an open list must float over the footer too */
 .layout__main:has(.dd--open) { z-index: 3; }
 .dd--open { z-index: 21; }
 .dd__btn { cursor: pointer; }
@@ -10,7 +8,6 @@
 
 .dd__menu { position: absolute; left: 0; top: calc(100% + 8px); z-index: 20; min-width: max(100%, 160px); margin: 0; padding: 6px; list-style: none; border-radius: 18px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .94); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), 0 14px 36px rgba(90, 40, 65, .18); transform-origin: top left; animation: dd-pop .28s cubic-bezier(.32, .72, 0, 1); }
 .dd__menu--up { top: auto; bottom: calc(100% + 8px); transform-origin: bottom left; }
-/* pickers that sit at the right edge open to the left */
 .dd--right .dd__menu { left: auto; right: 0; transform-origin: top right; }
 .dd--right .dd__menu--up { transform-origin: bottom right; }
 

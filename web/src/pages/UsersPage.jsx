@@ -26,7 +26,6 @@ const SORTERS = {
 const PAGE_SIZE = 12;
 const PLACES = ['i', 'ii', 'iii'];
 
-// One member: their doll standing on a little shelf (or the photo when they have no doll).
 function MemberCard({ member, place }) {
   const [layers, setLayers] = useState(null);
 
@@ -71,7 +70,6 @@ function MemberCard({ member, place }) {
   );
 }
 
-// Everyone on Dollique, each as their doll. Top rated first; the first three get a place.
 function UsersPage() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +85,6 @@ function UsersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // a new search or sort starts from the first page
   useEffect(() => setPage(1), [query, sort]);
 
   const needle = query.trim().toLowerCase();
@@ -98,7 +95,6 @@ function UsersPage() {
     .sort(SORTERS[sort]);
   const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
   const pageItems = shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  // places only make sense in the full rating list
   const withPlaces = sort === 'rating' && !needle && page === 1;
 
   const changePage = (next) => {

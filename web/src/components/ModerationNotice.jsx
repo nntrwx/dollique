@@ -4,9 +4,6 @@ import { api } from '../api/client';
 import { formatDate, formatDateTime } from '../utils/format';
 import ConfirmDialog from './ConfirmDialog';
 
-// The card above a post hidden by a moderator, for its author and for admins.
-// It shows the reason and where the appeal stands: the author can send one,
-// an admin can approve it (the post comes back) or reject it (the post is deleted).
 function ModerationNotice({
   post, isAuthor, isAdmin, onChanged, onDeleted,
 }) {

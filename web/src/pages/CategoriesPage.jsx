@@ -25,9 +25,6 @@ const SORTERS = {
 
 const TITLE_MAX = 100;
 
-// "Suggest a category": a dashed tile that opens into a small form.
-// Only a moderator makes a suggestion public, so the user sees it marked as waiting.
-// An admin's category is published at once, so for them it is simply "Add a category".
 function SuggestTile({ user, onCreated }) {
   const isAdmin = user?.role === 'admin';
   const [open, setOpen] = useState(false);
@@ -113,7 +110,6 @@ function SuggestTile({ user, onCreated }) {
   );
 }
 
-// Admin: approve a suggested category or reject it with a reason (the author gets notified).
 function ReviewActions({ category, onReviewed }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
@@ -214,7 +210,7 @@ function CategoryCard({
             {`${plural(category.posts_count, 'post')} · ${plural(category.followers_count, 'follower')}`}
           </span>
           {showFollow && (
-            // the card itself is a link, the heart must not open it
+            // card is a link, the heart shouldn't open it
             <span onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} role="presentation">
               <FollowButton on={following} title={category.title} short onClick={() => onFollow(category.id, following)} />
             </span>
@@ -225,8 +221,6 @@ function CategoryCard({
   );
 }
 
-// All categories as glass cards: how many posts, who follows, follow with a heart.
-// A card opens the feed filtered by that category.
 function CategoriesPage() {
   const user = useSelector(selectCurrentUser);
   const [categories, setCategories] = useState([]);
@@ -236,7 +230,6 @@ function CategoriesPage() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('popular');
   const [onlyFollowing, setOnlyFollowing] = useState(false);
-  // goes up when someone adds, approves or follows a category, so the list reloads at once
   const liveVersion = useLiveVersion('categories', 'posts');
 
   useEffect(() => {
@@ -262,7 +255,6 @@ function CategoriesPage() {
   }, [user?.id]);
 
   const toggleFollow = async (id, on) => {
-    // show it at once, the server answers with the real list
     setFollowing((list) => (on ? list.filter((item) => item !== id) : [...list, id]));
     setCategories((list) => list.map((category) => (category.id === id
       ? { ...category, followers_count: category.followers_count + (on ? -1 : 1) }
@@ -288,10 +280,8 @@ function CategoriesPage() {
 
   const isAdmin = user?.role === 'admin';
   const needle = query.trim().toLowerCase();
-  // admins see every suggestion that waits for a decision
   const toReview = isAdmin ? categories.filter((category) => category.status === 'pending') : [];
   const approved = categories.filter((category) => category.status === 'approved');
-  // the user's own suggestions that are not public yet
   const mine = categories.filter((category) => category.status !== 'approved' && category.created_by === user?.id);
   const shown = approved
     .filter((category) => !onlyFollowing || following.includes(category.id))

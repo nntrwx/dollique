@@ -1,4 +1,3 @@
-/* notifications: a round bell on the ribbon, the list drops down in a glass panel */
 .bell { position: relative; }
 .bell__btn { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #2f282c; color: var(--pink); cursor: pointer; transition: background .2s, transform .15s; }
 .bell__btn:hover { background: #3d3439; }
@@ -9,7 +8,6 @@
 
 .bell__panel { position: absolute; right: -10px; top: calc(100% + 18px); z-index: 30; display: flex; flex-direction: column; width: 360px; max-height: min(480px, 70vh); padding: 16px 16px 0; border-radius: 22px; background: radial-gradient(130% 70% at 12% 0%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 55%), rgba(255, 252, 253, .97); -webkit-backdrop-filter: var(--g-blur); backdrop-filter: var(--g-blur); box-shadow: var(--g-rim), 0 18px 46px rgba(33, 28, 31, .25); color: var(--ink); }
 .bell__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-/* the list scrolls, the head and the "See all" link stay in place */
 .bell__scroll { flex: 1; min-height: 0; overflow: auto; margin: 0 -6px; padding: 0 6px; }
 .bell__head h3 { margin: 0; font: 400 26px/1 var(--serif); }
 .bell__empty { display: flex; align-items: center; gap: 12px; margin: 8px 0 4px; font-size: 13px; color: var(--ink-3); }

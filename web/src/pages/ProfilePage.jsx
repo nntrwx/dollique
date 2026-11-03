@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 
 import { api } from '../api/client';
-import { forgetUserDoll, getDollParts, getUserDoll } from '../api/dolls';
+import { forgetUserDoll, getDollParts } from '../api/dolls';
 import AdminPostActions from '../components/AdminPostActions';
 import AdminUserPanel from '../components/AdminUserPanel';
 import { DEFAULT_AVATAR } from '../components/Avatar';
@@ -18,7 +18,7 @@ import PostCard from '../components/PostCard';
 import usePolling from '../hooks/usePolling';
 import { selectCurrentUser, userUpdated } from '../store/authSlice';
 import { describeDoll, layersOf, randomConfig } from '../utils/doll';
-import { formatDate, realName } from '../utils/format';
+import { endOfDay, formatDate, realName } from '../utils/format';
 import './ProfilePage.css';
 
 const PAGE_SIZE = 10;
@@ -27,7 +27,6 @@ const NO_FILTERS = {
 };
 const BIO_MAX = 300;
 
-// The doll card on the left: just the doll, the dress-up controls open on "Re-dress".
 function DollCard({
   profile, isMe, parts, onSaved,
 }) {
@@ -136,15 +135,12 @@ function ProfilePage() {
     api.get(`/users/${userId}`)
       .then(setProfile)
       .catch((err) => setLoadError(err.status === 404 ? 'This user does not exist.' : err.message));
-    // signing in as an admin adds the ban state to the answer
   }, [userId, me?.id]);
 
   useEffect(() => {
     getDollParts().then(setParts).catch(() => setParts([]));
   }, []);
 
-  // Posts of this user (GET /api/posts?author=id). Others see only the active ones.
-  // quiet: a refresh in the background, without the loading state
   const loadPosts = useCallback((quiet = false) => {
     if (!quiet) setPosts((current) => ({ ...current, loading: true }));
     return api.get('/posts', {
@@ -154,8 +150,7 @@ function ProfilePage() {
       sort: filters.sort,
       order: filters.order,
       date_from: filters.dateFrom,
-      // the "to" day is included up to its last second
-      date_to: filters.dateTo ? `${filters.dateTo}T23:59:59` : '',
+      date_to: endOfDay(filters.dateTo),
       status: filters.status,
     })
       .then((data) => setPosts({
@@ -174,13 +169,11 @@ function ProfilePage() {
     loadPosts();
   }, [loadPosts]);
 
-  // Changes made from another account (new posts, an admin editing the profile) show up on their own.
   usePolling(profile && !editing ? () => {
     loadPosts(true);
     api.get(`/users/${userId}`).then(setProfile).catch(() => {});
   } : null, 15000);
 
-  // FeedFilters reports { order } / { from, to } / { status }; any change starts from page 1
   const changeFilters = (patch) => {
     setFilters((current) => ({
       ...current,
@@ -194,7 +187,6 @@ function ProfilePage() {
   };
   const filtered = filters.order || filters.dateFrom || filters.dateTo || filters.status || filters.sort !== 'date';
 
-  // Favorites are private: only the owner sees them.
   useEffect(() => {
     if (!isMe) {
       setFavorites(null);
@@ -252,7 +244,6 @@ function ProfilePage() {
       const picture = data.user?.profile_picture || data.user?.profilePicture;
       patchProfile({ profile_picture: picture });
       dispatch(userUpdated({ profilePicture: picture }));
-      // A new photo is probably meant to be seen.
       if (profile.use_doll_as_avatar) await setAvatarMode(false);
       say('success', 'New photo saved.');
     } catch (err) {
@@ -302,7 +293,6 @@ function ProfilePage() {
     </span>
   );
 
-  // an admin can hide or delete someone else's post right from the list
   const adminActions = (post) => (isAdmin && post.authorId !== me.id ? (
     <AdminPostActions
       post={post}

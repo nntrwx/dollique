@@ -1,6 +1,3 @@
-// Small wrapper around fetch for the USOF API.
-// Adds the JWT, sends JSON or FormData, and turns API errors into thrown Error objects.
-
 const TOKEN_KEY = 'usof_token';
 
 export function getToken() {
@@ -15,7 +12,7 @@ export function saveToken(token) {
   }
 }
 
-// Reads the user id from the token payload (the API puts it there on login).
+// user id from the jwt payload
 export function getTokenUserId() {
   const token = getToken();
   if (!token) return null;

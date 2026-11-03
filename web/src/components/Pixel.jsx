@@ -1,5 +1,4 @@
-// Tiny pixel-art icons drawn from text maps: "1" is a pixel in the given colour,
-// "w" is a white pixel, "." is empty.
+// "1" = pixel in the given colour, "w" = white, "." = empty
 const MAPS = {
   heart: ['.11.11.', '1111111', '1111111', '.11111.', '..111..', '...1...'],
   broken: ['.11.11.', '111.111', '11.1111', '.111.1.', '..1.1..', '...1...'],

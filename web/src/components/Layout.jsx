@@ -4,7 +4,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Footer from './Footer';
 import Header from './Header';
 
-// Which dotted drawings peek out from behind the glass on this page.
 function glowFor(pathname) {
   if (/^\/(login|register|password-reset|confirm-email)/.test(pathname)) return 'auth';
   if (pathname.startsWith('/users/')) return 'profile';
@@ -12,7 +11,6 @@ function glowFor(pathname) {
   return 'feed';
 }
 
-// SVG filters that make clean shapes look drawn by hand (buttons, circles, lace lines).
 function HandDrawnFilters() {
   return (
     <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -43,7 +41,6 @@ function Layout() {
       </div>
       <Header />
       <main className="layout__main">
-        {/* a page opened for the first time is still loading: keep the header and footer meanwhile */}
         <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
           <Outlet />
         </Suspense>

@@ -6,17 +6,14 @@ import { api } from '../api/client';
 import AuthLayout from '../components/AuthLayout';
 import { selectCurrentUser } from '../store/authSlice';
 
-// The page opened from the confirmation email.
 function ConfirmEmailPage() {
   const { token } = useParams();
-  // 'sending' -> 'done' | 'failed'
+  // 'sending' | 'done' | 'failed'
   const [state, setState] = useState('sending');
   const [message, setMessage] = useState('');
-  // set when the link confirmed a new email from the settings page
   const [newEmail, setNewEmail] = useState('');
   const user = useSelector(selectCurrentUser);
-  // A token works only once, so the request must not repeat
-  // (React StrictMode runs effects twice in development).
+  // token works only once, and StrictMode runs effects twice
   const sentRef = useRef(false);
 
   useEffect(() => {

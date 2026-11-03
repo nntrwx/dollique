@@ -9,7 +9,6 @@ import Pixel from './Pixel';
 
 const PLACES = ['i', 'ii', 'iii'];
 
-// Three members with the best rating standing on a shelf (first place in the middle).
 function TopDolls() {
   const [top, setTop] = useState([]);
 

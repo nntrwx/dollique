@@ -25,15 +25,12 @@ function validate({ title, content, categoryIds, photos }) {
   return errors;
 }
 
-// The title field grows with the text instead of scrolling.
 function fitHeight(element) {
   if (!element) return;
   element.style.height = 'auto';
   element.style.height = `${element.scrollHeight}px`;
 }
 
-// New post (/posts/new) and edit post (/posts/:id/edit): title, text, categories and up to 5 photos.
-// Photos already on the post stay as links; new ones are sent as files.
 function PostEditorPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -45,7 +42,6 @@ function PostEditorPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [categoryIds, setCategoryIds] = useState([]);
-  // { url, file? }: a file means a new photo, without it the photo is already on the post
   const [photos, setPhotos] = useState([]);
   const [photosChanged, setPhotosChanged] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -61,7 +57,6 @@ function PostEditorPage() {
   const [dragging, setDragging] = useState(false);
   const [post, setPost] = useState(null);
 
-  // a category approved or added while the form is open shows up in the list at once
   const categoriesVersion = useLiveVersion('categories');
 
   useEffect(() => {
@@ -72,7 +67,6 @@ function PostEditorPage() {
       .catch(() => setCategories([]));
   }, [user?.id, categoriesVersion]);
 
-  // Editing: load the post into the form.
   useEffect(() => {
     if (!isEdit) return;
     setLoading(true);
@@ -93,7 +87,6 @@ function PostEditorPage() {
     fitHeight(titleRef.current);
   }, [title, loading]);
 
-  // Ask before leaving the page with unsaved text.
   useEffect(() => {
     if (!dirty) return undefined;
     const warn = (event) => {
@@ -104,7 +97,6 @@ function PostEditorPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  // Free the previews of new photos.
   useEffect(() => () => photos.forEach((photo) => photo.file && URL.revokeObjectURL(photo.url)), []);
 
   const change = (setter, field) => (event) => {
@@ -227,7 +219,7 @@ function PostEditorPage() {
     );
   }
 
-  // new photos can only go after the ones already on the post (the API adds them to the end)
+  // api adds new photos to the end
   const canAddPhotos = photos.length < MAX_PHOTOS;
 
   return (

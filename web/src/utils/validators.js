@@ -1,4 +1,4 @@
-// Same rules as the API (API/src/utils/validators.js), so users see errors before sending.
+// same rules as API/src/utils/validators.js
 
 const LOGIN_PATTERN = /^[a-zA-Z0-9_.-]{3,50}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,7 +34,6 @@ export function validateFullName(fullName) {
   return '';
 }
 
-// Returns true when the errors object has no messages.
 export function isValid(errors) {
   return Object.values(errors).every((message) => !message);
 }

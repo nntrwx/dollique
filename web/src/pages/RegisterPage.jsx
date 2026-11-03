@@ -35,7 +35,6 @@ function validate(values) {
   };
 }
 
-// 0–4 bars for the password meter.
 function passwordStrength(password) {
   if (!password) return 0;
   let score = password.length >= 6 ? 1 : 0;
@@ -57,7 +56,6 @@ function RegisterPage() {
   const [doll, setDoll] = useState(null);
   const [dollAsAvatar, setDollAsAvatar] = useState(true);
 
-  // Every new member starts with a randomly dressed doll.
   useEffect(() => {
     getDollParts()
       .then((data) => {
@@ -73,7 +71,6 @@ function RegisterPage() {
     setErrors((current) => ({ ...current, [name]: '' }));
   };
 
-  // Check a field as soon as the user leaves it.
   const handleBlur = (event) => {
     const { name } = event.target;
     if (!values[name]) return;
@@ -100,7 +97,7 @@ function RegisterPage() {
       });
       setSentTo(values.email.trim());
     } catch (error) {
-      // 409 means the login or email is taken: show it under the right field.
+      // 409 = login or email is taken
       if (error.status === 409 && /login/i.test(error.message)) {
         setErrors((current) => ({ ...current, login: 'This login is already taken.' }));
       } else if (error.status === 409 && /email/i.test(error.message)) {

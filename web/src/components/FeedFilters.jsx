@@ -10,7 +10,6 @@ const ORDER_LABELS = {
   likes: { desc: 'most liked first ↓', asc: 'least liked first ↑' },
 };
 
-// Users see only their own hidden posts, admins see all of them.
 function getStatusOptions(isAdmin) {
   return [
     { value: '', label: isAdmin ? 'all' : 'all I can see' },
@@ -25,12 +24,10 @@ function dateLabel(from, to) {
   return from ? `from ${formatDate(from)}` : `until ${formatDate(to)}`;
 }
 
-// Date range in a small glass popover with our own calendar under its capsule.
 function DateFilter({ dateFrom, dateTo, onChange }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef(null);
 
-  // A click anywhere else or Esc closes the popover.
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
@@ -46,7 +43,6 @@ function DateFilter({ dateFrom, dateTo, onChange }) {
 
   const change = (range) => {
     onChange(range);
-    // the range is complete, so the popover can go
     if (range.from && range.to) setOpen(false);
   };
 
@@ -72,8 +68,6 @@ function DateFilter({ dateFrom, dateTo, onChange }) {
   );
 }
 
-// Order, date range and (for signed-in users) post status, as little glass capsules.
-// Gets the current values from the URL and reports changes with onChange(patch).
 function FeedFilters({
   sort, order, dateFrom, dateTo, status, showStatus, isAdmin = false, onChange,
 }) {

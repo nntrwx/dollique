@@ -10,13 +10,12 @@ import {
   isValid, validatePassword, validatePasswordConfirmation,
 } from '../utils/validators';
 
-// Step 2 of the password reset: the page opened from the email link.
 function ResetPasswordPage() {
   const { token } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
-  // 'checking' -> 'valid' | 'invalid'
+  // 'checking' | 'valid' | 'invalid'
   const [tokenState, setTokenState] = useState('checking');
   const [values, setValues] = useState({ password: '', passwordConfirmation: '' });
   const [errors, setErrors] = useState({});
@@ -51,7 +50,6 @@ function ResetPasswordPage() {
         password: values.password,
         password_confirmation: values.passwordConfirmation,
       });
-      // The API signs the user out everywhere after a password change.
       if (user) {
         saveToken(null);
         dispatch(fetchCurrentUser());

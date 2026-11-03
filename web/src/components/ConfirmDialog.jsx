@@ -4,13 +4,10 @@ import { createPortal } from 'react-dom';
 import Pixel from './Pixel';
 import './ConfirmDialog.css';
 
-// "Are you sure?" window over the page: a glass card that pops in, the page fades behind it.
-// Esc or a click outside cancels; the safe button gets the focus first.
 function ConfirmDialog({
   title, children, confirmLabel = 'Yes', cancelLabel = 'Cancel', danger = false, busy = false, onConfirm, onCancel,
 }) {
   const cancelRef = useRef(null);
-  // the latest props for the key handler, so the effect runs only once
   const latest = useRef({ busy, onCancel });
   latest.current = { busy, onCancel };
 
@@ -20,7 +17,7 @@ function ConfirmDialog({
       if (event.key === 'Escape' && !latest.current.busy) latest.current.onCancel();
     };
     window.addEventListener('keydown', onKey);
-    // the page under the window should not scroll
+    // no page scroll while open
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
     return () => {

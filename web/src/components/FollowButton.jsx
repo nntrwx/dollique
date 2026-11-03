@@ -1,7 +1,5 @@
 import Pixel from './Pixel';
 
-// Follow / unfollow a category (its posts go to the "For you" feed).
-// compact: just the heart; short: "Follow" without the category name.
 function FollowButton({
   on, title, onClick, compact = false, short = false,
 }) {

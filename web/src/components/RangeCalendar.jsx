@@ -5,7 +5,7 @@ import './RangeCalendar.css';
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
-// 'YYYY-MM-DD' in local time (toISOString would shift the day for UTC+ zones)
+// local date, toISOString can shift the day
 function toKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -17,22 +17,17 @@ function fromKey(key) {
   return new Date(year, month - 1, day);
 }
 
-// 6 weeks starting on the Monday on or before the 1st of the month
 function monthDays(year, month) {
   const first = new Date(year, month, 1);
   const shift = (first.getDay() + 6) % 7;
   return Array.from({ length: 42 }, (_, index) => new Date(year, month, 1 - shift + index));
 }
 
-// A small month calendar for picking a date range: the first click picks the start,
-// the second one the end. Days after today can't be picked.
-// onChange({ from, to }) gets 'YYYY-MM-DD' strings ('' for none).
 function RangeCalendar({ from, to, onChange }) {
   const today = toKey(new Date());
   const startMonth = fromKey(to || from || today);
   const [view, setView] = useState({ year: startMonth.getFullYear(), month: startMonth.getMonth() });
   const [hover, setHover] = useState('');
-  // after a start day is picked the next click picks the end
   const picking = from && !to ? 'to' : 'from';
 
   const move = (step) => {
@@ -46,7 +41,6 @@ function RangeCalendar({ from, to, onChange }) {
     else onChange({ from: key, to: '' });
   };
 
-  // while choosing the end, the hovered day previews the range
   const rangeEnd = to || (picking === 'to' && hover >= from ? hover : '');
   const title = new Date(view.year, view.month, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 
@@ -67,7 +61,6 @@ function RangeCalendar({ from, to, onChange }) {
         {monthDays(view.year, view.month).map((date, index) => {
           const key = toKey(date);
           const classes = ['cal__day'];
-          // the ribbon gets round ends at the edges of a week
           if (index % 7 === 0) classes.push('cal__day--mon');
           if (index % 7 === 6) classes.push('cal__day--sun');
           if (date.getMonth() !== view.month) classes.push('cal__day--out');

@@ -24,7 +24,6 @@ const FILTERS = {
   moderation: (item) => !ACTIVITY.includes(item.type),
 };
 
-// A little pixel picture for every kind of notification.
 const ICONS = {
   post_comment: 'bubble',
   comment_reply: 'reply',
@@ -49,7 +48,6 @@ const ICONS = {
 const WARN = ['post_moderated', 'post_hidden', 'comment_moderated', 'comment_hidden', 'post_deleted',
   'comment_deleted', 'appeal_rejected', 'category_rejected', 'violation', 'user_banned', 'profile_reset'];
 
-// "Today", "Yesterday" or "12 Oct 2026": the heading of a day in the list
 function dayLabel(value) {
   const day = new Date(value);
   const today = new Date();
@@ -71,10 +69,8 @@ function groupByDay(items) {
   return groups;
 }
 
-// Lets the bell in the header recount the unread ones right away.
 const tellBell = () => window.dispatchEvent(new Event('notifications:changed'));
 
-// All notifications in one place: replies and likes, moderator decisions, strikes and bans.
 function NotificationsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);

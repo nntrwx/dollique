@@ -1,4 +1,3 @@
-/* header: dark glass ribbon that stays on top, stickers on it, pink lace hanging below */
 .bar {
   position: sticky;
   top: 0;
@@ -11,12 +10,10 @@
 .bar__in { display: flex; align-items: center; gap: 24px; max-width: 1200px; height: 72px; margin: 0 auto; padding: 0 28px; }
 .bar .lace-h { position: absolute; left: 0; top: calc(100% - 1px); display: block; width: 100%; height: 22px; }
 
-/* logo: a white sticker card, slightly crooked */
 .logo { flex: none; display: block; padding: 8px 16px; background: var(--card); border-radius: 12px; transform: rotate(-2.5deg); box-shadow: 0 5px 0 var(--pink); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
 .logo:hover { transform: rotate(1deg); }
 .logo img { display: block; height: 34px; }
 
-/* menu in a pink capsule */
 .bar__nav { display: flex; gap: 2px; padding: 4px; background: var(--pink); border-radius: 999px; transform: rotate(1deg); }
 .bar__nav a { padding: 7px 15px; border-radius: 999px; color: var(--ink-2); font-size: 14px; text-decoration: none; transition: background .2s, color .2s; }
 .bar__nav a:hover { color: var(--ink); background: #f3d6de; }
@@ -32,17 +29,15 @@
 .search kbd { padding: 1px 5px; border: 1px solid #4a4146; border-radius: 4px; font: 10px var(--mono); color: #8c7f84; }
 .search:focus-within kbd { display: none; }
 
-/* the user: a sticker with the avatar, login and role */
 .me { display: flex; align-items: center; gap: 9px; padding: 4px 14px 4px 4px; background: var(--card); border-radius: 999px; color: var(--ink); text-decoration: none; transform: rotate(-1.5deg); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
 .me:hover { transform: rotate(1deg); }
 .me__who { display: flex; flex-direction: column; gap: 3px; max-width: 140px; font-size: 13px; font-weight: 500; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me__login { overflow: hidden; text-overflow: ellipsis; }
 .me__role { font: 9px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--pink-deep); }
 
-/* Sign in / Log out: a pink sticker that presses in */
 .sticker { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pink); color: var(--ink); font: 500 13px var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer; transform: rotate(2deg); box-shadow: 0 3px 0 var(--pink-deep); transition: transform .2s, box-shadow .2s; }
 .sticker:hover { transform: rotate(-1deg) translateY(-1px); box-shadow: 0 5px 0 var(--pink-deep); }
 .sticker:active { transform: translateY(3px); box-shadow: 0 0 0 var(--pink-deep); }
-/* admins get a white "Admin" sticker that opens the admin panel */
 .sticker--admin { gap: 8px; background: var(--card); transform: rotate(-2deg); }
 
 .bar__burger { display: none; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #2f282c; color: var(--pink); cursor: pointer; transition: background .2s, transform .15s; }
@@ -57,7 +52,6 @@
 .bar__burger--open .burger i:nth-child(2) { opacity: 0; transform: scaleX(.2); }
 .bar__burger--open .burger i:nth-child(3) { top: 5px; transform: rotate(-45deg); }
 
-/* settings: a round pixel gear next to the bell, it turns a little on hover */
 .gear { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: #2f282c; color: var(--pink); transition: background .2s, transform .15s; }
 .gear .px { transition: transform .4s cubic-bezier(.3, 1.6, .5, 1); }
 .gear:hover { background: #3d3439; }
@@ -65,21 +59,21 @@
 .gear:active { transform: scale(.9); }
 .gear--on { background: var(--pink); color: var(--ink); }
 .gear--on:hover { background: var(--pink); }
-.bar__nav-settings { display: none; }
+.bar__nav-settings, .bar__nav-who, .bar__nav-out { display: none; }
 
-/* narrow windows and zoomed-in pages: the stickers shrink to icons before anything can be pushed off the ribbon */
 @media (max-width: 1220px) {
   .bar__in { gap: 16px; }
-  .search { width: 190px; }
-  .me { padding: 3px; }
-  .me__who { display: none; }
+  .search { width: 150px; }
+  .me { padding: 3px 12px 3px 3px; }
+  .me__who { max-width: 100px; }
   .sticker--admin { width: 36px; padding: 0; justify-content: center; }
   .sticker--admin span { display: none; }
 }
 @media (max-width: 1060px) {
   .bar__in { gap: 12px; }
   .bar__right { gap: 10px; }
-  .search { width: 150px; }
+  .search { width: 96px; padding: 0 16px; }
+  .search .px { display: none; }
   .search kbd { display: none; }
   .bar__nav a { padding: 7px 12px; }
 }
@@ -88,15 +82,12 @@
   .bar__in { gap: 10px; height: 62px; padding: 0 16px; }
   .logo { padding: 6px 12px; }
   .logo img { height: 28px; }
-  .me { padding: 3px; }
-  .me__who { display: none; }
+  .search .px { display: inline; }
   .sticker--admin { width: 36px; padding: 0; justify-content: center; }
   .sticker--admin span { display: none; }
   .bar__burger { display: grid; }
   .bar__right { gap: 10px; }
 
-  /* the menu and the search drop down under the ribbon: they fade in and slide down a little,
-     the links follow one after another */
   .bar__nav, .search { position: absolute; left: 16px; right: 16px; display: flex; visibility: hidden; opacity: 0; transform: translateY(-14px) scale(.97); transform-origin: top center; pointer-events: none; transition: opacity .2s ease-in, transform .25s ease-in, visibility 0s .25s; }
   .bar__nav { top: 74px; flex-direction: column; padding: 8px; border-radius: 20px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
   .bar__nav a { padding: 11px 16px; opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .3s cubic-bezier(.32, .72, 0, 1), background .2s, color .2s; }
@@ -109,11 +100,22 @@
   .bar__nav--open a:nth-child(4) { transition-delay: .12s; }
   .gear { display: none; }
   .bar__nav .bar__nav-settings { display: block; }
-  /* the menu is one link longer when signed in, the search goes lower */
+  /* signed in = one more link, so the search goes lower */
   .bar__in:has(.bar__nav-settings) .search { top: 273px; }
   .search--open { position: absolute; left: 16px; right: 16px; top: 228px; display: flex; width: auto; height: 44px; box-shadow: 0 16px 40px rgba(33, 28, 31, .25); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bar__nav, .search, .bar__nav a, .burger i { transition-duration: .01s !important; transition-delay: 0s !important; }
+}
+
+@media (max-width: 560px) {
+  .me { padding: 3px; }
+  .me__who { display: none; }
+  .bar__right > button.sticker { display: none; }
+  .bar__nav .bar__nav-who { display: flex; flex-direction: column; gap: 4px; padding: 10px 16px 12px; border-bottom: 1px dashed var(--pink-deep); margin-bottom: 4px; font-size: 14px; font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar__nav .bar__nav-out { display: block; padding: 11px 16px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font: 14px var(--sans); text-align: left; cursor: pointer; }
+  .bar__nav .bar__nav-out:hover { color: var(--ink); background: #f3d6de; }
+  /* two more rows in the menu */
+  .bar__in:has(.bar__nav-who) .search { top: 388px; }
 }

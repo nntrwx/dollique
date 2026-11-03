@@ -8,7 +8,6 @@ import useLiveVersion from '../hooks/useLiveVersion';
 import { HeaderLace } from './Lace';
 import Pixel from './Pixel';
 
-// Live numbers for the footer: members, posts and categories.
 function useSiteStats() {
   const [stats, setStats] = useState(null);
   const version = useLiveVersion('users', 'posts', 'categories');
@@ -30,7 +29,6 @@ function useSiteStats() {
   return stats;
 }
 
-// The same black ribbon as the header: what Dollique is, where to go, and a few live numbers.
 function Footer() {
   const user = useSelector(selectCurrentUser);
   const stats = useSiteStats();

@@ -38,7 +38,6 @@ body {
   overflow-x: hidden;
 }
 
-/* paper grain */
 body::before {
   content: '';
   position: fixed;
@@ -55,7 +54,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 ::selection { background: var(--pink); color: var(--ink); }
 :focus-visible { outline: 2px solid var(--pink-deep); outline-offset: 2px; }
 
-/* ---------- layout ---------- */
+/* layout */
 .layout { position: relative; display: flex; flex-direction: column; min-height: 100vh; overflow-x: clip; }
 .page-loading { min-height: 70vh; }
 .layout__main { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 28px 90px; }
@@ -89,7 +88,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .glow--profile .g-hearts { right: -20px; top: 1700px; }
 .glow--profile .g-wings, .glow--profile .g-bow { display: none; }
 
-/* ---------- small type ---------- */
+/* text */
 .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .muted { color: var(--ink-3); }
 .handle { font: 12px var(--mono); color: var(--ink-3); }
@@ -105,7 +104,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .page { max-width: 760px; margin: 40px auto 0; padding: 34px 36px; }
 .page--center { text-align: center; }
 
-/* ---------- glass ---------- */
+/* glass */
 .glass, .panel {
   background: var(--g-fill), rgba(250, 248, 245, .35);
   border: 0;
@@ -115,7 +114,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .panel { position: relative; padding: 22px; }
 .panel h3 { margin: 0 0 4px; font: 400 28px/1 var(--serif); }
 
-/* small controls: little glass capsules */
 .field, .chip, .pill {
   background: var(--capsule);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -173,7 +171,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .pill:disabled { cursor: default; }
 .pill.on { background: linear-gradient(180deg, rgba(250, 226, 233, .95), rgba(246, 214, 224, .7)); color: var(--pink-deep); }
 
-/* small category label on cards */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -204,7 +201,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .badge--soft { background: var(--pink); color: var(--ink); }
 .badge--hidden { background: rgba(149, 140, 144, .18); color: var(--ink-2); }
 
-/* post status: a green dot when it is published */
 .status {
   display: inline-flex;
   align-items: center;
@@ -222,7 +218,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .status--inactive { background: repeating-linear-gradient(-45deg, rgba(149, 140, 144, .16) 0 4px, rgba(149, 140, 144, .05) 4px 8px); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(91, 83, 87, .45); }
 .status--inactive::before { content: none; }
 
-/* ---------- naive buttons: wobbly hand-drawn pill + a pink layer printed slightly off, like riso ---------- */
+/* buttons */
 .nbtn, .button {
   --off: 4px;
   position: relative;
@@ -269,7 +265,6 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .nbtn--danger, .button--danger { color: #fff; }
 .nbtn--danger::before, .button--danger::before { background: var(--danger); border-color: var(--danger); }
 
-/* text buttons: mono caps, like the little actions under posts and comments */
 .link-button {
   display: inline-flex;
   align-items: center;
@@ -309,7 +304,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .nbtn.confirm__yes::before, .button.confirm__yes::before { background: var(--danger); border-color: var(--danger); }
 .confirm__question { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--danger); }
 
-/* ---------- alerts ---------- */
+/* alerts */
 .alert {
   display: flex;
   flex-wrap: wrap;
@@ -327,7 +322,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .alert--error { color: #8f3b52; background: rgba(246, 214, 224, .75); }
 .alert--success { color: #3f6b49; background: rgba(214, 240, 220, .7); }
 
-/* ---------- avatars and dolls ---------- */
+/* avatars and dolls */
 .doll { position: relative; display: block; }
 .doll img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 
@@ -336,7 +331,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .ava .doll { position: absolute; width: 175%; height: 175%; left: -37.5%; top: -6%; }
 .ava--guest { display: grid; place-items: center; }
 
-/* ---------- forms ---------- */
+/* forms */
 .fl { display: block; margin-bottom: 14px; }
 .fl__label { display: block; margin: 0 0 7px 4px; font: 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
 .fl__label i { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
@@ -412,7 +407,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .check input:not(:checked) + .check__box svg { visibility: hidden; }
 .check input:focus-visible + .check__box { outline: 2px solid var(--pink-deep); outline-offset: 2px; }
 
-/* ---------- loading ---------- */
+/* loading */
 .skeleton {
   border-radius: 22px;
   background: linear-gradient(100deg, rgba(255, 255, 255, .35) 30%, rgba(255, 255, 255, .8) 50%, rgba(255, 255, 255, .35) 70%) 0 0 / 300% 100%;
@@ -431,10 +426,9 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .follow--compact { width: 26px; height: 26px; padding: 0; justify-content: center; }
 @keyframes follow-beat { 0% { transform: scale(.5); } 60% { transform: scale(1.3); } 100% { transform: none; } }
 
-/* ---------- lightbox ---------- */
+/* lightbox */
 .lightbox { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 40px; background: rgba(33, 28, 31, .86); cursor: zoom-out; animation: lightbox-fade .28s ease-out both; }
 .lightbox img { max-width: calc(100vw - 80px); max-height: calc(100vh - 80px); border-radius: 12px; box-shadow: 0 24px 50px rgba(0, 0, 0, .3); animation: lightbox-pop .42s cubic-bezier(.32, .72, 0, 1) both; }
-/* closing: everything fades and the picture sinks back a little */
 .lightbox--closing { animation: lightbox-fade-out .22s ease-in both; }
 .lightbox--closing img { animation: lightbox-sink .22s ease-in both; }
 @keyframes lightbox-fade { from { opacity: 0; } }
@@ -447,7 +441,7 @@ button.field:hover, .field:has(select):hover { background: #fff; }
 .lightbox__close { position: absolute; right: 20px; top: 20px; }
 .lightbox__count { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); font: 11px var(--mono); color: var(--pink); }
 
-/* ---------- footer: the same black ribbon as the header, lace on top ---------- */
+/* footer */
 .footer { position: relative; z-index: 1; margin-top: 30px; background: var(--ink); color: #b9adb2; }
 .footer .lace-h { position: absolute; left: 0; bottom: calc(100% - 1px); width: 100%; height: 22px; transform: scaleY(-1); }
 .footer__inner { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 30px 40px; max-width: 1200px; margin: 0 auto; padding: 46px 28px 26px; font-size: 13px; }

@@ -1,6 +1,3 @@
-// Hand-drawn bits: shapes get a slight wobble from the SVG filters in Layout.
-
-// A loose pink circle around a word (selected category, active tab).
 export function DoodleCircle({ className = 'circ' }) {
   return (
     <svg className={className} viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
@@ -9,7 +6,6 @@ export function DoodleCircle({ className = 'circ' }) {
   );
 }
 
-// Underline with a little star at the end (active feed tab).
 export function DoodleUnderline() {
   return (
     <svg className="underline" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
@@ -19,7 +15,6 @@ export function DoodleUnderline() {
   );
 }
 
-// Four-point star path, used for sparkles.
 export function starPath(x, y, r) {
   const k = r * 0.18;
   return `M${x} ${y - r} Q${x + k} ${y - k} ${x + r} ${y} Q${x + k} ${y + k} ${x} ${y + r} Q${x - k} ${y + k} ${x - r} ${y} Q${x - k} ${y - k} ${x} ${y - r}Z`;
@@ -33,7 +28,6 @@ export function Sparkle({ className = 'sparkle', size = 40 }) {
   );
 }
 
-// Wobbly double line under the "Top dolls" shelf.
 export function ShelfLine() {
   return (
     <svg className="shelf-line" viewBox="0 0 260 14" preserveAspectRatio="none" aria-hidden="true">

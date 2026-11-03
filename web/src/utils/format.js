@@ -1,10 +1,8 @@
-// Formatting helpers shared by the feed, posts and comments.
-
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-// "just now", "5 min ago", "3 h ago", "2 days ago", then a plain date.
+// "just now", "5 min ago", "2 days ago", then a date
 export function formatRelativeDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
@@ -18,6 +16,11 @@ export function formatRelativeDate(value) {
     return `${days} ${days === 1 ? 'day' : 'days'} ago`;
   }
   return formatDate(value);
+}
+
+// date_to for the api: include the whole "to" day
+export function endOfDay(date) {
+  return date ? `${date}T23:59:59` : '';
 }
 
 // "12 Oct 2026"
@@ -35,7 +38,6 @@ export function formatDateTime(value) {
   return `${formatDate(value)}, ${time}`;
 }
 
-// "12 Oct, 09:14" for comments of this year
 export function formatShortDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
@@ -45,7 +47,6 @@ export function formatShortDateTime(value) {
   return `${day}, ${time}`;
 }
 
-// Cuts long text on a word boundary for previews.
 export function excerpt(text, maxLength = 220) {
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if (clean.length <= maxLength) return clean;
@@ -54,12 +55,11 @@ export function excerpt(text, maxLength = 220) {
   return `${cut.slice(0, lastSpace > maxLength * 0.6 ? lastSpace : maxLength)}…`;
 }
 
-// "1 comment", "4 comments", "2 replies"
 export function plural(count, word, pluralWord = `${word}s`) {
   return `${count} ${count === 1 ? word : pluralWord}`;
 }
 
-// The full name is optional; without one the API keeps the login there. '' means "no name".
+// empty full name is stored as the login
 export function realName(user) {
   const name = (user?.full_name ?? user?.fullName ?? '').trim();
   return name && name !== user.login ? name : '';

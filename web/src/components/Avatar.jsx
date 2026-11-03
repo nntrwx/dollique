@@ -6,9 +6,6 @@ import Pixel from './Pixel';
 
 export const DEFAULT_AVATAR = '/uploads/avatars/default.png';
 
-// Round avatar. With userId it shows the user's doll instead of the photo
-// when the user turned on "use doll as avatar" (GET /api/users/:id/doll).
-// Without a user at all (guest) it shows a little pixel bunny.
 function Avatar({
   src = null, alt, size = 38, userId = null, guest = false, className = '',
 }) {
@@ -56,7 +53,7 @@ function Avatar({
         loading="lazy"
         decoding="async"
         onError={(event) => {
-          // A broken file on the server falls back to the default picture.
+          // broken file -> default picture
           if (!event.currentTarget.src.endsWith(DEFAULT_AVATAR)) {
             event.currentTarget.src = DEFAULT_AVATAR;
           }

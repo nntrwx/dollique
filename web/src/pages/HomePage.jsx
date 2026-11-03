@@ -16,7 +16,7 @@ import TopDolls from '../components/TopDolls';
 import useLiveVersion from '../hooks/useLiveVersion';
 import usePolling from '../hooks/usePolling';
 import { selectCurrentUser } from '../store/authSlice';
-import { plural } from '../utils/format';
+import { endOfDay, plural } from '../utils/format';
 import './HomePage.css';
 
 const SORTS = [
@@ -80,28 +80,22 @@ function HomePage() {
   const [categories, setCategories] = useState([]);
   const [counts, setCounts] = useState({});
   const [membersCount, setMembersCount] = useState(null);
-  // ids of the categories the user follows; their posts make the "For you" feed
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // goes up when categories or posts change, so the category list and its counts reload at once
   const categoriesVersion = useLiveVersion('categories', 'posts');
 
-  // Only approved categories can be picked as a filter. The API has no post counts for
-  // categories, so each one is asked for the total of its posts (limit=1 keeps it light).
   useEffect(() => {
     let ignore = false;
-    api.get('/categories')
-      .then(async (data) => {
-        const approved = (data || []).filter((category) => category.status === 'approved');
+    Promise.all([api.get('/categories'), api.get('/posts', { limit: 1 })])
+      .then(([data, all]) => {
         if (ignore) return;
+        const approved = (data || []).filter((category) => category.status === 'approved');
         setCategories(approved);
-        const totals = await Promise.all([
-          api.get('/posts', { limit: 1 }).then((res) => ['all', res.pagination.total]),
-          ...approved.map((category) => api.get('/posts', { limit: 1, categories: category.id })
-            .then((res) => [category.id, res.pagination.total])),
-        ]);
-        if (!ignore) setCounts(Object.fromEntries(totals));
+        setCounts({
+          all: all.pagination.total,
+          ...Object.fromEntries(approved.map((category) => [category.id, category.posts_count])),
+        });
       })
       .catch(() => setCategories([]));
     return () => {
@@ -132,8 +126,7 @@ function HomePage() {
     search: params.query,
     categories: params.categories.join(','),
     date_from: params.dateFrom,
-    // The "to" day is included up to its last second.
-    date_to: params.dateTo ? `${params.dateTo}T23:59:59` : '',
+    date_to: endOfDay(params.dateTo),
     status: params.status,
     feed: params.forYou && user ? 'subscriptions' : '',
   });
@@ -159,10 +152,8 @@ function HomePage() {
     return () => {
       ignore = true;
     };
-    // paramsKey holds every value read above; user and following change what the API returns.
   }, [paramsKey, user?.id, params.forYou ? following.join(',') : '']);
 
-  // New posts from other people appear without reloading; the list is swapped quietly, with no skeleton.
   usePolling(loading ? null : () => api.get('/posts', feedQuery())
     .then((data) => {
       setPosts(data.posts || []);
@@ -170,7 +161,6 @@ function HomePage() {
     })
     .catch(() => {}), 15000);
 
-  // Writes changes to the URL. Any change except the page number starts from page 1.
   const updateParams = (patch) => {
     const next = new URLSearchParams(searchParams);
     Object.entries(patch).forEach(([key, value]) => {
@@ -214,7 +204,6 @@ function HomePage() {
     }
   };
 
-  // one category picked in the filter: it can be followed right from the feed
   const pickedCategory = params.categories.length === 1
     ? categories.find((category) => category.id === params.categories[0])
     : null;
@@ -329,7 +318,6 @@ function HomePage() {
         />
       </div>
 
-      {/* categories: serif words with counts; the chosen ones are circled by hand */}
       <div className="cats" role="group" aria-label="Categories">
         <button
           type="button"

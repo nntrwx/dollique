@@ -7,8 +7,6 @@ import './Dropdown.css';
 
 const MENU_GAP = 8;
 
-// Our own select: a glass capsule that opens a small glass list with a soft pop.
-// options: [{ value, label }]. Works with the keyboard: arrows, Enter, Esc, Tab.
 function Dropdown({
   label = null, value, options, onChange, ariaLabel, className = '',
 }) {
@@ -22,7 +20,7 @@ function Dropdown({
   const current = options.find((option) => String(option.value) === String(value)) || options[0];
 
   const openMenu = () => {
-    // open upwards when there is no room under the button (the "per page" picker at the bottom)
+    // open upwards if there is no space below
     const rect = buttonRef.current.getBoundingClientRect();
     const menuHeight = options.length * 38 + 16;
     setUp(window.innerHeight - rect.bottom < menuHeight + MENU_GAP && rect.top > menuHeight);

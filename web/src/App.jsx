@@ -1,5 +1,5 @@
 import { lazy, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Navigate, Route, Routes, useParams,
 } from 'react-router-dom';
@@ -8,9 +8,9 @@ import GuestRoute from './components/GuestRoute';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
-import { fetchCurrentUser } from './store/authSlice';
+import { onLiveChange } from './api/live';
+import { fetchCurrentUser, selectCurrentUser } from './store/authSlice';
 
-// The feed loads with the app; every other page is fetched the first time it is opened.
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
 const ConfirmEmailPage = lazy(() => import('./pages/ConfirmEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -25,7 +25,6 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 
-// A category has no page of its own: it is the feed filtered by it.
 function CategoryRedirect() {
   const { id } = useParams();
   return <Navigate to={`/?categories=${id}`} replace />;
@@ -34,10 +33,26 @@ function CategoryRedirect() {
 function App() {
   const dispatch = useDispatch();
 
-  // If a token survived the page reload, load the fresh profile for it.
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
+
+  // admin edited this user -> reload the profile for the header
+  const userId = useSelector(selectCurrentUser)?.id;
+  useEffect(() => {
+    if (!userId) return undefined;
+    const ownPath = `/api/users/${userId}`;
+    let pending = null;
+    const stop = onLiveChange((event) => {
+      if (event.kind !== 'users' || (event.path !== ownPath && !event.path.startsWith(`${ownPath}/`))) return;
+      clearTimeout(pending);
+      pending = setTimeout(() => dispatch(fetchCurrentUser()), 300);
+    });
+    return () => {
+      clearTimeout(pending);
+      stop();
+    };
+  }, [dispatch, userId]);
 
   return (
     <Routes>

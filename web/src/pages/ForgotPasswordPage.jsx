@@ -8,8 +8,6 @@ import FormField from '../components/FormField';
 import { selectCurrentUser } from '../store/authSlice';
 import { validateEmail } from '../utils/validators';
 
-// Step 1 of the password reset: ask for the email and send the link.
-// Signed-in users also come here to change their password (the API has no separate endpoint).
 function ForgotPasswordPage() {
   const user = useSelector(selectCurrentUser);
   const [email, setEmail] = useState(user?.email || '');

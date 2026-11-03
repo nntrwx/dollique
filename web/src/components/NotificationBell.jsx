@@ -9,8 +9,6 @@ import './NotificationBell.css';
 
 const REFRESH_MS = 15000;
 
-// Bell in the header: comments, replies and likes from other people, and moderation news
-// (hidden or deleted posts, strikes, bans, category suggestions). The pink dot counts the unread ones.
 function NotificationBell() {
   const location = useLocation();
   const [items, setItems] = useState([]);
@@ -20,8 +18,6 @@ function NotificationBell() {
 
   const load = () => api.get('/notifications').then((data) => setItems(data || [])).catch(() => {});
 
-  // Checked on every page change, right after any change on the site (someone may have
-  // commented or liked), every 15 seconds and when the notifications page changes something.
   useEffect(() => {
     load();
     window.addEventListener('notifications:changed', load);
@@ -34,7 +30,6 @@ function NotificationBell() {
     setOpen(false);
   }, [location.pathname]);
 
-  // A click outside the panel or Escape closes it.
   useEffect(() => {
     if (!open) return undefined;
     const handleClick = (event) => {
